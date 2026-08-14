@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0.0",
+  "check_id": "LE-04",
+  "template_id": "T5",
+  "title": "Flag duplicate purchase clusters for review",
+  "enabled": true,
+  "approval_tier": "batch",
+  "requires_consent_namespace_clean": false,
+  "irreversible": true,
+  "operator_disclosure": "Duplicate event cleanup may not be reversible in bulk.",
+  "rollback": {
+    "strategy": "remove_tag"
+  },
+  "operations": [
+    {
+      "operation_id": "manago.tag_add.duplicate_review",
+      "op_kind": "tag_add",
+      "target": "manago",
+      "namespace": "klints:",
+      "capability_id": "RESTV2.CONTACT.UPSERT",
+      "entity_type": "contact",
+      "from_evidence": {
+        "match": { "path": "side", "const": "duplicate_purchase" },
+        "entity_key": { "path": "order.id" },
+        "fields": {
+          "tag": { "const": "klints:duplicate_review" },
+          "order_id": { "path": "order.id" }
+        }
+      },
+      "guards": ["entity_key_required"]
+    }
+  ]
+}

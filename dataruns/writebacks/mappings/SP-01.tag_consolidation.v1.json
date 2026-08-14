@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0.0",
+  "check_id": "SP-01",
+  "template_id": "T9",
+  "title": "Tag consolidation (stub)",
+  "enabled": false,
+  "approval_tier": "batch",
+  "requires_consent_namespace_clean": false,
+  "irreversible": false,
+  "rollback": {
+    "strategy": "remove_tag"
+  },
+  "operations": []
+}

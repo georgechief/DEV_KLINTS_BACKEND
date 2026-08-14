@@ -1,0 +1,5 @@
+"""DCS score-run constants (PRD-DCS-01)."""
+
+DCS_SCORE_KIND = "dcs_score"
+DCS_SCORING_MODEL_NAME = "DCS"
+DCS_SCORING_MODEL_VERSION = "DCS-1.0.0"

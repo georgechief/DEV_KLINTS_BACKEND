@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0.0",
+  "check_id": "CI-01",
+  "template_id": "T1",
+  "title": "Backfill Shopify-only contacts into Manago",
+  "enabled": true,
+  "approval_tier": "batch",
+  "requires_consent_namespace_clean": false,
+  "irreversible": false,
+  "operator_disclosure": null,
+  "rollback": {
+    "strategy": "tagged_backfill_delete"
+  },
+  "operations": [
+    {
+      "operation_id": "manago.contact_upsert.shopify_only",
+      "op_kind": "contact_upsert",
+      "target": "manago",
+      "namespace": "native",
+      "capability_id": "RESTV2.CONTACT.UPSERT",
+      "entity_type": "contact",
+      "from_evidence": {
+        "match": { "path": "side", "const": "shopify_only" },
+        "entity_key": { "path": "email" },
+        "fields": {
+          "email": { "path": "email" },
+          "link_key": { "path": "shopify_customer_id" }
+        }
+      },
+      "guards": ["entity_key_required", "email_format"],
+      "mark_klints_backfill": true
+    }
+  ]
+}

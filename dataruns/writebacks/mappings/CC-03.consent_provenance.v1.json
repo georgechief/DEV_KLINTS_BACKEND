@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0.0",
+  "check_id": "CC-03",
+  "template_id": "T8",
+  "title": "Record Shopify consent evidence on Manago contact",
+  "enabled": true,
+  "approval_tier": "individual",
+  "requires_consent_namespace_clean": true,
+  "irreversible": false,
+  "operator_disclosure": null,
+  "rollback": {
+    "strategy": "revert_detail"
+  },
+  "operations": [
+    {
+      "operation_id": "manago.detail_set.klints_consent_evidence",
+      "op_kind": "detail_set",
+      "target": "manago",
+      "namespace": "klints_",
+      "capability_id": "RESTV2.CONTACT.UPSERT",
+      "entity_type": "contact",
+      "from_evidence": {
+        "match": { "path": "side", "const": "shopify_holds_evidence" },
+        "entity_key": { "path": "person.email" },
+        "fields": {
+          "detail_key": { "const": "klints_consent_evidence" },
+          "detail_value": { "const": "shopify_verified" },
+          "contact_id": { "path": "manago_contact_id" }
+        }
+      },
+      "guards": ["entity_key_required", "email_format", "klints_prefix"]
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "description": "Consent provenance and propagation fail",
+  "mutations": [
+    {
+      "check_id": "CC-03",
+      "status": "FAIL"
+    },
+    {
+      "check_id": "CC-05",
+      "status": "FAIL"
+    }
+  ],
+  "expected_state": "REMEDIATE_OR_BLOCKED_BY_WORKFLOW_GATES"
+}

@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0.0",
+  "tenant_id": "lumera-fixture",
+  "as_of": "2026-07-18T10:00:00Z",
+  "connectors": {
+    "manago": {
+      "status": "CONNECTED",
+      "contacts": 125000,
+      "purchase_events": 18420,
+      "workflow_count": 22
+    },
+    "shopify": {
+      "status": "CONNECTED",
+      "customers": 119500,
+      "orders": 18160,
+      "products": 2450
+    },
+    "erp": {
+      "status": "CONNECTED",
+      "products": 2442,
+      "inventory_updated_at": "2026-07-18T09:45:00Z"
+    }
+  },
+  "notes": "Synthetic golden tenant; no production data."
+}

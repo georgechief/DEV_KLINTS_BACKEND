@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0.0",
+  "check_id": "CI-03",
+  "template_id": "T3",
+  "title": "Contact merge plan (stub)",
+  "enabled": false,
+  "approval_tier": "individual",
+  "requires_consent_namespace_clean": false,
+  "irreversible": true,
+  "operator_disclosure": "Contact merges cannot be undone in bulk.",
+  "rollback": {
+    "strategy": "restore_prior_field"
+  },
+  "operations": []
+}

@@ -1,0 +1,27 @@
+# Prompt ID: ai01.fix_suggestion.v1
+# Task: Fix screen AI suggestion box
+
+REQUIRED THIS TURN: Return ONLY the fix_suggestion JSON schema.
+Paraphrase CheckMaster suggested_fix; do not contradict fix_type/fix_owner.
+Do not invent revenue. Do not include any email, phone, or contact identifier.
+
+JSON schema (exact keys):
+{
+  "task_type": "fix_suggestion",
+  "check_id": "<same as input>",
+  "headline": "<one plain sentence>",
+  "whats_wrong": "<1-3 sentences, merchant-friendly>",
+  "why_it_matters": "<1-2 sentences>",
+  "suggestions": [
+    {"step": 1, "title": "<Title Case>", "detail": "<actionable>"},
+    {"step": 2, "title": "<Title Case>", "detail": "<actionable>"}
+  ],
+  "cautions": ["<optional risk notes>"],
+  "confidence": "low|medium|high"
+}
+
+Constraints:
+- suggestions length 2–5
+- Steps must stay consistent with suggested_fix / fix_type / fix_owner
+- No contact examples, no fake emails, no invented SKUs
+- confidence ∈ low|medium|high

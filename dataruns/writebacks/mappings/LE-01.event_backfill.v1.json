@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0.0",
+  "check_id": "LE-01",
+  "template_id": "T5",
+  "title": "Purchase event backfill (stub)",
+  "enabled": false,
+  "approval_tier": "batch",
+  "requires_consent_namespace_clean": false,
+  "irreversible": true,
+  "operator_disclosure": "Bulk event backfill may not be reversible.",
+  "rollback": {
+    "strategy": "tagged_backfill_delete"
+  },
+  "operations": [
+    {
+      "operation_id": "manago.event_ingest.purchase",
+      "op_kind": "event_ingest",
+      "target": "manago",
+      "namespace": "native",
+      "capability_id": "RESTV2.EVENT.INGEST",
+      "entity_type": "event",
+      "from_evidence": {
+        "match": { "path": "side", "const": "missing_purchase_event" },
+        "entity_key": { "path": "order.id" },
+        "fields": {
+          "order_id": { "path": "order.id" },
+          "email": { "path": "person.email" },
+          "contact_id": { "path": "manago_contact_id" },
+          "value": { "path": "representative_value" }
+        }
+      },
+      "guards": ["entity_key_required"],
+      "mark_klints_backfill": true
+    }
+  ]
+}

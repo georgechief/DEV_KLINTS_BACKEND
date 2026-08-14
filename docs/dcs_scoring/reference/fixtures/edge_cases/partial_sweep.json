@@ -1,0 +1,11 @@
+{
+  "description": "Required evidence coverage below 80%",
+  "mutations": [
+    {
+      "dimension": "02 Lifecycle Event",
+      "status": "UNKNOWN",
+      "count": 3
+    }
+  ],
+  "expected_state": "INCOMPLETE"
+}

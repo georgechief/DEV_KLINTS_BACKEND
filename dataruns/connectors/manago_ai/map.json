@@ -1,0 +1,80 @@
+{
+  "type": "connector",
+  "name": "manago_ai",
+  "key_mapping": [
+    {
+      "entity": "contact",
+      "api_key": "contactId",
+      "db_key": "external_id"
+    },
+    {
+      "entity": "contact",
+      "api_key": "email",
+      "db_key": "email"
+    },
+    {
+      "entity": "contact",
+      "api_key": "phone",
+      "db_key": "phone"
+    },
+    {
+      "entity": "contact",
+      "api_key": "createdOn",
+      "db_key": "created_at"
+    },
+    {
+      "entity": "contact",
+      "api_key": "externalId",
+      "db_key": "link_key"
+    },
+    {
+      "entity": "order",
+      "api_key": "transactionId",
+      "db_key": "external_id"
+    },
+    {
+      "entity": "order",
+      "api_key": "value",
+      "db_key": "amount"
+    },
+    {
+      "entity": "order",
+      "api_key": "currency",
+      "db_key": "currency"
+    },
+    {
+      "entity": "order",
+      "api_key": "email",
+      "db_key": "contact_external_id"
+    },
+    {
+      "entity": "order",
+      "api_key": "date",
+      "db_key": "created_at"
+    },
+    {
+      "entity": "order",
+      "api_key": "contactExtEventType",
+      "db_key": "status"
+    },
+    {
+      "entity": "config",
+      "api_key": "clientId",
+      "db_key": "workspace_id"
+    }
+  ],
+  "status_map": {
+    "PURCHASE": "paid",
+    "CANCELLED": "failed"
+  },
+  "raw_sources": [
+    {
+      "collection": "contacts",
+      "entity": "contact"
+    },
+    {
+      "collection": "transactions",
+      "entity": "order"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0.0",
+  "capabilities": {
+    "RESTV2.CONTACT.UPSERT": {
+      "status": "CONFIRMED_LIVE",
+      "batch_max": 1000
+    },
+    "RESTV2.EVENT.INGEST": {
+      "status": "CONFIRMED_LIVE",
+      "batch_max": 1000
+    },
+    "RESTV2.PRODUCT.IMPORT": {
+      "status": "DISCOVERY_REQUIRED",
+      "batch_max": 100
+    }
+  }
+}

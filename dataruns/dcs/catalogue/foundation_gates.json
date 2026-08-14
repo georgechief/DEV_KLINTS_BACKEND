@@ -1,0 +1,69 @@
+{
+  "FD-01": {
+    "check_name": "Manago API authentication valid",
+    "severity": "Critical",
+    "root_cause_ids": ["RC-12"],
+    "systems_compared": "Manago",
+    "detection_logic": "Signed test call (sha1 of apiKey+clientId+apiSecret) to a read endpoint returns success=true; verify per-account endpoint URL resolves.",
+    "suggested_fix": "Re-capture credentials in onboarding; validate endpoint URL format; store in secret manager with per-tenant scoping.",
+    "cadence": "Initial + Recurring"
+  },
+  "FD-02": {
+    "check_name": "Shopify API authentication and scopes",
+    "severity": "Critical",
+    "root_cause_ids": ["RC-12"],
+    "systems_compared": "Shopify",
+    "detection_logic": "OAuth token valid; granted scopes include read_customers, read_orders; log any missing scope.",
+    "suggested_fix": "Re-run OAuth with full read scope set; hard-fail onboarding if a required scope is denied rather than scoring partially.",
+    "cadence": "Initial + Recurring"
+  },
+  "FD-03": {
+    "check_name": "ERP feed reachable and parseable",
+    "severity": "High",
+    "root_cause_ids": ["RC-06", "RC-12"],
+    "systems_compared": "ERP",
+    "detection_logic": "CSV/API feed retrievable; schema header matches agreed mapping template; row count > 0; encoding valid UTF-8.",
+    "suggested_fix": "Notify tenant with expected schema template; allow scoring to proceed with BR dimension flagged 'not connected' rather than silently zero.",
+    "cadence": "Initial + Recurring"
+  },
+  "FD-04": {
+    "check_name": "API rate-limit headroom measured",
+    "severity": "High",
+    "root_cause_ids": ["RC-15"],
+    "systems_compared": "Manago + Shopify",
+    "detection_logic": "Measure throttle responses during a controlled burst; record safe request budget per connector for the full sweep.",
+    "suggested_fix": "Adaptive throttling with checkpoint/resume; never emit a score from an incomplete sweep — emit 'sweep incomplete' state instead.",
+    "cadence": "Initial"
+  },
+  "FD-05": {
+    "check_name": "Historical data depth available",
+    "severity": "Medium",
+    "root_cause_ids": ["RC-09"],
+    "systems_compared": "Manago + Shopify + ERP",
+    "detection_logic": "Determine max retrievable history per system (orders, events, contacts); record earliest timestamp per entity.",
+    "suggested_fix": "Record per-entity history depth as sweep metadata; cap lookback of cross-system reconciliations to the shortest common window.",
+    "cadence": "Initial"
+  },
+  "FD-06": {
+    "check_name": "Manago account/sub-account topology mapped",
+    "user_check_name": "Manago accounts set up correctly",
+    "severity": "High",
+    "root_cause_ids": ["RC-11"],
+    "systems_compared": "Manago",
+    "detection_logic": "Enumerate accounts/sub-accounts in scope; classify relationship (geo-variant / independent business line / segment-variant) before any cross-account check runs.",
+    "suggested_fix": "Onboarding captures account relationship classification; each cross-system check declares which classes it applies to.",
+    "user_suggested_fix": "In Klints, pick the primary Manago owner for this company. If you use more than one Manago account, say how they relate (regions, separate brands, or audience segments) so we don't mix their data.",
+    "cadence": "Initial"
+  },
+  "FD-07": {
+    "check_name": "Manago site tracking code active",
+    "user_check_name": "Website tracking is working",
+    "severity": "High",
+    "root_cause_ids": ["RC-12"],
+    "systems_compared": "Manago + Storefront",
+    "detection_logic": "Recent VISIT events exist and smclient cookies are being issued; verify monitoring code fires on the production storefront domain(s). Also scrape Company.domain HTML for SalesManago tracker markers.",
+    "suggested_fix": "Install/repair monitoring code via Shopify theme integration; verify with a live test visit before sweep. Ensure SalesManago snippet is present in public website source.",
+    "user_suggested_fix": "Install or repair the Manago tracking code on your live Shopify storefront, then visit the site once so we can confirm visits are arriving.",
+    "cadence": "Initial + Recurring"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "description": "All 42 checks pass",
+  "mutations": [
+    {
+      "match": "*",
+      "status": "PASS",
+      "confidence": "HIGH"
+    }
+  ],
+  "expected_state": "READY",
+  "expected_score": 100
+}

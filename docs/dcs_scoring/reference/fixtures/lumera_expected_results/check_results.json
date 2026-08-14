@@ -1,0 +1,1220 @@
+[
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "FD-01",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 0,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/FD-01",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "FD-02",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 0,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/FD-02",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "FD-03",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 0,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/FD-03",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "FD-04",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 0,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/FD-04",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "FD-05",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 0,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/FD-05",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "FD-06",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 0,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/FD-06",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "FD-07",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 0,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/FD-07",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "CI-01",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 4,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/CI-01",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "CI-02",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 4,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/CI-02",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "CI-03",
+    "status": "FAIL",
+    "score_factor": 0,
+    "numeric_weight": 4,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/CI-03",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "CI-05",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 4,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/CI-05",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "LE-01",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 4,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/LE-01",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "LE-02",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 4,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/LE-02",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "LE-03",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 4,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/LE-03",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "LE-04",
+    "status": "FAIL",
+    "score_factor": 0,
+    "numeric_weight": 4,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/LE-04",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "LE-05",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 4,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/LE-05",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "LE-09",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 4,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/LE-09",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "PT-01",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 4,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/PT-01",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "PT-03",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 4,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/PT-03",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "PT-04",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 4,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/PT-04",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "SP-03",
+    "status": "WARN",
+    "score_factor": 0.5,
+    "numeric_weight": 4,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/SP-03",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "SP-07",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 5,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/SP-07",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "CC-01",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 4,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/CC-01",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "CC-02",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 4,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/CC-02",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "CC-03",
+    "status": "FAIL",
+    "score_factor": 0,
+    "numeric_weight": 4,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/CC-03",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "CC-05",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 4,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/CC-05",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "ME-02",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 4,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/ME-02",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "BR-01",
+    "status": "WARN",
+    "score_factor": 0.5,
+    "numeric_weight": 4,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/BR-01",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "CI-13",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 2,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/CI-13",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "CI-14",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 2,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/CI-14",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "CI-15",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 2,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/CI-15",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "LE-08",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 2,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/LE-08",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "LE-11",
+    "status": "WARN",
+    "score_factor": 0.5,
+    "numeric_weight": 4,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/LE-11",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "LE-13",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 2,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/LE-13",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "PT-14",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 2,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/PT-14",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "SP-08",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 4,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/SP-08",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "SP-12",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 2,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/SP-12",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "CC-12",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 1,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/CC-12",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "ME-08",
+    "status": "WARN",
+    "score_factor": 0.5,
+    "numeric_weight": 2,
+    "confidence": "MEDIUM",
+    "confidence_factor": 0.7,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/ME-08",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "ME-09",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 2,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/ME-09",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "BR-02",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 4,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/BR-02",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  },
+  {
+    "schema_version": "1.0.0",
+    "tenant_id": "lumera-fixture",
+    "run_id": "DCS-RUN-001",
+    "check_id": "BR-12",
+    "status": "PASS",
+    "score_factor": 1,
+    "numeric_weight": 2,
+    "confidence": "HIGH",
+    "confidence_factor": 1,
+    "reason_code": null,
+    "evidence": [
+      {
+        "source": "fixture",
+        "locator": "lumera/BR-12",
+        "value": "synthetic-evidence",
+        "observed_at": "2026-07-18T10:00:00Z"
+      }
+    ],
+    "scoring_model_version": "DCS-1.0.0",
+    "evaluated_at": "2026-07-18T10:05:00Z",
+    "provenance": {
+      "source_versions": {
+        "fixture": "1.0.0"
+      },
+      "created_at": "2026-07-18T10:05:00Z",
+      "created_by": "Klints fixture generator"
+    }
+  }
+]

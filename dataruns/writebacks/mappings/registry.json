@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0.0",
+  "mappings": {
+    "CI-01": {
+      "file": "CI-01.identity_backfill.v1.json",
+      "enabled": true
+    },
+    "CC-03": {
+      "file": "CC-03.consent_provenance.v1.json",
+      "enabled": true
+    },
+    "LE-04": {
+      "file": "LE-04.duplicate_purchase.v1.json",
+      "enabled": true
+    },
+    "CI-03": {
+      "file": "CI-03.contact_merge.v1.json",
+      "enabled": false,
+      "template_id": "T3"
+    },
+    "SP-01": {
+      "file": "SP-01.tag_consolidation.v1.json",
+      "enabled": false,
+      "template_id": "T9"
+    },
+    "LE-01": {
+      "file": "LE-01.event_backfill.v1.json",
+      "enabled": false,
+      "template_id": "T5"
+    }
+  }
+}

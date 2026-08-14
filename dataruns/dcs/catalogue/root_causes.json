@@ -1,0 +1,78 @@
+{
+  "RC-01": {
+    "name": "Integration gap",
+    "definition": "Data exists in a source system but no pipe carries it to the consuming system.",
+    "standard_remediation_pattern": "Build the missing pipe; backfill common window with approval."
+  },
+  "RC-02": {
+    "name": "Mapping error",
+    "definition": "A pipe exists but maps the wrong field, wrong granularity, or wrong semantic.",
+    "standard_remediation_pattern": "Fix mapping config; correct or era-flag affected records."
+  },
+  "RC-03": {
+    "name": "Guest / anonymous identity",
+    "definition": "Commerce activity occurs without a durable identity the marketing platform can hold.",
+    "standard_remediation_pattern": "Email-first contact creation; capture-point improvements as workflow opportunities."
+  },
+  "RC-04": {
+    "name": "Duplicate creation",
+    "definition": "Multiple entry points create parallel records for one real-world entity.",
+    "standard_remediation_pattern": "Merge plan with survivor designation; unify entry-point keys."
+  },
+  "RC-05": {
+    "name": "Sync lag / timing",
+    "definition": "Pipes work but ordering, latency or scheduling produces stale or racing state.",
+    "standard_remediation_pattern": "Cadence contract + freshness SLA + heartbeat monitoring."
+  },
+  "RC-06": {
+    "name": "Schema / definition drift",
+    "definition": "The meaning or shape of a field changed over time without migration.",
+    "standard_remediation_pattern": "Format contract per key; era boundaries flagged in canonical layer."
+  },
+  "RC-07": {
+    "name": "Consent flow divergence",
+    "definition": "Consent capture, storage or propagation differs between systems.",
+    "standard_remediation_pattern": "Source-of-truth policy per direction; propagation loop wired."
+  },
+  "RC-08": {
+    "name": "Manual entry / import artifact",
+    "definition": "Human-entered or bulk-imported data carrying format noise or junk.",
+    "standard_remediation_pattern": "Normalisation batches with approval; provenance cohort tagging."
+  },
+  "RC-09": {
+    "name": "Historical migration gap",
+    "definition": "The integration started at a point in time; earlier truth was never loaded.",
+    "standard_remediation_pattern": "Approved backfill within the FD-05 window; declare residual blind spots."
+  },
+  "RC-10": {
+    "name": "Deleted / archived residue",
+    "definition": "Entities removed in the source live on in downstream surfaces.",
+    "standard_remediation_pattern": "Residue sweep + delete/archive webhooks wired."
+  },
+  "RC-11": {
+    "name": "Multi-store / multi-account ambiguity",
+    "definition": "Data from parallel stores, locales or sub-accounts mixed or mis-scoped.",
+    "standard_remediation_pattern": "Store/account registry (FD-06) enforced at every pipe.",
+    "user_definition": "More than one store or Manago account is in play, and Klints isn’t sure which data belongs where."
+  },
+  "RC-12": {
+    "name": "Configuration error",
+    "definition": "Tracking code, feed config, scopes or platform settings wrong or absent.",
+    "standard_remediation_pattern": "Configuration audit + guided repair + verification test."
+  },
+  "RC-13": {
+    "name": "API contract violation / type misuse",
+    "definition": "Integration uses the platform API outside its documented semantics.",
+    "standard_remediation_pattern": "Vocabulary contract; integration re-routing; never mutate types."
+  },
+  "RC-14": {
+    "name": "Format / unit / timezone inconsistency",
+    "definition": "Same fact encoded differently: units, currency basis, TZ, date format.",
+    "standard_remediation_pattern": "Canonical normalisation rules; unit validation at ingestion."
+  },
+  "RC-15": {
+    "name": "Volume loss",
+    "definition": "Records dropped by rate limits, retry expiry, or partial failures.",
+    "standard_remediation_pattern": "Ordering fixes, idempotent retries, gap-list recovery."
+  }
+}

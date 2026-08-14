@@ -1,0 +1,318 @@
+{
+  "version": "1.0.0",
+  "scope_model_version": "MVP1-42-v1.4.1",
+  "scoring_model_version": "DCS-1.0.0",
+  "dimension_weights": {
+    "01 Customer Identity": 18,
+    "02 Lifecycle Event": 18,
+    "03 Product & Transaction": 14,
+    "04 Segment & Property": 12,
+    "05 Channel & Consent": 18,
+    "06 Measurement": 10,
+    "07 Business Reality": 10
+  },
+  "required_dimensions": [
+    "01 Customer Identity",
+    "02 Lifecycle Event",
+    "03 Product & Transaction",
+    "04 Segment & Property",
+    "05 Channel & Consent",
+    "06 Measurement"
+  ],
+  "checks": [
+    {
+      "check_id": "FD-01",
+      "dimension": "00 Foundation Gate",
+      "numeric_weight": 0,
+      "role": "GATE",
+      "isOptional": false
+    },
+    {
+      "check_id": "FD-02",
+      "dimension": "00 Foundation Gate",
+      "numeric_weight": 0,
+      "role": "GATE",
+      "isOptional": false
+    },
+    {
+      "check_id": "FD-03",
+      "dimension": "00 Foundation Gate",
+      "numeric_weight": 0,
+      "role": "GATE",
+      "isOptional": true
+    },
+    {
+      "check_id": "FD-04",
+      "dimension": "00 Foundation Gate",
+      "numeric_weight": 0,
+      "role": "GATE",
+      "isOptional": false
+    },
+    {
+      "check_id": "FD-05",
+      "dimension": "00 Foundation Gate",
+      "numeric_weight": 0,
+      "role": "GATE",
+      "isOptional": false
+    },
+    {
+      "check_id": "FD-06",
+      "dimension": "00 Foundation Gate",
+      "numeric_weight": 0,
+      "role": "GATE",
+      "isOptional": false
+    },
+    {
+      "check_id": "FD-07",
+      "dimension": "00 Foundation Gate",
+      "numeric_weight": 0,
+      "role": "GATE",
+      "isOptional": false
+    },
+    {
+      "check_id": "CI-01",
+      "dimension": "01 Customer Identity",
+      "numeric_weight": 4,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "CI-02",
+      "dimension": "01 Customer Identity",
+      "numeric_weight": 4,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "CI-03",
+      "dimension": "01 Customer Identity",
+      "numeric_weight": 4,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "CI-05",
+      "dimension": "01 Customer Identity",
+      "numeric_weight": 4,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "LE-01",
+      "dimension": "02 Lifecycle Event",
+      "numeric_weight": 4,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "LE-02",
+      "dimension": "02 Lifecycle Event",
+      "numeric_weight": 4,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "LE-03",
+      "dimension": "02 Lifecycle Event",
+      "numeric_weight": 4,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "LE-04",
+      "dimension": "02 Lifecycle Event",
+      "numeric_weight": 4,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "LE-05",
+      "dimension": "02 Lifecycle Event",
+      "numeric_weight": 4,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "LE-09",
+      "dimension": "02 Lifecycle Event",
+      "numeric_weight": 4,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "PT-01",
+      "dimension": "03 Product & Transaction",
+      "numeric_weight": 4,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "PT-03",
+      "dimension": "03 Product & Transaction",
+      "numeric_weight": 4,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "PT-04",
+      "dimension": "03 Product & Transaction",
+      "numeric_weight": 4,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "SP-03",
+      "dimension": "04 Segment & Property",
+      "numeric_weight": 4,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "SP-07",
+      "dimension": "04 Segment & Property",
+      "numeric_weight": 5,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "CC-01",
+      "dimension": "05 Channel & Consent",
+      "numeric_weight": 4,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "CC-02",
+      "dimension": "05 Channel & Consent",
+      "numeric_weight": 4,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "CC-03",
+      "dimension": "05 Channel & Consent",
+      "numeric_weight": 4,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "CC-05",
+      "dimension": "05 Channel & Consent",
+      "numeric_weight": 4,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "ME-02",
+      "dimension": "06 Measurement",
+      "numeric_weight": 4,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "BR-01",
+      "dimension": "07 Business Reality",
+      "numeric_weight": 4,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "CI-13",
+      "dimension": "01 Customer Identity",
+      "numeric_weight": 2,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "CI-14",
+      "dimension": "01 Customer Identity",
+      "numeric_weight": 2,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "CI-15",
+      "dimension": "01 Customer Identity",
+      "numeric_weight": 2,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "LE-08",
+      "dimension": "02 Lifecycle Event",
+      "numeric_weight": 2,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "LE-11",
+      "dimension": "02 Lifecycle Event",
+      "numeric_weight": 4,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "LE-13",
+      "dimension": "02 Lifecycle Event",
+      "numeric_weight": 2,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "PT-14",
+      "dimension": "03 Product & Transaction",
+      "numeric_weight": 2,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "SP-08",
+      "dimension": "04 Segment & Property",
+      "numeric_weight": 4,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "SP-12",
+      "dimension": "04 Segment & Property",
+      "numeric_weight": 2,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "CC-12",
+      "dimension": "05 Channel & Consent",
+      "numeric_weight": 1,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "ME-08",
+      "dimension": "06 Measurement",
+      "numeric_weight": 2,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "ME-09",
+      "dimension": "06 Measurement",
+      "numeric_weight": 2,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "BR-02",
+      "dimension": "07 Business Reality",
+      "numeric_weight": 4,
+      "role": "SCORED",
+      "isOptional": false
+    },
+    {
+      "check_id": "BR-12",
+      "dimension": "07 Business Reality",
+      "numeric_weight": 2,
+      "role": "SCORED",
+      "isOptional": false
+    }
+  ]
+}

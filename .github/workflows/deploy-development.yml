@@ -1,0 +1,142 @@
+# Deploy Klints backend (Docker) to the DigitalOcean development droplet on every push to main.
+#
+# DNS: apis.klints.io → A/AAAA to the droplet (required for Let's Encrypt).
+# TLS: deploy/scripts/ensure-ssl.sh issues/renews certs; nginx terminates HTTPS.
+#
+# GitHub Variables (Settings → Secrets and variables → Actions → Variables):
+#   DEV_HOST          Droplet public IP (keep IP for SSH; domain is for public API)
+#   DEV_USER          SSH user (usually root on a fresh DO CentOS image)
+#   DEV_SSH_PORT      Optional, default 22
+#   DEV_APP_DIR       Optional, default /opt/klints_backend
+#   API_DOMAIN        Optional, default apis.klints.io
+#   CERTBOT_EMAIL     Optional, default ops@klints.io
+#
+# GitHub Secrets (Settings → Secrets and variables → Actions → Secrets):
+#   DEV_SSH_PRIVATE_KEY   Private key for DEV_USER (full PEM / OpenSSH key)
+#   DEV_ENV_FILE          Full .env contents for the server (see .env.example)
+#                         Must include ALLOWED_HOSTS=apis.klints.io,... and SSL flags
+
+name: Deploy to Development
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-development
+  cancel-in-progress: true
+
+env:
+  APP_DIR: ${{ vars.DEV_APP_DIR != '' && vars.DEV_APP_DIR || '/opt/klints_backend' }}
+
+jobs:
+  deploy:
+    name: Deploy Docker stack to DigitalOcean
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required secrets and variables
+        env:
+          DEV_HOST: ${{ vars.DEV_HOST }}
+          DEV_USER: ${{ vars.DEV_USER }}
+          DEV_SSH_PRIVATE_KEY: ${{ secrets.DEV_SSH_PRIVATE_KEY }}
+          DEV_ENV_FILE: ${{ secrets.DEV_ENV_FILE }}
+        run: |
+          missing=0
+          for name in DEV_HOST DEV_USER DEV_SSH_PRIVATE_KEY DEV_ENV_FILE; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing ${name}. Add GitHub Variable or Secret (see workflow header comments)."
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Configure SSH
+        env:
+          DEV_SSH_PRIVATE_KEY: ${{ secrets.DEV_SSH_PRIVATE_KEY }}
+          DEV_HOST: ${{ vars.DEV_HOST }}
+          DEV_USER: ${{ vars.DEV_USER }}
+          DEV_SSH_PORT: ${{ vars.DEV_SSH_PORT }}
+        run: |
+          SSH_PORT="${DEV_SSH_PORT:-22}"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          # Support ed25519 or RSA keys from the secret
+          KEY_FILE=~/.ssh/deploy_key
+          printf '%s\n' "$DEV_SSH_PRIVATE_KEY" > "$KEY_FILE"
+          chmod 600 "$KEY_FILE"
+          ssh-keyscan -p "$SSH_PORT" -H "$DEV_HOST" >> ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host klints-dev
+            HostName ${DEV_HOST}
+            User ${DEV_USER}
+            Port ${SSH_PORT}
+            IdentityFile ${KEY_FILE}
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+            ServerAliveInterval 30
+            ServerAliveCountMax 10
+          EOF
+          chmod 600 ~/.ssh/config
+
+      - name: Ensure app directory exists
+        run: |
+          ssh klints-dev "mkdir -p '${APP_DIR}' || sudo mkdir -p '${APP_DIR}'; owner=\$(whoami); sudo chown -R \"\$owner:\$owner\" '${APP_DIR}' || chown -R \"\$owner:\$owner\" '${APP_DIR}'"
+
+      - name: Sync release to droplet
+        run: |
+          rsync -az --delete \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude '.venv/' \
+            --exclude '__pycache__/' \
+            --exclude '*.pyc' \
+            --exclude '.env' \
+            --exclude 'db.sqlite3' \
+            --exclude 'media/' \
+            --exclude 'staticfiles/' \
+            --exclude '.pytest_cache/' \
+            ./ klints-dev:"${APP_DIR}/"
+
+      - name: Write environment file
+        env:
+          DEV_ENV_FILE: ${{ secrets.DEV_ENV_FILE }}
+        run: |
+          printf '%s\n' "$DEV_ENV_FILE" | ssh klints-dev "cat > '${APP_DIR}/.env' && chmod 600 '${APP_DIR}/.env'"
+
+      - name: Bootstrap host (Docker + 1GB rotating logs)
+        run: |
+          ssh klints-dev "APP_DIR='${APP_DIR}' bash '${APP_DIR}/deploy/scripts/bootstrap-host.sh'"
+
+      - name: Deploy stack (TLS, build, migrate, start)
+        env:
+          API_DOMAIN: ${{ vars.API_DOMAIN }}
+          CERTBOT_EMAIL: ${{ vars.CERTBOT_EMAIL }}
+        run: |
+          DOMAIN="${API_DOMAIN:-apis.klints.io}"
+          EMAIL="${CERTBOT_EMAIL:-ops@klints.io}"
+          ssh klints-dev "APP_DIR='${APP_DIR}' API_DOMAIN='${DOMAIN}' CERTBOT_EMAIL='${EMAIL}' bash '${APP_DIR}/deploy/scripts/deploy.sh'"
+
+      - name: Smoke check via HTTPS domain
+        env:
+          API_DOMAIN: ${{ vars.API_DOMAIN }}
+        run: |
+          DOMAIN="${API_DOMAIN:-apis.klints.io}"
+          for i in $(seq 1 12); do
+            code=$(curl -sS -o /tmp/health.out -w '%{http_code}' --max-time 15 "https://${DOMAIN}/health/" || echo 000)
+            if [ "$code" = "200" ]; then
+              echo "Development is up: https://${DOMAIN}/health/ → $(cat /tmp/health.out)"
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $code — $(head -c 200 /tmp/health.out 2>/dev/null || true)"
+            sleep 5
+          done
+          echo "::error::HTTPS health check failed for https://${DOMAIN}/health/"
+          ssh klints-dev "cd '${APP_DIR}' && grep -E '^(ALLOWED_HOSTS|CSRF_TRUSTED_ORIGINS|API_DOMAIN|SECURE_SSL_REDIRECT)=' .env; docker compose logs --tail=100 nginx web"
+          exit 1

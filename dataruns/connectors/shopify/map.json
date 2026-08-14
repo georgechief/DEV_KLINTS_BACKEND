@@ -1,0 +1,94 @@
+{
+  "type": "connector",
+  "name": "shopify",
+  "key_mapping": [
+    {
+      "entity": "contact",
+      "api_key": "id",
+      "db_key": "external_id"
+    },
+    {
+      "entity": "contact",
+      "api_key": "email",
+      "db_key": "email"
+    },
+    {
+      "entity": "contact",
+      "api_key": "phone",
+      "db_key": "phone"
+    },
+    {
+      "entity": "contact",
+      "api_key": "created_at",
+      "db_key": "created_at"
+    },
+    {
+      "entity": "order",
+      "api_key": "id",
+      "db_key": "external_id"
+    },
+    {
+      "entity": "order",
+      "api_key": "total_price",
+      "db_key": "amount"
+    },
+    {
+      "entity": "order",
+      "api_key": "currency",
+      "db_key": "currency"
+    },
+    {
+      "entity": "order",
+      "api_key": "financial_status",
+      "db_key": "status"
+    },
+    {
+      "entity": "order",
+      "api_key": "customer.id",
+      "db_key": "contact_external_id"
+    },
+    {
+      "entity": "order",
+      "api_key": "email",
+      "db_key": "email"
+    },
+    {
+      "entity": "order",
+      "api_key": "created_at",
+      "db_key": "created_at"
+    },
+    {
+      "entity": "config",
+      "api_key": "shop",
+      "db_key": "shop_domain"
+    }
+  ],
+  "status_map": {
+    "paid": "paid",
+    "partially_paid": "paid",
+    "refunded": "refunded",
+    "partially_refunded": "refunded",
+    "voided": "failed",
+    "pending": "failed"
+  },
+  "raw_sources": [
+    {
+      "collection": "customers",
+      "entity": "contact"
+    },
+    {
+      "collection": "orders",
+      "entity": "order"
+    },
+    {
+      "collection": "checkouts",
+      "entity": "checkout",
+      "note": "Abandoned checkouts for Excel LE-08; raw-only (not upserted to Order)"
+    },
+    {
+      "collection": "inventory_levels",
+      "entity": "inventory",
+      "note": "Excel BR-02 inventory_levels.updated_at; raw-only"
+    }
+  ]
+}

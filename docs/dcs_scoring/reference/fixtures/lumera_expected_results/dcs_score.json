@@ -1,0 +1,53 @@
+{
+  "schema_version": "1.0.0",
+  "tenant_id": "lumera-fixture",
+  "run_id": "DCS-RUN-001",
+  "scoring_model_version": "DCS-1.0.0",
+  "blocking_gates_failed": 0,
+  "headline_score": 84.267,
+  "score_state": "CONDITIONALLY_READY",
+  "dimensions": {
+    "01 Customer Identity": {
+      "score": 81.8182,
+      "coverage": 1,
+      "confidence": 1,
+      "weight_percent": 18
+    },
+    "02 Lifecycle Event": {
+      "score": 81.25,
+      "coverage": 1,
+      "confidence": 1,
+      "weight_percent": 18
+    },
+    "03 Product & Transaction": {
+      "score": 100,
+      "coverage": 1,
+      "confidence": 1,
+      "weight_percent": 14
+    },
+    "04 Segment & Property": {
+      "score": 86.6667,
+      "coverage": 1,
+      "confidence": 1,
+      "weight_percent": 12
+    },
+    "05 Channel & Consent": {
+      "score": 76.4706,
+      "coverage": 1,
+      "confidence": 1,
+      "weight_percent": 18
+    },
+    "06 Measurement": {
+      "score": 87.5,
+      "coverage": 1,
+      "confidence": 0.925,
+      "weight_percent": 10
+    },
+    "07 Business Reality": {
+      "score": 80,
+      "coverage": 1,
+      "confidence": 1,
+      "weight_percent": 10
+    }
+  }
+}
