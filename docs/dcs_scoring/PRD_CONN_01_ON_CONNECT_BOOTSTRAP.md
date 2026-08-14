@@ -288,7 +288,7 @@ Body: issue codes + message, link to reconnect.
 | `tenants/emails.py` | Bootstrap email helpers |
 | `core/settings/base.py` | Task time limits / queue if needed |
 | `tenants/tests/test_connector_fetch.py` (+ new bootstrap tests) | Async enqueue, on-connect trigger, health_report |
-| `docs/PRD_CONNECTOR_CSV_EXPORT.md` | Add note: default path superseded by this PRD |
+| `docs/connectors/PRD_CONNECTOR_CSV_EXPORT.md` | Add note: default path superseded by this PRD |
 
 ## 11. Out of scope
 

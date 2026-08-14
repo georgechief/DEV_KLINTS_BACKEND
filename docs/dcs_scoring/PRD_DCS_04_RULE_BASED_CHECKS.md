@@ -2,7 +2,7 @@
 
 **Depends on:** DCS-02 gates, DCS-03 snapshot  
 **DataPack:** sheet **09** rows 8–28, **02** detection logic, **06** field mapping  
-**IDs:** see [`CHECK_MASTER_42.md`](./CHECK_MASTER_42.md)
+**IDs:** see [`docs/dcs_scoring/CHECK_MASTER_42.md`](./CHECK_MASTER_42.md)
 
 ## 1. Goal
 

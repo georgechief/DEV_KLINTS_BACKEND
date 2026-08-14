@@ -1,7 +1,7 @@
 # PRD-DCS-10 — Run diff (audit) + period compare (Overview)
 
 **Status:** Ready for implementation  
-**Owner track:** Backend DCS (`docs/dcs_scoring/`) + FE Overview / Data Center / Activity (Maheep + Sahil surfaces)  
+**Owner track:** Backend DCS (`docs/dcs_scoring/`) + FE Overview / Data Center / Activity (backend + frontend surfaces)  
 **Depends on:** DCS-01 orchestration · DCS-06 status/history APIs · DCS-08 revenue impact (`business_impact.estimate`) · AUDIT-01 Activity · FE-06 Overview live shell  
 **Surfaces:** `GET /api/v1/dcs/history/` · Overview period control · Dimension charts · Captured by Klints · Data Center trend · `/activity`  
 **Out of scope:** Real “money captured” workflow attribution · Opportunities live wiring (stub only) · Architecture AF period horizon · inventing Billing/capture ledger  
@@ -528,9 +528,9 @@ Same as existing history: authenticated user → company scope. Empty payload if
 |-------|------------------|----------|
 | **BE-A** Persist `run_diff` + audit | Backend / DCS | orchestrate + tests |
 | **BE-B** History `until` + `period_compare` + `at_stake_series` | Backend / DCS | history.py + views + tests |
-| **FE-A** Overview period binding | Maheep / Overview | OverviewPanel + query keys |
-| **FE-B** Activity Δ copy | Maheep / Audit | Activity timeline formatting |
-| **FE-C** Data Center Δ (small) | Sahil / Data Center | only if chart header needs period Δ |
+| **FE-A** Overview period binding | Engineering / Overview | OverviewPanel + query keys |
+| **FE-B** Activity Δ copy | Engineering / Audit | Activity timeline formatting |
+| **FE-C** Data Center Δ (small) | Engineering / Data Center | only if chart header needs period Δ |
 
 Ship **BE-A + BE-B** before FE-A so Overview is not double-mocked.
 
@@ -539,9 +539,9 @@ Ship **BE-A + BE-B** before FE-A so Overview is not double-mocked.
 ## 12. Related docs
 
 - `docs/dcs_scoring/PRD_DCS_06_API_RESPONSES.md` — status/history contracts  
-- `docs/sahil/PRD_DCS_08_REVENUE_IMPACT.md` — `business_impact.estimate`  
-- `docs/maheep/PRD_FE_06_GUIDED_DCS_WORKLIST.md` — Overview live shell  
-- `docs/maheep/PRD_AUDIT_01_GOVERNANCE_ACTIVITY.md` — Activity / audit  
+- `docs/dcs_scoring/PRD_DCS_08_REVENUE_IMPACT.md` — `business_impact.estimate`  
+- `docs/frontend/PRD_FE_06_GUIDED_DCS_WORKLIST.md` — Overview live shell  
+- `docs/audit/PRD_AUDIT_01_GOVERNANCE_ACTIVITY.md` — Activity / audit  
 - `klints_frontend/src/lib/overview-period.ts` — period windows  
 
 ---

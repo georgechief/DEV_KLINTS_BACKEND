@@ -38,9 +38,9 @@ In addition, work that is **not required for M1** is already present and referen
 |---|----------------------|--------|-----------------------------|
 | D1 | Infrastructure ready (repo, Django, PostgreSQL, Celery/Redis, CI/CD) | **Met** | Django project `core/`; Postgres via env (`core/settings/base.py` → `DATABASES`); Celery + Redis (`core/celery.py`, `CELERY_*` in settings); CI/CD `.github/workflows/deploy-development.yml` → DigitalOcean droplet / `apis.klints.io` |
 | D2 | Auth + OAuth ready (JWT, RBAC, multi-tenant isolation) | **Met** | `tenants/auth_*`, `tenants/auth/`; JWT SimpleJWT; company/tenant models + API scoping; Shopify OAuth `tenants/shopify.py`, `tenants/connector_*` |
-| D3 | Ingestion + webhooks live | **Met (evolved)** | Universal connectors `dataruns/connectors/` (`manago_ai/`, `shopify/`); bootstrap/import `dataruns/connectors/import_data.py`, `tenants/fetch_persist.py`. **Webhook-centric refresh replaced by agreed daily Beat** — `docs/maheep/PRD_DCS_07_DAILY_BEAT_SCHEDULE.md`, schedule in `core/settings/base.py` (`dcs-daily-score-1500-ist`), dispatcher `dataruns.dispatch_daily_dcs_scores` / `dataruns/dcs/enqueue.py` |
+| D3 | Ingestion + webhooks live | **Met (evolved)** | Universal connectors `dataruns/connectors/` (`manago_ai/`, `shopify/`); bootstrap/import `dataruns/connectors/import_data.py`, `tenants/fetch_persist.py`. **Webhook-centric refresh replaced by agreed daily Beat** — `docs/dcs_scoring/PRD_DCS_07_DAILY_BEAT_SCHEDULE.md`, schedule in `core/settings/base.py` (`dcs-daily-score-1500-ist`), dispatcher `dataruns.dispatch_daily_dcs_scores` / `dataruns/dcs/enqueue.py` |
 | D4 | Scoring engine live (28 checks, 7 sub-scores) | **Exceeded** | Live DCS pipeline `dataruns/dcs/`; master catalogue **42 checks** — `dataruns/dcs/check_master_mvp1.json`, `docs/dcs_scoring/CHECK_MASTER_42.md`; **7 scored dimensions** + foundation gates |
-| D5 | Data Fix Agent live | **Met** | Backend writeback/fix foundation `dataruns/writebacks/`; AI fix suggestions `dataruns/ai/`; FE Fix bridge `src/routes/fix.tsx`, `src/lib/fix-flow.ts`, `src/lib/fix-live-plan.ts`; evidence/copy PRDs `docs/maheep/PRD_FE_08_*`, `PRD_FE_09_*` |
+| D5 | Data Fix Agent live | **Met** | Backend writeback/fix foundation `dataruns/writebacks/`; AI fix suggestions `dataruns/ai/`; FE Fix bridge `src/routes/fix.tsx`, `src/lib/fix-flow.ts`, `src/lib/fix-live-plan.ts`; evidence/copy PRDs `docs/frontend/PRD_FE_08_*`, `docs/frontend/PRD_FE_09_*` |
 
 ### 2.2 Acceptance Criteria (Schedule 1 — M1)
 
@@ -68,7 +68,7 @@ Schedule 1 listed “Ingestion + webhooks live.” Delivery kept **ingestion liv
 - **Daily Celery Beat** at **15:00 IST** for every eligible connected company  
 - Task: `dataruns.dispatch_daily_dcs_scores`  
 - Schedule key: `dcs-daily-score-1500-ist` in `core/settings/base.py`  
-- Spec: `docs/maheep/PRD_DCS_07_DAILY_BEAT_SCHEDULE.md`  
+- Spec: `docs/dcs_scoring/PRD_DCS_07_DAILY_BEAT_SCHEDULE.md`  
 - Enqueue / idempotency: `dataruns/dcs/enqueue.py` (`DAILY_BEAT_TRIGGER = "daily_beat"`)
 
 This is more powerful than webhook-only refresh: it continuously re-scores **all tenants** on a governed schedule, independent of individual webhook reliability.
@@ -111,7 +111,7 @@ The Fix experience is not a placeholder:
 - Diagnose / evidence UI: `src/components/klints/DiagnoseEvidence.tsx`  
 - Backend writeback pipeline: `dataruns/writebacks/` (adapters, approvals, preflight, transform)  
 - AI fix suggestions / narrative: `dataruns/ai/` (`complete.py`, prompts, providers)  
-- Product PRDs: `docs/maheep/PRD_FE_08_FIX_LIVE_ISSUE_BRIDGE.md`, `PRD_FE_09_DCS_COPY_AND_FIX_EVIDENCE.md`, `PRD_WB_01_WRITEBACK_ADAPTER_FOUNDATION.md`, `docs/sahil/PRD_AI_01_MISTRAL_NARRATIVE_AND_FIX_SUGGESTIONS.md`
+- Product PRDs: `docs/frontend/PRD_FE_08_FIX_LIVE_ISSUE_BRIDGE.md`, `docs/frontend/PRD_FE_09_DCS_COPY_AND_FIX_EVIDENCE.md`, `docs/writebacks/PRD_WB_01_WRITEBACK_ADAPTER_FOUNDATION.md`, `docs/ai/PRD_AI_01_MISTRAL_NARRATIVE_AND_FIX_SUGGESTIONS.md`
 
 Operators see **what failed**, **why**, and **what fix is required**, with evidence — not only a raw fail flag.
 
@@ -137,14 +137,14 @@ The following are **outside** the M1 Foundation & Core acceptance row, but are i
 
 | Area | Why it matters | Key references |
 |------|----------------|----------------|
-| **Architecture assessment (AF-01)** | Lifecycle / stack architecture verdicts after DCS | `dataruns/architecture/`, `docs/sahil/PRD_AF_01_ARCHITECTURE_ASSESSMENT.md`, FE `src/routes/lifecycle.tsx`, `src/lib/architecture.ts` |
-| **Use-case / pilot library (UC-01)** | 16 MVP1 pilots / opportunities | `dataruns/use_cases/`, `docs/sahil/PRD_UC_01_*`, FE `src/routes/opportunities.tsx`, `src/routes/workflow.*` |
-| **Orchestration (ORCH-01)** | Canonical priority / opportunity planning | `dataruns/orchestration/`, `docs/sahil/PRD_ORCH_01_CANONICAL_PRIORITY.md`, `src/lib/orchestration.ts` |
-| **Assessment report PDF (RPT-01 / RPT-01B)** | Governed report compose + polished PDF export | `dataruns/reports/` (`compose.py`, `render_pdf.py`, `views.py`), `docs/sahil/PRD_RPT_01_*`, FE assessment helpers `src/lib/assessment-report.ts` |
-| **AI agent setup (PRD-AI-01)** | Narrative + fix suggestions with privacy gate | `dataruns/ai/`, `docs/AI_AGENT_ORCHESTRATION_BLUEPRINT.md`, `docs/sahil/PRD_AI_01_*` |
+| **Architecture assessment (AF-01)** | Lifecycle / stack architecture verdicts after DCS | `dataruns/architecture/`, `docs/architecture/PRD_AF_01_ARCHITECTURE_ASSESSMENT.md`, FE `src/routes/lifecycle.tsx`, `src/lib/architecture.ts` |
+| **Use-case / pilot library (UC-01)** | 16 MVP1 pilots / opportunities | `dataruns/use_cases/`, `docs/use_cases/PRD_UC_01_*`, FE `src/routes/opportunities.tsx`, `src/routes/workflow.*` |
+| **Orchestration (ORCH-01)** | Canonical priority / opportunity planning | `dataruns/orchestration/`, `docs/orchestration/PRD_ORCH_01_CANONICAL_PRIORITY.md`, `src/lib/orchestration.ts` |
+| **Assessment report PDF (RPT-01 / RPT-01B)** | Governed report compose + polished PDF export | `dataruns/reports/` (`compose.py`, `render_pdf.py`, `views.py`), `docs/reports/PRD_RPT_01_*`, FE assessment helpers `src/lib/assessment-report.ts` |
+| **AI agent setup (PRD-AI-01)** | Narrative + fix suggestions with privacy gate | `dataruns/ai/`, `docs/ai/AI_AGENT_ORCHESTRATION_BLUEPRINT.md`, `docs/ai/PRD_AI_01_*` |
 | **DCS-10 run diff / period compare** | History, diffs, period UX beyond first score | `dataruns/dcs/run_diff.py`, `docs/dcs_scoring/PRD_DCS_10_*`, FE Data Consistency period UI |
-| **Team invites / workspace / password** | Multi-user workspace readiness | `tenants/team_*`, `docs/PRD_TEAM_INVITES.md`, FE `src/routes/invite.accept.tsx`, `src/routes/settings.tsx` |
-| **Audit / governance** | Activity & audit chain foundations | `dataruns/audit*`, `docs/maheep/PRD_AUDIT_*`, FE `src/routes/activity.tsx` |
+| **Team invites / workspace / password** | Multi-user workspace readiness | `tenants/team_*`, `docs/team/PRD_TEAM_INVITES.md`, FE `src/routes/invite.accept.tsx`, `src/routes/settings.tsx` |
+| **Audit / governance** | Activity & audit chain foundations | `dataruns/audit*`, `docs/audit/PRD_AUDIT_*`, FE `src/routes/activity.tsx` |
 | **QA / Handoff surfaces** | Operator QA & handoff screens | FE `src/routes/qa.tsx`, `src/routes/handoff.tsx` |
 | **Security / data processing response** | Written security posture for Client | `docs/security/KLINTS_AI_SECURITY_AND_DATA_PROCESSING_RESPONSE.md` |
 
@@ -160,7 +160,7 @@ These items strengthen the M1 story: the foundation is not only “stood up” �
 core/                 Django settings, Celery, health
 tenants/              Auth, connectors, team, workspace
 dataruns/             DCS, architecture, orchestration, reports, AI, writebacks
-docs/                 PRDs & DCS masters (preserved as authored)
+docs/                 PRDs by module (see docs/README.md)
 .github/workflows/    deploy-development.yml (DO CI/CD)
 .env.example          Required secrets documented (values excluded)
 requirements.txt      Dependency manifest
@@ -180,21 +180,24 @@ Secrets (`.env`, production credentials) are **excluded**. Configure from `.env.
 
 ---
 
-## 7. Documentation index (authoritative PRDs)
+## 7. Documentation index (by module)
 
-| Topic | Path |
-|-------|------|
-| DCS overview | `docs/dcs_scoring/PRD_00_OVERVIEW.md` |
-| Check master 42 | `docs/dcs_scoring/CHECK_MASTER_42.md` |
-| Daily Beat (webhook evolution) | `docs/maheep/PRD_DCS_07_DAILY_BEAT_SCHEDULE.md` |
-| Connector bootstrap | `docs/dcs_scoring/PRD_CONN_01_ON_CONNECT_BOOTSTRAP.md` |
-| Fix bridge / evidence | `docs/maheep/PRD_FE_08_*`, `PRD_FE_09_*` |
-| Writeback foundation | `docs/maheep/PRD_WB_01_*` |
-| Architecture | `docs/sahil/PRD_AF_01_*` |
-| Reports / PDF | `docs/sahil/PRD_RPT_01_*` |
-| AI | `docs/sahil/PRD_AI_01_*`, `docs/AI_AGENT_ORCHESTRATION_BLUEPRINT.md` |
-| Team invites | `docs/PRD_TEAM_INVITES.md` |
-| Auth / connectors API notes | `docs/API_AUTH_CONNECTORS.md` |
+Full index: [`docs/README.md`](docs/README.md). PRDs are organized by product module (no contributor folders).
+
+| Module | Path |
+|--------|------|
+| DCS scoring | `docs/dcs_scoring/` (overview, CHECK_MASTER_42, daily Beat DCS-07, diffs DCS-10) |
+| Connectors | `docs/connectors/` + bootstrap `docs/dcs_scoring/PRD_CONN_01_*` |
+| Frontend / Fix UX | `docs/frontend/` (FE-08 / FE-09 Fix bridge & evidence) |
+| Writebacks | `docs/writebacks/` |
+| Architecture | `docs/architecture/` |
+| Orchestration | `docs/orchestration/` |
+| Use cases / pilots | `docs/use_cases/` |
+| Reports / PDF | `docs/reports/` |
+| AI | `docs/ai/` |
+| Auth / team / workspace | `docs/auth/`, `docs/team/`, `docs/workspace/` |
+| Audit | `docs/audit/` |
+| Security | `docs/security/` |
 
 ---
 

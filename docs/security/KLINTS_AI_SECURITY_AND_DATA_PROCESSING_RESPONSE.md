@@ -335,7 +335,7 @@ Failures · denied fallbacks · policy violations · access to reports · connec
 
 ## 8. DCS implementation contract
 
-Preserved exactly (DataPack v1.2 / workbook v1.4.1 / `CHECK_MASTER_42.md`):
+Preserved exactly (DataPack v1.2 / workbook v1.4.1 / `docs/dcs_scoring/CHECK_MASTER_42.md`):
 
 | Item | Contract |
 |------|----------|

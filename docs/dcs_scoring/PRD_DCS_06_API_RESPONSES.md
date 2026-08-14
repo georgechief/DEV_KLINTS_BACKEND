@@ -295,7 +295,7 @@ Headline score time series, value-capture placeholders, and period-over-period c
 
 ### Consecutive run-diff (write path, audit)
 
-On each SUCCEEDED scored run, orchestration persists `DataRun.metadata.run_diff` (vs immediately previous scored run) and includes the same object in `dcs.score_completed` audit metadata. First-ever run: `baseline: true`, deltas null. See `PRD_DCS_10_RUN_DIFF_AND_PERIOD_COMPARE.md`.
+On each SUCCEEDED scored run, orchestration persists `DataRun.metadata.run_diff` (vs immediately previous scored run) and includes the same object in `dcs.score_completed` audit metadata. First-ever run: `baseline: true`, deltas null. See `docs/dcs_scoring/PRD_DCS_10_RUN_DIFF_AND_PERIOD_COMPARE.md`.
 
 ## 8. Error envelope
 

@@ -43,7 +43,7 @@ Schemas (`docs/dcs_scoring/reference/schemas/`):
 - `check_result.schema.json`
 - `dcs_run.schema.json`
 
-Human-readable master copy in-repo: [`CHECK_MASTER_42.md`](./CHECK_MASTER_42.md).
+Human-readable master copy in-repo: [`docs/dcs_scoring/CHECK_MASTER_42.md`](./CHECK_MASTER_42.md).
 
 ## 3. Master registry
 

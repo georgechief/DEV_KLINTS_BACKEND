@@ -32,5 +32,5 @@ Workbook SHA-256 (matches DataPack `manifest.json`):
 
 ## Related existing docs
 
-- `docs/PRD_CONNECTOR_CSV_EXPORT.md` — current sync fetch (superseded for default path by CONN-01)
-- `docs/API_AUTH_CONNECTORS.md` — connect/auth
+- `docs/connectors/PRD_CONNECTOR_CSV_EXPORT.md` — current sync fetch (superseded for default path by CONN-01)
+- `docs/auth/API_AUTH_CONNECTORS.md` — connect/auth

@@ -26,7 +26,7 @@ Do not rename IDs. Full detection logic text lives in sheet 02 — join by `Chec
 
 ## Master table
 
-Notes: **FD-03** is `isOptional=true` (FE-03 / ERP). **FD-07** = Excel VISIT/smclient **+** company-website SalesManago scrape (Sahil PRD; implement under FD-07).
+Notes: **FD-03** is `isOptional=true` (FE-03 / ERP). **FD-07** = Excel VISIT/smclient **+** company-website SalesManago scrape (Engineering PRD; implement under FD-07).
 
 | Seq | Check ID | Class | Dimension | Check Name | Check Type | Weight | Role | Cadence | Phase | Systems Compared | Root Causes | Severity |
 |----:|----------|-------|-----------|------------|------------|-------:|------|---------|-------|------------------|-------------|----------|
