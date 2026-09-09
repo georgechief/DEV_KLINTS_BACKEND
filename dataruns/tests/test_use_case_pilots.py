@@ -139,12 +139,33 @@ class UseCaseCatalogueApiTests(TestCase):
         self.assertIn("workflow_summary", response.data)
         self.assertIn("trigger", response.data)
         self.assertIn("business_objective", response.data)
+        nodes = (response.data.get("workflow_summary") or {}).get("nodes") or []
+        self.assertTrue(nodes)
+        self.assertIn("fields", nodes[0])
+        self.assertIn("approval", response.data)
 
     def test_detail_unknown_returns_404(self):
         request = self.factory.get("/api/v1/use-cases/UC-99/")
         force_authenticate(request, user=self.viewer)
         response = UseCaseDetailView.as_view()(request, use_case_id="UC-99")
         self.assertEqual(response.status_code, 404)
+
+    def test_all_sixteen_detail_expose_workflow_summary(self):
+        """PRD-WF-01 §12 — Studio binds real blueprint nodes for every MVP1 pilot."""
+        for use_case_id in sorted(MVP1_PILOT_IDS):
+            with self.subTest(use_case_id=use_case_id):
+                request = self.factory.get(f"/api/v1/use-cases/{use_case_id}/")
+                force_authenticate(request, user=self.viewer)
+                response = UseCaseDetailView.as_view()(
+                    request,
+                    use_case_id=use_case_id,
+                )
+                self.assertEqual(response.status_code, 200)
+                summary = response.data.get("workflow_summary") or {}
+                self.assertGreater(summary.get("node_count") or 0, 0)
+                nodes = summary.get("nodes") or []
+                self.assertGreater(len(nodes), 0)
+                self.assertTrue(response.data.get("blueprint_id"))
 
     def test_catalogue_empty_before_load(self):
         UseCasePilot.objects.all().delete()
@@ -153,3 +174,32 @@ class UseCaseCatalogueApiTests(TestCase):
         response = UseCaseCatalogueView.as_view()(request)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["pilot_count"], 0)
+
+
+class VerifyPilotCatalogueTests(TestCase):
+    def test_verify_fails_when_catalogue_empty(self):
+        from dataruns.use_cases.verify_catalogue import verify_pilot_catalogue
+
+        UseCasePilot.objects.all().delete()
+        UseCaseBlueprint.objects.all().delete()
+        PilotStageMap.objects.all().delete()
+
+        ok, messages = verify_pilot_catalogue(verbose=False)
+        self.assertFalse(ok)
+        joined = "\n".join(messages)
+        self.assertIn("UseCasePilot count = 16", joined)
+
+    def test_verify_passes_after_load(self):
+        from dataruns.use_cases.verify_catalogue import verify_pilot_catalogue
+
+        base = Path(settings.BASE_DIR)
+        load_use_case_pilots_from_pack(
+            manifest_path=base / DEFAULT_MANIFEST_REL,
+            blueprints_dir=(base / DEFAULT_MANIFEST_REL).parent,
+        )
+
+        ok, messages = verify_pilot_catalogue(verbose=False)
+        self.assertTrue(ok, msg="\n".join(messages))
+        joined = "\n".join(messages)
+        self.assertIn("UC-02 present", joined)
+        self.assertIn("PilotStageMap count = 17", joined)

@@ -16,7 +16,6 @@ from dataruns.ai.constants import (
 _PROMPT_FILES = {
     PROMPT_SYSTEM_V1: "system_v1.txt",
     PROMPT_FIX_SUGGESTION_V1: "fix_suggestion_v1.txt",
-    # Stubs — files added in Phase F; loader returns empty until then.
     PROMPT_EXPLAIN_FINDING_V1: "explain_finding_v1.txt",
     PROMPT_REPORT_NARRATIVE_V1: "report_narrative_v1.txt",
     PROMPT_NBA_BLURB_V1: "nba_blurb_v1.txt",
@@ -51,3 +50,15 @@ def system_prompt_v1() -> str:
 
 def fix_suggestion_prompt_v1() -> str:
     return load_prompt(PROMPT_FIX_SUGGESTION_V1)
+
+
+def explain_finding_prompt_v1() -> str:
+    return load_prompt(PROMPT_EXPLAIN_FINDING_V1)
+
+
+def report_narrative_prompt_v1() -> str:
+    return load_prompt(PROMPT_REPORT_NARRATIVE_V1)
+
+
+def nba_blurb_prompt_v1() -> str:
+    return load_prompt(PROMPT_NBA_BLURB_V1)

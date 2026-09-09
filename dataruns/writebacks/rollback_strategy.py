@@ -9,6 +9,7 @@ _STRATEGY_BY_OP = {
     "detail_set": frozenset({"revert_detail"}),
     "tag_add": frozenset({"remove_tag"}),
     "tag_remove": frozenset({"remove_tag"}),
+    "shopify_customer_update": frozenset({"restore_prior_field"}),
 }
 
 

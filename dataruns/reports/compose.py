@@ -11,8 +11,12 @@ from dataruns.audit import append_audit_event
 from dataruns.dcs.worklist import build_enriched_issues, load_check_master_by_id
 from dataruns.models import AssessmentReport
 from dataruns.orchestration.candidates import build_fix_tasks_for_data_run
-from dataruns.reports.constants import TEMPLATE_VERSION
-from dataruns.reports.payload import build_report_payload
+from dataruns.reports.constants import (
+    OVERVIEW_BRIEF_TEMPLATE_VERSION,
+    REPORT_PROFILE_OVERVIEW_BRIEF,
+    TEMPLATE_VERSION,
+)
+from dataruns.reports.payload import build_report_payload, parse_report_profile
 from dataruns.reports.resolve import (
     RunResolutionError,
     resolve_architecture_assessment_for_run,
@@ -58,8 +62,24 @@ def _has_explicit_window(
     return False
 
 
-@transaction.atomic
 def compose_assessment_report(
+    *,
+    company: Company,
+    user: User,
+    body: dict[str, Any],
+) -> AssessmentReport:
+    report = _compose_assessment_report(
+        company=company,
+        user=user,
+        body=body,
+    )
+    from dataruns.ai.service import attach_report_narrative_fail_open
+
+    attach_report_narrative_fail_open(report)
+    return report
+
+
+def _compose_assessment_report(
     *,
     company: Company,
     user: User,
@@ -71,6 +91,7 @@ def compose_assessment_report(
     include_architecture = _as_bool(body.get("include_architecture"), default=True)
     include_plan = _as_bool(body.get("include_plan"), default=True)
     dcs_run_id = body.get("dcs_run_id")
+    report_profile = parse_report_profile(body)
 
     try:
         data_run = resolve_dcs_run_for_compose(
@@ -122,6 +143,16 @@ def compose_assessment_report(
         cap=None,
     )
 
+    ai_fix_by_check_id: dict[str, str] | None = None
+    if report_profile == REPORT_PROFILE_OVERVIEW_BRIEF:
+        from dataruns.reports.remediation_ai import collect_fix_suggestions_for_report
+
+        ai_fix_by_check_id = collect_fix_suggestions_for_report(
+            company=company,
+            dcs_run_id=data_run.id,
+            open_issues=open_issues,
+        )
+
     report_id = uuid.uuid4()
     payload = build_report_payload(
         report_id=report_id,
@@ -135,47 +166,65 @@ def compose_assessment_report(
         include_plan=include_plan,
         period_from=period_from_label,
         period_to=period_to_label,
+        report_profile=report_profile,
+        ai_fix_by_check_id=ai_fix_by_check_id,
     )
 
-    report = AssessmentReport.objects.create(
-        id=report_id,
-        company=company,
-        variant=AssessmentReport.Variant.PAID_FULL,
-        status=AssessmentReport.Status.READY,
-        dcs_data_run=data_run,
-        architecture_assessment=architecture,
-        period_from=period_from,
-        period_to=period_to,
-        window_since=since,
-        window_until=until,
-        payload=payload,
-        payload_hash=payload["payload_hash"],
-        template_version=TEMPLATE_VERSION,
-        created_by=user,
+    template_version = (
+        OVERVIEW_BRIEF_TEMPLATE_VERSION
+        if report_profile == REPORT_PROFILE_OVERVIEW_BRIEF
+        else TEMPLATE_VERSION
     )
 
-    append_audit_event(
-        company=company,
-        action="report.composed",
-        summary="Assessment report composed",
-        performed_by=user.email,
-        actor_user_id=str(user.id),
-        metadata={
-            "report_id": str(report.id),
-            "payload_hash": report.payload_hash,
-            "dcs_run_id": data_run.id,
-        },
-    )
+    with transaction.atomic():
+        report = AssessmentReport.objects.create(
+            id=report_id,
+            company=company,
+            variant=AssessmentReport.Variant.PAID_FULL,
+            status=AssessmentReport.Status.READY,
+            dcs_data_run=data_run,
+            architecture_assessment=architecture,
+            period_from=period_from,
+            period_to=period_to,
+            window_since=since,
+            window_until=until,
+            payload=payload,
+            payload_hash=payload["payload_hash"],
+            template_version=template_version,
+            created_by=user,
+        )
+
+        append_audit_event(
+            company=company,
+            action="report.composed",
+            summary="Assessment report composed",
+            performed_by=user.email,
+            actor_user_id=str(user.id),
+            metadata={
+                "report_id": str(report.id),
+                "payload_hash": report.payload_hash,
+                "dcs_run_id": data_run.id,
+                "report_profile": report_profile or "legacy",
+            },
+        )
     return report
 
 
 def serialize_report_metadata(report: AssessmentReport) -> dict[str, Any]:
+    profile = None
+    payload = report.payload if isinstance(report.payload, dict) else {}
+    content = payload.get("content") if isinstance(payload.get("content"), dict) else {}
+    ctx = content.get("render_context") if isinstance(content.get("render_context"), dict) else {}
+    if isinstance(ctx.get("report_profile"), str):
+        profile = ctx.get("report_profile")
+
     return {
         "report_id": str(report.id),
         "status": report.status,
         "variant": report.variant,
         "payload_hash": report.payload_hash,
         "template_version": report.template_version,
+        "report_profile": profile,
         "dcs_run_id": report.dcs_data_run_id,
         "af_assessment_id": (
             str(report.architecture_assessment_id)

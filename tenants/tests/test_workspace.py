@@ -1,6 +1,7 @@
 from django.test import TestCase
 from rest_framework.test import APIRequestFactory, force_authenticate
 
+from dataruns.models import AuditLog
 from tenants.auth.views import MeView
 from tenants.models import Company, Tenant, User
 from tenants.workspace.views import WorkspaceView
@@ -71,6 +72,83 @@ class WorkspacePatchTests(TestCase):
         self.assertEqual(me_response.data["tenant"]["slug"], "workspace-test")
         self.assertEqual(me_response.data["company"]["name"], "Renamed Company")
         self.assertEqual(me_response.data["company"]["domain"], "renamed.example")
+        self.assertFalse(me_response.data["company"]["writeback_execute_enabled"])
+
+    def test_get_me_includes_writeback_execute_enabled_default_false(self):
+        response = self._get_me(user=self.admin)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("writeback_execute_enabled", response.data["company"])
+        self.assertFalse(response.data["company"]["writeback_execute_enabled"])
+
+    def test_admin_can_enable_writeback_execute(self):
+        response = self._patch_workspace(
+            {"writeback_execute_enabled": True},
+            user=self.admin,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.company.refresh_from_db()
+        self.assertTrue(self.company.writeback_execute_enabled)
+        self.assertTrue(response.data["company"]["writeback_execute_enabled"])
+
+        me_response = self._get_me(user=self.admin)
+        self.assertTrue(me_response.data["company"]["writeback_execute_enabled"])
+
+    def test_admin_can_disable_writeback_execute(self):
+        self.company.writeback_execute_enabled = True
+        self.company.save(update_fields=["writeback_execute_enabled"])
+
+        response = self._patch_workspace(
+            {"writeback_execute_enabled": False},
+            user=self.admin,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.company.refresh_from_db()
+        self.assertFalse(self.company.writeback_execute_enabled)
+        self.assertFalse(response.data["company"]["writeback_execute_enabled"])
+
+    def test_writeback_toggle_writes_audit_event(self):
+        response = self._patch_workspace(
+            {"writeback_execute_enabled": True},
+            user=self.admin,
+        )
+        self.assertEqual(response.status_code, 200)
+
+        entry = AuditLog.objects.filter(
+            company=self.company,
+            action="writeback.execute_toggled",
+        ).latest("created_at")
+        self.assertEqual(entry.summary, "Writeback execute enabled")
+        self.assertEqual(entry.performed_by, self.admin.email)
+        self.assertEqual(entry.metadata, {"old": False, "new": True})
+
+    def test_writeback_toggle_no_audit_when_unchanged(self):
+        self.company.writeback_execute_enabled = True
+        self.company.save(update_fields=["writeback_execute_enabled"])
+
+        response = self._patch_workspace(
+            {"writeback_execute_enabled": True},
+            user=self.admin,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(
+            AuditLog.objects.filter(
+                company=self.company,
+                action="writeback.execute_toggled",
+            ).exists()
+        )
+
+    def test_analyst_cannot_toggle_writeback_execute(self):
+        response = self._patch_workspace(
+            {"writeback_execute_enabled": True},
+            user=self.analyst,
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.company.refresh_from_db()
+        self.assertFalse(self.company.writeback_execute_enabled)
 
     def test_admin_updates_tenant_name(self):
         response = self._patch_workspace(

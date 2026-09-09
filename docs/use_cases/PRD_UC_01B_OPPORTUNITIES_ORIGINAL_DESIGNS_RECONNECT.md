@@ -1,7 +1,7 @@
 # PRD-UC-01B — Opportunity tracker reconnect to `original-designs` (FE correction)
 
 **Status:** Ready for implementation — **supersedes UC-01 FE layout** (merged FE PR #23 put the wrong page job on `/opportunities`)  
-**Module:** see folder path  
+**Owner track:** Engineering   
 **Scope:** **Frontend `/opportunities` only**  
 **Depends on:** BE UC-01 APIs (already merged) · FE-08 Fix `?issue=` links  
 **Design source of truth:** frontend branch **`original-designs`** — `src/routes/opportunities.tsx`  
@@ -15,7 +15,7 @@
 ```text
 Implement PRD-UC-01B — FE /opportunities only.
 
-Read: docs/use_cases/PRD_UC_01B_OPPORTUNITIES_ORIGINAL_DESIGNS_RECONNECT.md
+Read: docs/engineering/PRD_UC_01B_OPPORTUNITIES_ORIGINAL_DESIGNS_RECONNECT.md
 Design SoT: git show origin/original-designs:src/routes/opportunities.tsx
 
 DO NOT touch /lifecycle — Architecture is already live there

@@ -226,6 +226,29 @@ def find_latest_bootstrap_data_run(
     )
 
 
+def find_latest_dcs_fresh_import_data_run(
+    *,
+    company: Company,
+    connector: Connector,
+) -> DataRun | None:
+    """
+    Return the most recent DCS fresh-import DataRun for (company_id, connector.name).
+
+    PRD-DCS-10 Slice F — imports created by ``refresh_connected_platforms_for_dcs``.
+    """
+    return (
+        DataRun.objects.filter(
+            name=f"dcs-fresh-import:{connector.name}",
+            metadata__kind=CONNECTOR_FETCH_KIND,
+            metadata__company_id=str(company.id),
+            metadata__platform=connector.name,
+            metadata__triggered_by="dcs_score",
+        )
+        .order_by("-created_at")
+        .first()
+    )
+
+
 def enqueue_connector_bootstrap(
     *,
     company: Company,
@@ -342,7 +365,7 @@ def mark_data_run_succeeded(
     data_run.status = DataRun.Status.SUCCEEDED
     data_run.finished_at = timezone.now()
     data_run.metadata = {
-        **data_run.metadata,
+        **(data_run.metadata or {}),
         "counts": counts,
         "snapshot_id": str(snapshot.id),
     }

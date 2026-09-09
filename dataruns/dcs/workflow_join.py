@@ -8,12 +8,28 @@ from __future__ import annotations
 
 from typing import Any
 
-from dataruns.dcs.lifecycle_join import _latest_connector_raw
+from dataruns.dcs.lifecycle_join import (
+    PinnedSnapshotIds,
+    SourceRunIds,
+    _connector_raw_for_platform,
+)
 from tenants.models import Company
 
 
-def build_workflow_snapshot(*, company: Company) -> dict[str, Any]:
-    manago_raw = _latest_connector_raw(company=company, platform="manago_ai")
+def build_workflow_snapshot(
+    *,
+    company: Company,
+    source_run_ids: SourceRunIds = None,
+    pinned_snapshot_ids: PinnedSnapshotIds = None,
+) -> dict[str, Any]:
+    ids = source_run_ids or {}
+    snaps = pinned_snapshot_ids or {}
+    manago_raw = _connector_raw_for_platform(
+        company=company,
+        platform="manago_ai",
+        source_run_id=ids.get("manago_ai"),
+        snapshot_id=snaps.get("manago_ai"),
+    )
     workflows = [w for w in (manago_raw.get("workflows") or []) if isinstance(w, dict)]
     stats_rows = [
         s for s in (manago_raw.get("workflow_stats") or []) if isinstance(s, dict)

@@ -93,6 +93,32 @@ def _gate_inputs_from_import(data_run_id: int | None) -> dict[str, Any]:
     }
 
 
+def _normalize_source_run_ids(source_runs: dict[str, Any]) -> dict[str, int | None]:
+    out: dict[str, int | None] = {"shopify": None, "manago_ai": None}
+    for platform in ("shopify", "manago_ai"):
+        value = source_runs.get(platform)
+        if value is None:
+            continue
+        try:
+            out[platform] = int(value)
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
+def _pinned_snapshot_ids(fresh_imports: dict[str, Any]) -> dict[str, str | None]:
+    """Optional direct snapshot ids from ``fresh_imports`` (Slice E fast path)."""
+    out: dict[str, str | None] = {"shopify": None, "manago_ai": None}
+    for platform in ("shopify", "manago_ai"):
+        block = fresh_imports.get(platform)
+        if not isinstance(block, dict):
+            continue
+        snapshot_id = block.get("snapshot_id")
+        if snapshot_id is not None and str(snapshot_id).strip():
+            out[platform] = str(snapshot_id)
+    return out
+
+
 def build_dcs_run_snapshot(
     *,
     company: Company,
@@ -109,6 +135,8 @@ def build_dcs_run_snapshot(
     """
     fresh_imports = fresh_imports or {}
     days = window_days if window_days is not None else settings.BOOTSTRAP_DAYS
+    pinned_source_run_ids = _normalize_source_run_ids(source_runs)
+    pinned_snapshot_ids = _pinned_snapshot_ids(fresh_imports)
 
     shopify_id = source_runs.get("shopify")
     manago_id = source_runs.get("manago_ai")
@@ -130,19 +158,47 @@ def build_dcs_run_snapshot(
 
     identity = build_identity_snapshot(company=company)
     identity_summary = identity.get("identity") or {}
-    lifecycle = build_lifecycle_snapshot(company=company)
+    lifecycle = build_lifecycle_snapshot(
+        company=company,
+        source_run_ids=pinned_source_run_ids,
+        pinned_snapshot_ids=pinned_snapshot_ids,
+    )
     lifecycle_summary = lifecycle.get("lifecycle") or {}
-    consent = build_consent_snapshot(company=company)
+    consent = build_consent_snapshot(
+        company=company,
+        source_run_ids=pinned_source_run_ids,
+        pinned_snapshot_ids=pinned_snapshot_ids,
+    )
     consent_summary = consent.get("consent") or {}
-    product_truth = build_product_truth_snapshot(company=company)
+    product_truth = build_product_truth_snapshot(
+        company=company,
+        source_run_ids=pinned_source_run_ids,
+        pinned_snapshot_ids=pinned_snapshot_ids,
+    )
     product_truth_summary = product_truth.get("product_truth") or {}
-    catalog = build_catalog_snapshot(company=company)
+    catalog = build_catalog_snapshot(
+        company=company,
+        source_run_ids=pinned_source_run_ids,
+        pinned_snapshot_ids=pinned_snapshot_ids,
+    )
     catalog_summary = catalog.get("catalog") or {}
-    segment = build_segment_snapshot(company=company)
+    segment = build_segment_snapshot(
+        company=company,
+        source_run_ids=pinned_source_run_ids,
+        pinned_snapshot_ids=pinned_snapshot_ids,
+    )
     segment_summary = segment.get("segment") or {}
-    workflow = build_workflow_snapshot(company=company)
+    workflow = build_workflow_snapshot(
+        company=company,
+        source_run_ids=pinned_source_run_ids,
+        pinned_snapshot_ids=pinned_snapshot_ids,
+    )
     measurement_summary = workflow.get("measurement") or {}
-    drift = build_drift_snapshot(company=company)
+    drift = build_drift_snapshot(
+        company=company,
+        source_run_ids=pinned_source_run_ids,
+        pinned_snapshot_ids=pinned_snapshot_ids,
+    )
     drift_summary = drift.get("drift") or {}
 
     contact_total = Contact.objects.filter(company=company).count()

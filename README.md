@@ -32,6 +32,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env   # set SECRET_KEY
 python manage.py migrate
+python manage.py load_use_case_pilots   # 16 MVP1 pilots (idempotent; Docker/deploy runs this after migrate)
 python manage.py runserver
 ```
 
@@ -39,6 +40,7 @@ python manage.py runserver
 - Admin: `/admin/`
 - Tenants API: `/api/v1/tenants/`
 - Data runs API: `/api/v1/dataruns/`
+- Use cases / pilots: `/api/v1/use-cases/` (requires `load_use_case_pilots`)
 
 ## Celery + Redis
 
@@ -139,6 +141,19 @@ python manage.py seed_dcs_master
 ```
 
 Restart Celery workers after re-seeding so cached master lookups refresh.
+
+**Use-case pilots (UC-01):** the 16 MVP1 pilots + blueprints live in DB tables seeded from the Build Pack. Local:
+
+```bash
+python manage.py load_use_case_pilots
+```
+
+**Deploy / Docker:** the `web` image `CMD` runs `migrate` then `load_use_case_pilots` before gunicorn (idempotent upsert — safe on every restart). Post-deploy verify:
+
+```bash
+python scripts/verify_use_case_pilots.py
+# or: docker compose exec -T web python scripts/verify_use_case_pilots.py
+```
 
 Enqueue a data run:
 ```python

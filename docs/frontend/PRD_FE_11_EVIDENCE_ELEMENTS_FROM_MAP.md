@@ -1,8 +1,8 @@
 # PRD-FE-11 — Evidence “Elements” = platform field / model from connector map
 
 **Status:** Ready for implementation  
-**Module:** see folder path — FE + worklist display enrichment  
-**Consult:** **Engineering** when changing check executors / provenance / worklist contracts (`docs/`) — do not silently change DCS result semantics without alignment  
+**Owner track:** Engineering  — FE + worklist display enrichment  
+**Consult:** **Engineering** when BE touches check executors / provenance shape / worklist contracts he owns  — do not silently change DCS result semantics without him  
 **Depends on:** FE-09 (friendly evidence table) · connector `map.json` · DCS worklist detail  
 **Pack / product:** Operators must see **which field/model** the difference was found on (Shopify / Manago API names), not blank “—”  
 **Out of scope:** Writeback execute · changing check PASS/FAIL logic · inventing fields not in evidence or map
@@ -14,7 +14,7 @@
 ```text
 Implement PRD-FE-11 — Elements column from connector map / field metadata.
 
-Read: docs/frontend/PRD_FE_11_EVIDENCE_ELEMENTS_FROM_MAP.md
+Read: docs/engineering/PRD_FE_11_EVIDENCE_ELEMENTS_FROM_MAP.md
 Screenshot bug: Differences Found → Elements = "—" for CI-13 etc.
 
 Root cause (understand before coding):
@@ -48,7 +48,7 @@ contracts, or worklist detail fields beyond additive element metadata.
 | Renaming/removing existing evidence keys FE already consumes | **Must consult Engineering** — breaking change |
 | Unsure whether a check’s “element” is a map field vs drift metric | **Ask Engineering** for the check’s intended surface |
 
-Engineering track pointer: `docs/README.md` (DCS / worklist / related PRDs). Leave a short note on the PR: “Architecture reviewed: yes/no — …”.
+Engineering track pointer: `docs/engineering/README.md` (DCS / worklist / related PRDs). Leave a short note on the PR: “Engineering consulted: yes/no — …”.
 
 ---
 
@@ -218,4 +218,4 @@ If the check only has aggregate counts, Element = the **metric/surface name**, n
 | Map? | Use `connectors/*/map.json` api_key for field-level diffs |
 | Who? | Engineering |
 
-**PRD:** FE-11 · **Track:** delivery · **Bar:** Elements shows real field/model  
+**PRD:** FE-11 · **Track:** Engineering · **Bar:** Elements shows real field/model  

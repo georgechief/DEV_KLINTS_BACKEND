@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from django.db import IntegrityError
+from django.db.utils import ProgrammingError
 from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
@@ -20,7 +22,7 @@ from dataruns.dcs.constants import DCS_SCORE_KIND
 from dataruns.dcs.enqueue import DCS_SCORE_DATA_RUN_NAME
 from dataruns.models import AiCall, AiSuggestion, CheckMaster, DataRun, DimensionMaster
 from tenants.models import Company, Tenant, User
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 
 class CapturePromptProvider(MockAiProvider):
@@ -187,6 +189,20 @@ class FixSuggestionServiceTests(TestCase):
         self.assertEqual(body["prompt_version"], PROMPT_FIX_SUGGESTION_V1)
         self.assertFalse(body["cached"])
 
+    def test_success_persists_langsmith_run_id(self):
+        fake_trace = MagicMock()
+        fake_trace.run_id = "ls-persist-1"
+        fake_trace.finish_ok = MagicMock()
+        fake_trace.finish_error = MagicMock()
+        with patch("dataruns.ai.complete.start_ai_trace", return_value=fake_trace):
+            get_or_create_fix_suggestion(
+                company=self.company,
+                check_id="LE-04",
+                provider=MockAiProvider(),
+            )
+        call = AiCall.objects.get(status=AiCall.Status.SUCCESS)
+        self.assertEqual(call.langsmith_run_id, "ls-persist-1")
+
     def test_cache_hit_skips_second_provider_call(self):
         first = get_or_create_fix_suggestion(
             company=self.company,
@@ -203,6 +219,25 @@ class FixSuggestionServiceTests(TestCase):
         self.assertEqual(second.suggestion.id, first.suggestion.id)
         self.assertEqual(AiCall.objects.count(), calls_before)
         self.assertEqual(AiSuggestion.objects.count(), 1)
+
+    def test_concurrent_upsert_returns_existing_suggestion(self):
+        first = get_or_create_fix_suggestion(
+            company=self.company,
+            check_id="LE-04",
+            provider=MockAiProvider(),
+        )
+        with patch(
+            "dataruns.ai.runner.upsert_ai_suggestion",
+            side_effect=IntegrityError("uniq_ai_suggestions_company_task_fp"),
+        ):
+            second = get_or_create_fix_suggestion(
+                company=self.company,
+                check_id="LE-04",
+                provider=MockAiProvider(),
+                skip_cache=True,
+            )
+        self.assertTrue(second.cached)
+        self.assertEqual(second.suggestion.id, first.suggestion.id)
 
     def test_unknown_check_404(self):
         with self.assertRaises(AiNotFoundError):
@@ -243,7 +278,7 @@ class FixSuggestionServiceTests(TestCase):
 
         denied = GateResult(ok=False, reason_code="pii_remaining", context=None)
         with patch(
-            "dataruns.ai.service.ensure_safe_context",
+            "dataruns.ai.runner.ensure_safe_context",
             return_value=denied,
         ):
             with self.assertRaises(AiGateDeniedError) as ctx:
@@ -284,7 +319,7 @@ class FixSuggestionServiceTests(TestCase):
 
         denied = GateResult(ok=False, reason_code="pii_remaining", context=None)
         with patch(
-            "dataruns.ai.service.ensure_safe_context",
+            "dataruns.ai.runner.ensure_safe_context",
             return_value=denied,
         ):
             with self.assertRaises(AiGateDeniedError):
@@ -303,7 +338,7 @@ class FixSuggestionServiceTests(TestCase):
 
         denied = GateResult(ok=False, reason_code="pii_remaining", context=None)
         with patch(
-            "dataruns.ai.service.ensure_safe_context",
+            "dataruns.ai.runner.ensure_safe_context",
             return_value=denied,
         ):
             with self.assertRaises(AiGateDeniedError):
@@ -601,7 +636,7 @@ class FixSuggestionApiTests(TestCase):
 
         denied = GateResult(ok=False, reason_code="pii_remaining", context=None)
         with patch(
-            "dataruns.ai.service.ensure_safe_context",
+            "dataruns.ai.runner.ensure_safe_context",
             return_value=denied,
         ):
             response = self.client.post(
@@ -615,7 +650,7 @@ class FixSuggestionApiTests(TestCase):
 
     def test_post_json_retry_exhausted_503(self):
         with patch(
-            "dataruns.ai.service.get_ai_provider",
+            "dataruns.ai.runner.get_ai_provider",
             return_value=FlakyJsonProvider(fail_times=5),
         ):
             response = self.client.post(
@@ -626,7 +661,7 @@ class FixSuggestionApiTests(TestCase):
         self.assertEqual(response.status_code, 503)
         self.assertEqual(response.data["code"], "json_retry_exhausted")
 
-    @override_settings(AI_ENABLED=True, AI_PROVIDER="mistral")
+    @override_settings(AI_ENABLED=True, AI_PROVIDER="mistral", MISTRAL_API_KEY="")
     def test_post_mistral_not_configured_503(self):
         response = self.client.post(
             "/api/v1/ai/suggestions/fix/",
@@ -639,3 +674,17 @@ class FixSuggestionApiTests(TestCase):
         self.assertEqual(failed.count(), 1)
         self.assertEqual(failed.first().error_code, "provider_not_configured")
         self.assertEqual(AiSuggestion.objects.count(), 0)
+
+    def test_post_db_error_is_503_not_500(self):
+        with patch(
+            "dataruns.ai.views.get_or_create_fix_suggestion",
+            side_effect=ProgrammingError("relation ai_suggestions does not exist"),
+        ):
+            response = self.client.post(
+                "/api/v1/ai/suggestions/fix/",
+                {"check_id": "LE-04"},
+                format="json",
+            )
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.data["code"], "ai_unavailable")
+        self.assertNotIn("alice@", str(response.data))

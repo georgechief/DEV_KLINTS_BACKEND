@@ -2,19 +2,35 @@
 
 from __future__ import annotations
 
+import uuid
+
 from django.conf import settings
+from django.db import transaction
 
 from dataruns.audit import append_audit_event
 from dataruns.dcs.fix_ownership import is_klints_automated_fix
-from dataruns.models import CheckMaster, WritebackJob
+from dataruns.models import AuditLog, CheckMaster, WritebackJob
 from dataruns.writebacks.adapters import get_adapter
-from dataruns.writebacks.approvals.service import consume_approval_token
+from dataruns.writebacks.approvals.service import (
+    consume_approval_token,
+    revoke_superseded_grants_for_new_preview,
+)
 from dataruns.writebacks.capabilities import capability_batch_max
-from dataruns.writebacks.exceptions import DiffHashMismatchError
-from dataruns.writebacks.gates import execute_allowed, is_sandbox_company
+from dataruns.writebacks.exceptions import (
+    DiffHashMismatchError,
+    WritebackAlreadyExecutedForRunError,
+    WritebackDcsRunRequiredError,
+)
+from dataruns.writebacks.gates import execute_allowed, is_writeback_execute_enabled
 from dataruns.writebacks.hashing import compute_diff_hash
 from dataruns.writebacks.preflight import run_preflight
 from dataruns.writebacks.registry import MappingDisabled, MappingNotFound, get_check_mapping
+from dataruns.writebacks.run_gate import (
+    acquire_company_execute_lock,
+    find_blocking_execute_job,
+    reclaim_stale_executing_jobs,
+    resolve_latest_dcs_data_run_id,
+)
 from dataruns.writebacks.transform import build_intents_from_mapping, collect_evidence_rows
 from dataruns.writebacks.types import (
     ExecuteEligibility,
@@ -50,9 +66,14 @@ def run_writeback_pipeline(
         raise ValueError(str(exc)) from exc
 
     effective_batch = batch_size or settings.WRITEBACK_DEFAULT_BATCH_SIZE
+    # Preview and execute must share the same row cap (Fix UI omits max_rows).
+    # Individual-tier mappings (CC-03) may execute only one intent — cap at 1.
     effective_max = max_rows
-    if mode in ("execute", "sandbox_execute") and effective_max is None:
-        effective_max = settings.WRITEBACK_SANDBOX_MAX_ROWS
+    if effective_max is None:
+        if mapping.get("approval_tier") == "individual":
+            effective_max = 1
+        else:
+            effective_max = settings.WRITEBACK_SANDBOX_MAX_ROWS
 
     blocked_reason = run_preflight(company=company, mapping=mapping)
     if blocked_reason:
@@ -83,18 +104,27 @@ def run_writeback_pipeline(
 
     summary = _summarize(intents)
     execute_eligible = ExecuteEligibility(
-        sandbox=is_sandbox_company(company),
+        sandbox=is_writeback_execute_enabled(company),
         production=bool(settings.WRITEBACKS_ENABLED),
     )
+    dcs_data_run_id = resolve_latest_dcs_data_run_id(company=company)
 
     master = CheckMaster.objects.filter(check_id=normalized_check).first()
-    preview_only_owner = master is not None and not is_klints_automated_fix(master.fix_owner)
+    # PRD-WB-01 §10.1: non-Klints owners are preview-only, even in sandbox,
+    # unless the sandbox override applies (WB-01B Manago/Shopify proof).
+    preview_only_owner = (
+        master is not None
+        and not is_klints_automated_fix(master.fix_owner)
+        and not is_writeback_execute_enabled(company)
+    )
 
     if mode in ("execute", "sandbox_execute"):
+        # PRD-WB-03 §6 — accept legacy sandbox_execute callers; report mode as execute.
+        report_mode: WriteMode = "execute"
         if mapping.get("approval_tier") == "individual" and summary.ready > 1:
             return WritebackResult(
                 check_id=normalized_check,
-                mode=mode,
+                mode=report_mode,
                 diff_hash=diff_hash,
                 intents=intents,
                 summary=summary,
@@ -122,7 +152,7 @@ def run_writeback_pipeline(
             )
             return WritebackResult(
                 check_id=normalized_check,
-                mode=mode,
+                mode=report_mode,
                 diff_hash=diff_hash,
                 intents=intents,
                 summary=summary,
@@ -131,72 +161,160 @@ def run_writeback_pipeline(
                 approval_tier=mapping.get("approval_tier"),
                 irreversible=bool(mapping.get("irreversible")),
                 operator_disclosure=mapping.get("operator_disclosure"),
+                data_run_id=dcs_data_run_id,
             )
 
-        intents, job_status = _execute_intents(
-            company=company,
-            check_id=normalized_check,
-            intents=intents,
-            batch_size=effective_batch,
-            diff_hash=diff_hash,
-            approval_id=approval_id,
-        )
-        summary = _summarize(intents)
-        sandbox = is_sandbox_company(company)
-        job_mode = "sandbox_execute" if sandbox else "execute"
+        # PRD-WB-07 §3.4 — no terminal DCS run ⇒ deny (do not leave gate wide open).
+        if dcs_data_run_id is None:
+            raise WritebackDcsRunRequiredError()
 
-        job = WritebackJob.objects.create(
-            company=company,
-            check_id=normalized_check,
-            mode=job_mode,
-            status=job_status,
-            diff_hash=diff_hash,
-            approval_tier=str(mapping.get("approval_tier") or ""),
-            approval_id=_parse_uuid(approval_id),
-            token_binds={
-                "tenant_id": str(company.tenant_id),
-                "object_id": normalized_check,
-                "object_version": str(mapping.get("schema_version") or "1.0.0"),
-                "diff_hash": diff_hash,
-            },
-            intents=_serialize_intents(intents),
-            summary={
+        sandbox = is_writeback_execute_enabled(company)
+        job_mode: WriteMode = "execute"
+
+        # PRD-WB-07 §3 — claim WritebackJob (status=executing) + consume approval
+        # under lock BEFORE adapter I/O.
+        with transaction.atomic():
+            acquire_company_execute_lock(company=company)
+            reclaim_stale_executing_jobs(
+                company=company,
+                check_id=normalized_check,
+                dcs_data_run_id=dcs_data_run_id,
+            )
+            blocking_job = find_blocking_execute_job(
+                company=company,
+                check_id=normalized_check,
+                dcs_data_run_id=dcs_data_run_id,
+            )
+            if blocking_job is not None:
+                raise WritebackAlreadyExecutedForRunError(
+                    check_id=normalized_check,
+                    data_run_id=dcs_data_run_id,
+                    execute_job_id=str(blocking_job.id),
+                )
+
+            job = WritebackJob.objects.create(
+                company=company,
+                check_id=normalized_check,
+                mode=job_mode,
+                status="executing",
+                diff_hash=diff_hash,
+                approval_tier=str(mapping.get("approval_tier") or ""),
+                approval_id=_parse_uuid(approval_id),
+                token_binds={
+                    "tenant_id": str(company.tenant_id),
+                    "object_id": normalized_check,
+                    "object_version": str(mapping.get("schema_version") or "1.0.0"),
+                    "diff_hash": diff_hash,
+                },
+                intents=_serialize_intents(intents),
+                summary={
+                    "ready": summary.ready,
+                    "skipped": summary.skipped,
+                    "errors": summary.errors,
+                    "executed": 0,
+                },
+                sandbox=sandbox,
+                actor_user=actor,
+                dcs_data_run_id=dcs_data_run_id,
+                metadata={
+                    "batch_size": effective_batch,
+                    "rollback_window_minutes": settings.WRITEBACK_PARTIAL_ROLLBACK_MINUTES,
+                    "claim": "executing",
+                },
+            )
+            if approval_id:
+                consume_approval_token(company=company, approval_id=approval_id)
+
+        try:
+            intents, job_status = _execute_intents(
+                company=company,
+                check_id=normalized_check,
+                intents=intents,
+                batch_size=effective_batch,
+                diff_hash=diff_hash,
+                approval_id=approval_id,
+            )
+            summary = _summarize(intents)
+        except Exception:
+            job.status = "failed"
+            job.summary = {
                 "ready": summary.ready,
                 "skipped": summary.skipped,
-                "errors": summary.errors,
-                "executed": summary.executed,
-            },
-            sandbox=sandbox,
-            actor_user=actor,
-            metadata={
-                "batch_size": effective_batch,
-                "rollback_window_minutes": settings.WRITEBACK_PARTIAL_ROLLBACK_MINUTES,
-            },
-        )
+                "errors": max(summary.errors, 1),
+                "executed": 0,
+            }
+            metadata = dict(job.metadata) if isinstance(job.metadata, dict) else {}
+            metadata["adapter_crash"] = True
+            job.metadata = metadata
+            job.save(update_fields=["status", "summary", "metadata"])
+            _audit(
+                company=company,
+                actor=actor,
+                action="writeback.execute_failed",
+                summary=f"Writeback execute crashed for {normalized_check}",
+                tone=AuditLog.Tone.RISK,
+                metadata={
+                    "check_id": normalized_check,
+                    "job_id": str(job.id),
+                    "diff_hash": diff_hash,
+                    "status": "failed",
+                    "executed": 0,
+                    "sandbox": sandbox,
+                    "data_run_id": dcs_data_run_id,
+                    "reason": "adapter_crash",
+                },
+            )
+            raise
 
-        _audit(
-            company=company,
-            actor=actor,
-            action="writeback.executed",
-            summary=f"Writeback executed for {normalized_check}",
-            metadata={
-                "check_id": normalized_check,
-                "job_id": str(job.id),
-                "diff_hash": diff_hash,
-                "status": job_status,
-                "executed": summary.executed,
-                "errors": summary.errors,
-                "sandbox": sandbox,
-            },
-        )
+        job.status = job_status
+        job.intents = _serialize_intents(intents)
+        job.summary = {
+            "ready": summary.ready,
+            "skipped": summary.skipped,
+            "errors": summary.errors,
+            "executed": summary.executed,
+        }
+        metadata = dict(job.metadata) if isinstance(job.metadata, dict) else {}
+        metadata["batch_size"] = effective_batch
+        metadata["rollback_window_minutes"] = settings.WRITEBACK_PARTIAL_ROLLBACK_MINUTES
+        job.metadata = metadata
+        job.save(update_fields=["status", "intents", "summary", "metadata"])
 
-        if (
-            approval_id
-            and not sandbox
-            and job_status in ("executed", "partial")
-            and summary.executed > 0
-        ):
-            consume_approval_token(company=company, approval_id=approval_id)
+        if summary.executed > 0:
+            _audit(
+                company=company,
+                actor=actor,
+                action="writeback.executed",
+                summary=f"Writeback executed for {normalized_check}",
+                metadata={
+                    "check_id": normalized_check,
+                    "job_id": str(job.id),
+                    "diff_hash": diff_hash,
+                    "status": job_status,
+                    "executed": summary.executed,
+                    "errors": summary.errors,
+                    "sandbox": sandbox,
+                    "data_run_id": dcs_data_run_id,
+                },
+            )
+        else:
+            _audit(
+                company=company,
+                actor=actor,
+                action="writeback.execute_failed",
+                summary=f"Writeback execute failed for {normalized_check}",
+                tone=AuditLog.Tone.RISK,
+                metadata={
+                    "check_id": normalized_check,
+                    "job_id": str(job.id),
+                    "diff_hash": diff_hash,
+                    "status": job_status,
+                    "executed": summary.executed,
+                    "errors": summary.errors,
+                    "sandbox": sandbox,
+                    "data_run_id": dcs_data_run_id,
+                },
+            )
 
         return WritebackResult(
             check_id=normalized_check,
@@ -207,6 +325,7 @@ def run_writeback_pipeline(
             execute_eligible=execute_eligible,
             blocked_reason=None,
             job_id=str(job.id),
+            data_run_id=dcs_data_run_id,
             approval_tier=mapping.get("approval_tier"),
             irreversible=bool(mapping.get("irreversible")),
             operator_disclosure=mapping.get("operator_disclosure"),
@@ -232,9 +351,21 @@ def run_writeback_pipeline(
             "errors": summary.errors,
             "executed": summary.executed,
         },
-        sandbox=is_sandbox_company(company),
+        sandbox=is_writeback_execute_enabled(company),
         actor_user=actor,
-        metadata={"batch_size": effective_batch},
+        dcs_data_run_id=dcs_data_run_id,
+        metadata={
+            "batch_size": effective_batch,
+            "irreversible": bool(mapping.get("irreversible")),
+            "operator_disclosure": mapping.get("operator_disclosure"),
+        },
+    )
+    # C4 — force/new dry-run must not leave older APPROVED grants executable
+    # (same hash can still validate against an orphaned token).
+    revoke_superseded_grants_for_new_preview(
+        company=company,
+        check_id=normalized_check,
+        preview_job=job,
     )
 
     _audit(
@@ -248,7 +379,8 @@ def run_writeback_pipeline(
             "diff_hash": diff_hash,
             "ready": summary.ready,
             "errors": summary.errors,
-            "sandbox": is_sandbox_company(company),
+            "sandbox": is_writeback_execute_enabled(company),
+            "data_run_id": dcs_data_run_id,
         },
     )
 
@@ -261,6 +393,7 @@ def run_writeback_pipeline(
         execute_eligible=execute_eligible,
         blocked_reason=None,
         job_id=str(job.id),
+        data_run_id=dcs_data_run_id,
         approval_tier=mapping.get("approval_tier"),
         irreversible=bool(mapping.get("irreversible")),
         operator_disclosure=mapping.get("operator_disclosure"),
@@ -458,6 +591,7 @@ def _audit(
     action: str,
     summary: str,
     metadata: dict,
+    tone: str = AuditLog.Tone.INFO,
 ) -> None:
     append_audit_event(
         company=company,
@@ -466,14 +600,13 @@ def _audit(
         performed_by=actor.email if actor else "system",
         actor_user_id=str(actor.id) if actor else None,
         metadata=metadata,
+        tone=tone,
     )
 
 
 def _parse_uuid(value: str | None):
     if not value:
         return None
-    import uuid
-
     try:
         return uuid.UUID(str(value))
     except (ValueError, TypeError):

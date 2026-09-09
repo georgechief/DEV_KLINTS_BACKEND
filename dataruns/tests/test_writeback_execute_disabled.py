@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from django.test import TestCase, override_settings
+
+from dataruns.tests.writeback_helpers import enable_company_sandbox, sandbox_company, seed_writeback_allowlist
 from rest_framework.test import APIRequestFactory, force_authenticate
 
 from dataruns.dcs.enqueue import DCS_SCORE_DATA_RUN_NAME, DCS_SCORE_KIND
@@ -15,11 +17,10 @@ from tenants.models import Company, Connector, Tenant, User
 
 @override_settings(
     WRITEBACKS_ENABLED=False,
-    WRITEBACK_CHECK_ALLOWLIST=["CI-01"],
-    WRITEBACK_SANDBOX_COMPANY_IDS=[],
 )
 class WritebackExecuteDisabledTests(TestCase):
     def setUp(self):
+        seed_writeback_allowlist("CI-01")
         self.tenant = Tenant.objects.create(name="WBD", slug="wbd")
         self.company = Company.objects.create(
             tenant=self.tenant,
@@ -97,6 +98,8 @@ class WritebackExecuteDisabledTests(TestCase):
         )
 
     def test_service_execute_blocked_without_sandbox(self):
+        self.company.writeback_execute_enabled = False
+        self.company.save(update_fields=["writeback_execute_enabled"])
         preview = writeback_run(
             company=self.company,
             check_id="CI-01",
@@ -113,6 +116,8 @@ class WritebackExecuteDisabledTests(TestCase):
         self.assertEqual(result.blocked_reason, "writebacks_disabled")
 
     def test_execute_api_returns_403_with_disabled_message(self):
+        self.company.writeback_execute_enabled = False
+        self.company.save(update_fields=["writeback_execute_enabled"])
         preview = writeback_run(
             company=self.company,
             check_id="CI-01",
@@ -127,5 +132,5 @@ class WritebackExecuteDisabledTests(TestCase):
         force_authenticate(request, user=self.admin)
         response = WritebackExecuteView.as_view()(request)
         self.assertEqual(response.status_code, 403)
-        self.assertEqual(response.data["detail"], "Writebacks are disabled.")
+        self.assertIn("Settings", response.data["detail"])
         self.assertEqual(response.data["reason"], "writebacks_disabled")

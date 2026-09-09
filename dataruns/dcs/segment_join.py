@@ -11,7 +11,11 @@ import re
 from collections import Counter, defaultdict
 from typing import Any
 
-from dataruns.dcs.lifecycle_join import _latest_connector_raw
+from dataruns.dcs.lifecycle_join import (
+    PinnedSnapshotIds,
+    SourceRunIds,
+    _connector_raw_for_platform,
+)
 from tenants.models import Company
 
 SP_SAMPLE = 50
@@ -83,9 +87,26 @@ def _iter_tags(contact: dict[str, Any]) -> list[str]:
     return tags
 
 
-def build_segment_snapshot(*, company: Company) -> dict[str, Any]:
-    manago_raw = _latest_connector_raw(company=company, platform="manago_ai")
-    shopify_raw = _latest_connector_raw(company=company, platform="shopify")
+def build_segment_snapshot(
+    *,
+    company: Company,
+    source_run_ids: SourceRunIds = None,
+    pinned_snapshot_ids: PinnedSnapshotIds = None,
+) -> dict[str, Any]:
+    ids = source_run_ids or {}
+    snaps = pinned_snapshot_ids or {}
+    manago_raw = _connector_raw_for_platform(
+        company=company,
+        platform="manago_ai",
+        source_run_id=ids.get("manago_ai"),
+        snapshot_id=snaps.get("manago_ai"),
+    )
+    shopify_raw = _connector_raw_for_platform(
+        company=company,
+        platform="shopify",
+        source_run_id=ids.get("shopify"),
+        snapshot_id=snaps.get("shopify"),
+    )
     contacts = [c for c in (manago_raw.get("contacts") or []) if isinstance(c, dict)]
     metafields = [
         m

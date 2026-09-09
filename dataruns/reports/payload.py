@@ -27,7 +27,10 @@ from dataruns.dcs.worklist import (
 )
 from dataruns.models import DataRun
 from dataruns.reports.constants import (
+    IMPACT_METHOD_NOTE,
+    OVERVIEW_BRIEF_TEMPLATE_VERSION,
     PII_FORBIDDEN_KEYS,
+    REPORT_PROFILE_OVERVIEW_BRIEF,
     REPORT_VERSION,
     RETENTION_POLICY_ID,
     SCHEMA_VERSION,
@@ -37,6 +40,7 @@ from dataruns.orchestration.scoring import sort_tasks_by_priority
 from dataruns.reports.humanize import (
     architecture_incomplete_copy,
     format_customer_title,
+    format_dimension_display,
     format_display_domain,
     format_systems_label,
     humanize_check_detail,
@@ -45,7 +49,8 @@ from dataruns.reports.humanize import (
 from tenants.models import Company, Connector
 
 _EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
-_REMEDIATION_FALLBACK = "See Data Center for this check"
+REMEDIATION_FALLBACK = "See Data Center for this check"
+_REMEDIATION_FALLBACK = REMEDIATION_FALLBACK
 _COVERAGE_INCOMPLETE_THRESHOLD = 0.70
 
 
@@ -149,6 +154,23 @@ def _required_fix_text(value: Any, *, fallback: str = _REMEDIATION_FALLBACK) -> 
     return token
 
 
+_FOUNDATION_CONNECTOR_GATES = {
+    "FD-01": "manago",
+    "FD-02": "shopify",
+}
+
+
+def _map_foundation_gate_to_connector_status(status: Any) -> str:
+    token = str(status or "").strip().upper()
+    if token == "NOT_CONNECTED":
+        return "disconnected"
+    if token == "PASS":
+        return "connected"
+    if token in {"FAIL", "WARN"}:
+        return "degraded"
+    return "unknown"
+
+
 def _connector_status_for_company(company: Company) -> list[dict[str, str]]:
     rows = list(
         Connector.objects.filter(company=company).only("name", "status", "type")
@@ -168,6 +190,29 @@ def _connector_status_for_company(company: Company) -> list[dict[str, str]]:
         {"key": "shopify", "status": by_platform.get("shopify", "unknown")},
         {"key": "erp", "status": by_platform.get("erp", "unknown")},
     ]
+
+
+def _connector_status_from_foundation_gates(
+    company: Company,
+    *,
+    check_results: list[dict[str, Any]],
+) -> list[dict[str, str]]:
+    """Overview brief — FD-01/FD-02 override Connector rows for Scope honesty."""
+    connectors = _connector_status_for_company(company)
+    by_key = {row["key"]: row for row in connectors}
+    for result in check_results:
+        if not isinstance(result, dict):
+            continue
+        check_id = str(result.get("check_id") or "").strip().upper()
+        platform = _FOUNDATION_CONNECTOR_GATES.get(check_id)
+        if not platform:
+            continue
+        by_key[platform] = {
+            "key": platform,
+            "status": _map_foundation_gate_to_connector_status(result.get("status")),
+        }
+    order = ("manago", "shopify", "erp")
+    return [by_key.get(key, {"key": key, "status": "unknown"}) for key in order]
 
 
 def _fix_first_asset_names(assessment: ArchitectureAssessment) -> list[str]:
@@ -329,14 +374,17 @@ def _build_remediation(
     open_issues: list[dict[str, Any]],
     *,
     master_by_id: dict[str, Any] | None = None,
+    ai_fix_by_check_id: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     masters = master_by_id or {}
+    ai_fixes = ai_fix_by_check_id or {}
     items: list[dict[str, Any]] = []
     for issue in sort_worklist_issues(open_issues):
         check_id = issue.get("check_id")
         if not isinstance(check_id, str) or not check_id:
             continue
-        master = masters.get(check_id)
+        check_key = check_id.strip().upper()
+        master = masters.get(check_id) or masters.get(check_key)
         suggested = _safe_text(issue.get("suggested_fix"))
         fix_type = _safe_text(issue.get("fix_type")) if isinstance(issue.get("fix_type"), str) else ""
         if not fix_type and issue.get("fix_type") is not None:
@@ -351,11 +399,15 @@ def _build_remediation(
                 fix_type = master.fix_type.strip()
             if not fix_owner and isinstance(master.fix_owner, str):
                 fix_owner = master.fix_owner.strip()
+        source = "check_master" if suggested else "fallback"
+        ai_text = _safe_text(ai_fixes.get(check_key) or ai_fixes.get(check_id) or "")
+        if ai_text:
+            suggested = ai_text
+            source = "ai"
         title = format_customer_title(
             str(issue.get("title") or (master.check_name if master else "") or check_id)
         )
-        items.append(
-            {
+        item: dict[str, Any] = {
                 "check_id": check_id,
                 "title": title,
                 "suggested_fix": _required_fix_text(suggested),
@@ -364,7 +416,9 @@ def _build_remediation(
                 "root_cause_ids": list(issue.get("root_cause_ids") or []),
                 "fix_href": f"/fix?issue={check_id}",
             }
-        )
+        if ai_fix_by_check_id is not None:
+            item["source"] = source
+        items.append(item)
     return {"items": items, "count": len(items)}
 
 
@@ -469,6 +523,24 @@ def _dimension_scores_map(enrichment: dict[str, Any]) -> dict[str, Any]:
     return scores
 
 
+def _dimension_scores_map_overview(enrichment: dict[str, Any]) -> dict[str, Any]:
+    raw = _dimension_scores_map(enrichment)
+    return {
+        format_dimension_display(name) or name: value
+        for name, value in raw.items()
+    }
+
+
+def parse_report_profile(body: dict[str, Any]) -> str | None:
+    raw = body.get("report_profile")
+    if not isinstance(raw, str):
+        return None
+    token = raw.strip().lower()
+    if token == REPORT_PROFILE_OVERVIEW_BRIEF:
+        return REPORT_PROFILE_OVERVIEW_BRIEF
+    return None
+
+
 def build_report_payload(
     *,
     report_id: uuid.UUID,
@@ -482,6 +554,8 @@ def build_report_payload(
     include_plan: bool = True,
     period_from: str | None = None,
     period_to: str | None = None,
+    report_profile: str | None = None,
+    ai_fix_by_check_id: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     metadata = dcs_run.metadata if isinstance(dcs_run.metadata, dict) else {}
     payload = extract_dcs_payload(metadata)
@@ -515,14 +589,45 @@ def build_report_payload(
         else None
     )
     display_domain = format_display_domain(company.domain)
-    connectors = _connector_status_for_company(company)
+    is_overview_brief = report_profile == REPORT_PROFILE_OVERVIEW_BRIEF
+    if is_overview_brief:
+        connectors = _connector_status_from_foundation_gates(
+            company,
+            check_results=check_results,
+        )
+        dimension_scores = _dimension_scores_map_overview(enrichment)
+        template_version = OVERVIEW_BRIEF_TEMPLATE_VERSION
+        report_title = "Data consistency assessment brief"
+    else:
+        connectors = _connector_status_for_company(company)
+        dimension_scores = _dimension_scores_map(enrichment)
+        template_version = TEMPLATE_VERSION
+        report_title = "Data consistency assessment report"
+
+    business_impact = _business_impact_content(enrichment)
+    if is_overview_brief:
+        business_impact["method_note"] = IMPACT_METHOD_NOTE
+
+    render_context: dict[str, Any] = {
+        "company_name": company.name,
+        "company_domain": display_domain,
+        "period_from": period_from,
+        "period_to": period_to,
+        "report_title": report_title,
+        "aggregate_notice": "Aggregate report - no contact-level PII",
+        "connector_status": connectors,
+        "show_incomplete_banner": show_incomplete,
+    }
+    if is_overview_brief:
+        render_context["report_profile"] = REPORT_PROFILE_OVERVIEW_BRIEF
+        render_context["impact_method_note"] = IMPACT_METHOD_NOTE
 
     content: dict[str, Any] = {
         "dcs": {
             "state": run_state,
             "headline_score": headline,
             "coverage": coverage,
-            "dimension_scores": _dimension_scores_map(enrichment),
+            "dimension_scores": dimension_scores,
             "check_summary": check_summary,
             "dimensions": enrichment.get("dimensions"),
             "incomplete_banner": incomplete_banner,
@@ -540,24 +645,19 @@ def build_report_payload(
                 "fix_first_assets": [],
             }
         ),
-        "business_impact": _business_impact_content(enrichment),
+        "business_impact": business_impact,
         "top_issues": _top_issues(open_issues),
         "check_register": check_register,
-        "remediation": _build_remediation(open_issues, master_by_id=master_by_id),
+        "remediation": _build_remediation(
+            open_issues,
+            master_by_id=master_by_id,
+            ai_fix_by_check_id=ai_fix_by_check_id if is_overview_brief else None,
+        ),
         "execution_plan": (
             _build_execution_plan(plan_tasks) if include_plan else {"tasks": [], "count": 0, "empty_reason": "excluded"}
         ),
         "locked_sections": [],
-        "render_context": {
-            "company_name": company.name,
-            "company_domain": display_domain,
-            "period_from": period_from,
-            "period_to": period_to,
-            "report_title": "Data consistency assessment report",
-            "aggregate_notice": "Aggregate report - no contact-level PII",
-            "connector_status": connectors,
-            "show_incomplete_banner": show_incomplete,
-        },
+        "render_context": render_context,
     }
 
     created_at = _as_of_iso()
@@ -573,7 +673,7 @@ def build_report_payload(
             dcs_run=dcs_run,
             assessment=architecture_assessment if include_architecture else None,
         ),
-        "template_version": TEMPLATE_VERSION,
+        "template_version": template_version,
         "content": content,
         "access_policy": {
             "tenant_scoped": True,
@@ -588,7 +688,7 @@ def build_report_payload(
                 "dcs": SCHEMA_VERSION,
                 "architecture": SCHEMA_VERSION,
                 "orchestration": SCHEMA_VERSION,
-                "template": TEMPLATE_VERSION,
+                "template": template_version,
             },
             "created_at": created_at,
             "created_by": created_by_email,

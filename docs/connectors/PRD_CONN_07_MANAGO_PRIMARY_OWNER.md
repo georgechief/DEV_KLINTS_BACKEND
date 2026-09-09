@@ -1,7 +1,7 @@
 # PRD-CONN-07 — Manago primary owner picker (FD-06)
 
 **Status:** Backend done — **frontend implementation only**  
-**Module:** see folder path  
+**Owner track:** Engineering   
 **Depends on:** Manago connect on `/integrations`; connector list API; DCS foundation gate FD-06  
 **Surface:** `/integrations` (Manago card) + optional post-connect onboarding step  
 **Scope:** When Manago has **2+ users**, let the operator **pick the primary owner**. Persist via backend. Unblocks FD-06 / RC-11 multi-account ambiguity.
@@ -13,7 +13,7 @@
 ```text
 Implement PRD-CONN-07 frontend only (backend APIs already ship).
 
-Read: docs/connectors/PRD_CONN_07_MANAGO_PRIMARY_OWNER.md
+Read: docs/engineering/PRD_CONN_07_MANAGO_PRIMARY_OWNER.md
 
 Do:
 1. Add API helpers in src/lib/connectors.ts:
@@ -62,7 +62,7 @@ Already live on API:
 
 FE only needs to **call** these and render UI.
 
-Reference: `docs/auth/API_AUTH_CONNECTORS.md` §7b  
+Reference: `docs/API_AUTH_CONNECTORS.md` §7b  
 Backend service: `tenants/manago_topology_service.py`  
 Views: `ManagoOwnersView` in `tenants/connector_views.py`
 

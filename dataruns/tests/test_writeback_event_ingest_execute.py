@@ -8,6 +8,13 @@ from unittest.mock import patch
 
 from django.test import TestCase, override_settings
 
+from dataruns.tests.writeback_helpers import (
+    enable_company_sandbox,
+    issue_approved_writeback_token,
+    sandbox_company,
+    seed_writeback_allowlist,
+)
+
 from dataruns.writebacks.service import writeback_run
 from dataruns.writebacks.transform import build_intents_from_mapping
 from tenants.crypto import encrypt_config
@@ -18,11 +25,11 @@ _MAPPINGS_DIR = Path(__file__).resolve().parents[1] / "writebacks" / "mappings"
 
 @override_settings(
     WRITEBACKS_ENABLED=False,
-    WRITEBACK_CHECK_ALLOWLIST=["LE-01"],
     WRITEBACK_SANDBOX_MAX_ROWS=10,
 )
 class WritebackEventIngestExecuteTests(TestCase):
     def setUp(self):
+        seed_writeback_allowlist("LE-01")
         tenant = Tenant.objects.create(name="LE01", slug="le01")
         self.company = Company.objects.create(
             tenant=tenant,
@@ -54,7 +61,7 @@ class WritebackEventIngestExecuteTests(TestCase):
         )
 
     def _settings_with_sandbox(self):
-        return self.settings(WRITEBACK_SANDBOX_COMPANY_IDS=[str(self.company.id)])
+        return sandbox_company(self.company)
 
     def _build_le01_intents(self):
         mapping = json.loads(
@@ -100,12 +107,19 @@ class WritebackEventIngestExecuteTests(TestCase):
                 intents=intents,
                 actor=self.admin,
             )
+            token = issue_approved_writeback_token(
+                company=self.company,
+                job_id=preview.job_id,
+                requester=self.admin,
+                approver=self.admin,
+            )
             result = writeback_run(
                 company=self.company,
                 check_id="LE-01",
                 mode="sandbox_execute",
                 intents=intents,
                 expected_diff_hash=preview.diff_hash,
+                approval_id=str(token.id),
                 actor=self.admin,
             )
 

@@ -1,7 +1,7 @@
 # PRD-AUDIT-02 — Audit notifications (unread bell + mark read)
 
 **Status:** Ready for implementation  
-**Module:** see folder path  
+**Owner track:** Engineering   
 **Depends on:** PRD-AUDIT-01 (company audit log + `GET /api/v1/audit/events/` shipped in backend #20 / FE #12)  
 **Repos:** AppShell bell + `NotificationsPanel`; Activity timeline remains full history  
 **Scope:** expose latest unread audit events in the notifications dropdown (top 5), unread count badge, `audit_read` flag, mark-one / mark-all-read APIs + FE wiring

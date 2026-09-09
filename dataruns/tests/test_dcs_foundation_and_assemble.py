@@ -196,7 +196,7 @@ class FoundationGateTests(unittest.TestCase):
         self.assertEqual(result.reason_code, "RC-12")
         self.assertIn("RC-12", result.root_cause_ids)
         self.assertTrue(result.message)
-        self.assertIn("Configuration error", result.message)
+        self.assertEqual(result.message, "bad key")
         self.assertTrue(result.suggested_fix)
         self.assertEqual(result.severity, "Critical")
         self.assertTrue(result.root_causes)
@@ -259,6 +259,33 @@ class FoundationGateTests(unittest.TestCase):
 
     def test_fd02_full_sheet_scopes_pass(self):
         scopes = sorted(SHOPIFY_FD02_REQUIRED_SCOPES)
+        ctx = FoundationGateContext(
+            shopify=ConnectorGateInput(
+                platform="shopify",
+                connected=True,
+                connector_status="connected",
+                scopes_granted=scopes,
+                health_report={
+                    "summary_status": "ok",
+                    "preflight": {
+                        "auth_ok": True,
+                        "scopes_granted": scopes,
+                        "issues": [],
+                    },
+                },
+            ),
+        )
+        self.assertEqual(evaluate_fd_02(ctx).status, "PASS")
+
+    def test_fd02_write_admin_scopes_pass(self):
+        """Modern Shopify OAuth returns write_* handles, not literal read_*."""
+        scopes = [
+            "read_inventory",
+            "read_orders",
+            "read_products",
+            "read_store_credit_account_transactions",
+            "write_customers",
+        ]
         ctx = FoundationGateContext(
             shopify=ConnectorGateInput(
                 platform="shopify",

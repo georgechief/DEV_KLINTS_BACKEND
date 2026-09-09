@@ -8,6 +8,8 @@ from unittest.mock import patch
 
 from django.test import TestCase, override_settings
 
+from dataruns.tests.writeback_helpers import enable_company_sandbox, sandbox_company, seed_writeback_allowlist
+
 from dataruns.dcs.enqueue import DCS_SCORE_DATA_RUN_NAME, DCS_SCORE_KIND
 from dataruns.models import DataRun, Run
 from dataruns.writebacks.adapters.manago import ManagoWriteAdapter
@@ -25,6 +27,7 @@ _MAPPINGS_DIR = Path(__file__).resolve().parents[1] / "writebacks" / "mappings"
 
 class WritebackGuardsAndPreflightTests(TestCase):
     def setUp(self):
+        seed_writeback_allowlist("CC-03")
         tenant = Tenant.objects.create(name="WBG", slug="wbg")
         self.company = Company.objects.create(
             tenant=tenant,
@@ -91,6 +94,36 @@ class WritebackGuardsAndPreflightTests(TestCase):
         props = payload.get("properties") or {}
         self.assertEqual(props.get("klints_backfill"), "true")
 
+    @patch("dataruns.writebacks.transform.find_manago_contact")
+    @patch("dataruns.writebacks.transform.contact_detail_value")
+    def test_cc03_skips_when_detail_already_at_target(self, mock_detail, mock_find):
+        mock_find.return_value = {"email": "consent@example.com", "contactId": "c1"}
+        mock_detail.return_value = "shopify_verified"
+        mapping = get_check_mapping("CC-03")
+        intents = build_intents_from_mapping(
+            company=self.company,
+            mapping=mapping,
+            evidence_rows=[
+                {
+                    "side": "shopify_holds_evidence",
+                    "person.email": "consent@example.com",
+                    "manago_contact_id": "c1",
+                }
+            ],
+        )
+        self.assertEqual(len(intents), 1)
+        intent = intents[0]
+        self.assertEqual(intent.status, "skipped")
+        self.assertEqual(intent.error_reason, "already_at_target")
+        self.assertEqual(
+            intent.before.get("klints_consent_evidence"),
+            "shopify_verified",
+        )
+        self.assertEqual(
+            intent.after.get("klints_consent_evidence"),
+            "shopify_verified",
+        )
+
     def test_le01_event_ingest_dry_run_ready(self):
         path = _MAPPINGS_DIR / "LE-01.event_backfill.v1.json"
         mapping = json.loads(path.read_text(encoding="utf-8"))
@@ -130,10 +163,10 @@ class WritebackGuardsAndPreflightTests(TestCase):
         self.assertEqual(results[0].error_reason, "capability_not_confirmed")
 
     @override_settings(
-        WRITEBACKS_ENABLED=False,
-        WRITEBACK_CHECK_ALLOWLIST=["CC-03"],
-    )
+        WRITEBACKS_ENABLED=False,    )
     def test_sp07_preflight_blocks_cc03_preview(self):
+        self.company.writeback_execute_enabled = False
+        self.company.save(update_fields=["writeback_execute_enabled"])
         domain_run = Run.objects.create(
             company=self.company,
             run_type=Run.RunType.FULL,
@@ -162,6 +195,39 @@ class WritebackGuardsAndPreflightTests(TestCase):
         )
         self.assertEqual(result.blocked_reason, "consent_namespace_not_clean")
         self.assertEqual(result.summary.ready, 0)
+
+    @override_settings(
+        WRITEBACKS_ENABLED=False,    )
+    def test_sp07_preflight_skipped_for_sandbox_company(self):
+        domain_run = Run.objects.create(
+            company=self.company,
+            run_type=Run.RunType.FULL,
+            status=Run.Status.COMPLETED,
+        )
+        DataRun.objects.create(
+            tenant=self.company.tenant,
+            name=DCS_SCORE_DATA_RUN_NAME,
+            status=DataRun.Status.SUCCEEDED,
+            metadata={
+                "kind": DCS_SCORE_KIND,
+                "company_id": str(self.company.id),
+                "run_id": str(domain_run.id),
+                "dcs_run": {"run_id": str(domain_run.id), "run_state": "SCORED"},
+                "check_results": [
+                    {"check_id": "SP-07", "status": "FAIL"},
+                    {"check_id": "CC-03", "status": "FAIL"},
+                ],
+            },
+        )
+        with sandbox_company(self.company):
+            result = writeback_run(
+                company=self.company,
+                check_id="CC-03",
+                mode="dry_run",
+                actor=self.admin,
+                max_rows=0,
+            )
+        self.assertIsNone(result.blocked_reason)
 
     @patch("dataruns.writebacks.rollback_snapshot.find_manago_contact")
     def test_rollback_snapshot_refreshed_before_detail_set_execute(self, mock_find):

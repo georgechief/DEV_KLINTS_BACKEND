@@ -6,7 +6,12 @@ import re
 from decimal import Decimal
 from typing import Any
 
-from dataruns.dcs.enqueue import DCS_SCORE_DATA_RUN_NAME, DCS_SCORE_KIND
+from dataruns.dcs.enqueue import (
+    DCS_SCORE_DATA_RUN_NAME,
+    DCS_SCORE_KIND,
+    ELIGIBLE_CONNECTOR_NAMES,
+    fail_stale_active_dcs_runs,
+)
 from dataruns.dcs.gates import (
     is_effectively_blocked,
     load_optional_check_ids,
@@ -148,6 +153,47 @@ def _coerce_headline_score(value) -> float | None:
     return None
 
 
+def _coerce_fresh_import_data_run_id(value: Any) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str) and value.strip().isdigit():
+        return int(value.strip())
+    return None
+
+
+def _serialize_fresh_imports_for_status(
+    metadata: dict[str, Any] | None,
+) -> dict[str, dict[str, Any]] | None:
+    """
+    PRD-DCS-10 Slice B — platform summary for GET /dcs/status/ run payloads.
+
+    Exposes ``data_run_id`` and ``window_end`` per platform; omits counts and
+    other internal import fields.
+    """
+    metadata = metadata or {}
+    raw = metadata.get("fresh_imports")
+    if not isinstance(raw, dict):
+        return None
+
+    summary: dict[str, dict[str, Any]] = {}
+    for platform in ELIGIBLE_CONNECTOR_NAMES:
+        block = raw.get(platform)
+        if not isinstance(block, dict):
+            continue
+        entry: dict[str, Any] = {}
+        data_run_id = _coerce_fresh_import_data_run_id(block.get("data_run_id"))
+        if data_run_id is not None:
+            entry["data_run_id"] = data_run_id
+        window_end = block.get("window_end")
+        if isinstance(window_end, str) and window_end.strip():
+            entry["window_end"] = window_end.strip()
+        if entry:
+            summary[platform] = entry
+    return summary or None
+
+
 def _serialize_run_summary(
     data_run: DataRun | None,
     *,
@@ -180,11 +226,20 @@ def _serialize_run_summary(
         ),
         "triggered_by": metadata.get("triggered_by"),
         "started_at": data_run.started_at,
+        "created_at": data_run.created_at,
         "finished_at": data_run.finished_at,
     }
     run_diff = metadata.get("run_diff")
     if isinstance(run_diff, dict):
         result["run_diff"] = run_diff
+    fresh_imports = _serialize_fresh_imports_for_status(metadata)
+    if fresh_imports is not None:
+        result["fresh_imports"] = fresh_imports
+    failed_platform = metadata.get("fresh_import_failed_platform")
+    if isinstance(failed_platform, str):
+        failed_platform = failed_platform.strip()
+        if failed_platform in ELIGIBLE_CONNECTOR_NAMES:
+            result["fresh_import_failed_platform"] = failed_platform
     return result
 
 
@@ -217,12 +272,27 @@ def _best_headline_score(runs) -> float | None:
     return best
 
 
+def _latest_succeeded_headline_score(runs) -> float | None:
+    """Most recent succeeded run's headline (not the historical max)."""
+    for data_run in runs:
+        if data_run.status != DataRun.Status.SUCCEEDED:
+            continue
+        payload = _extract_dcs_payload(data_run.metadata)
+        headline = _coerce_headline_score(payload["headline_score"])
+        if headline is not None:
+            return headline
+    return None
+
+
 def _has_ever_scored(runs) -> bool:
-    return _best_headline_score(runs) is not None
+    return _latest_succeeded_headline_score(runs) is not None
 
 
 def resolve_dcs_app_status(*, company: Company) -> dict[str, Any]:
     """Compute DCS app-gate payload for the shell (PRD-FE-03 §5.2 / FE-06 §4.4)."""
+    # Unlock soft-lock loops when workers never picked up a queued run.
+    fail_stale_active_dcs_runs(company=company)
+
     optional_check_ids = load_optional_check_ids()
 
     runs = list(_company_dcs_runs(company=company))
@@ -238,6 +308,7 @@ def resolve_dcs_app_status(*, company: Company) -> dict[str, Any]:
     scheduled = active_run is not None
     has_ever_scored = _has_ever_scored(runs)
     best_headline_score = _best_headline_score(runs)
+    last_succeeded_headline = _latest_succeeded_headline_score(runs)
 
     state_run = latest_any
     if state_run is not None and state_run.status in ACTIVE_STATUSES:
@@ -311,12 +382,49 @@ def resolve_dcs_app_status(*, company: Company) -> dict[str, Any]:
             message = LOCK_MESSAGES["incomplete_no_score"]
 
     if app_access == "unlocked":
-        display_headline = latest_headline if latest_headline is not None else best_headline_score
-        score_display = {
-            "state": "ready",
-            "headline_score": display_headline,
-            "label": None,
-        }
+        # Hide ready score only when the latest terminal run failed and nothing
+        # is currently recalculating. While scheduled, keep showing the last
+        # successful score (PRD: usable_score + scheduled → unlocked product).
+        latest_failed = (
+            not scheduled
+            and latest_terminal is not None
+            and latest_terminal.status == DataRun.Status.FAILED
+            and latest_headline is None
+        )
+        if latest_failed:
+            # Keep product unlocked (prior score existed) but do NOT show a
+            # ready headline — that looked like a live/dummy score after failure.
+            score_display = {
+                "state": "not_calculated",
+                "headline_score": None,
+                "label": "Not calculated",
+            }
+            if message is None:
+                message = LOCK_MESSAGES["failed"]
+                error_text = (latest_terminal.metadata or {}).get("error")
+                if isinstance(error_text, str) and error_text.strip():
+                    snippet = _redact_secrets(error_text.strip())
+                    if len(snippet) > 240:
+                        snippet = f"{snippet[:237]}..."
+                    message = f"{message} {snippet}"
+                if last_succeeded_headline is not None:
+                    message = (
+                        f"{message} Last successful score was "
+                        f"{round(last_succeeded_headline)}."
+                    )
+        else:
+            # Prefer the current succeeded run; else most recent succeeded score
+            # (never the historical max — that looks like a dummy/wrong score).
+            display_headline = (
+                latest_headline
+                if latest_headline is not None
+                else last_succeeded_headline
+            )
+            score_display = {
+                "state": "ready",
+                "headline_score": display_headline,
+                "label": None,
+            }
         allowed_routes = UNLOCKED_ALLOWED_ROUTES
     elif app_access == "soft_locked_running":
         score_display = {

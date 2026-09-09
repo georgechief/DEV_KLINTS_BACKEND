@@ -8,26 +8,26 @@ import uuid
 
 from django.test import TestCase, override_settings
 
+from dataruns.tests.writeback_helpers import enable_company_sandbox, seed_default_writeback_allowlist
 from dataruns.writebacks.service import writeback_run
 from tenants.models import Company, User
 
 
 def _sandbox_configured() -> bool:
-    raw = os.environ.get("WRITEBACK_SANDBOX_COMPANY_IDS", "")
-    return bool(raw.strip())
+    raw = os.environ.get("WRITEBACK_SANDBOX_COMPANY_ID", "").strip()
+    return bool(raw)
 
 
-@unittest.skipUnless(_sandbox_configured(), "WRITEBACK_SANDBOX_COMPANY_IDS not set")
-@override_settings(
-    WRITEBACKS_ENABLED=False,
-    WRITEBACK_CHECK_ALLOWLIST=["CC-03"],
-)
+@unittest.skipUnless(_sandbox_configured(), "WRITEBACK_SANDBOX_COMPANY_ID not set")
+@override_settings(WRITEBACKS_ENABLED=False)
 class WritebackSandboxIntegrationTests(TestCase):
     """Writes one klints detail in sandbox and rolls back (PRD-WB-01 §5.3)."""
 
     def setUp(self):
-        company_id = os.environ["WRITEBACK_SANDBOX_COMPANY_IDS"].split(",")[0].strip()
+        company_id = os.environ["WRITEBACK_SANDBOX_COMPANY_ID"].strip()
         self.company = Company.objects.get(pk=uuid.UUID(company_id))
+        enable_company_sandbox(self.company)
+        seed_default_writeback_allowlist()
         self.admin = User.objects.filter(
             tenant_id=self.company.tenant_id,
             role=User.Role.ADMIN,
@@ -45,7 +45,7 @@ class WritebackSandboxIntegrationTests(TestCase):
             actor=self.admin,
         )
         if preview.summary.ready == 0:
-            self.skipTest("No CC-03 evidence rows in sandbox company")
+            self.skipTest("No Manago contacts available for CC-03 sandbox fallback")
 
         result = writeback_run(
             company=self.company,

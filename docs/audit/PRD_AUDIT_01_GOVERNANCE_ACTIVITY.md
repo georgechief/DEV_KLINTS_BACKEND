@@ -1,7 +1,7 @@
 # PRD-AUDIT-01 — Governance activity / audit timeline
 
 **Status:** Ready for implementation  
-**Module:** see folder path  
+**Owner track:** Engineering   
 **Depends on:** existing stub `dataruns.models.AuditLog`; FE `/activity` page  
 **Repos:** Activity UI (`klints_frontend/src/routes/activity.tsx`) + Settings/admin later  
 **Scope (v1):** company-scoped append-only audit events + list API + replace mock Activity feed; lightweight hash chain for integrity (timeline Week 5 foundation); **Activity nav always visible** — never disabled by DCS lock (amend FE-03 allowlist)

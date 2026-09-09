@@ -9,9 +9,11 @@ from typing import Any
 
 from django.utils import timezone
 
+from dataruns.audit import resolve_audit_href
 from dataruns.dcs.constants import DCS_SCORE_KIND
 from dataruns.dcs.enqueue import DCS_SCORE_DATA_RUN_NAME
 from dataruns.dcs.status import _extract_dcs_payload
+from dataruns.dcs.worklist import get_latest_terminal_dcs_run
 from dataruns.models import AuditLog, CheckMaster, DataRun, RunIssue
 from tenants.models import Company, Connector, ConnectorSnapshot
 
@@ -88,16 +90,8 @@ def _format_relative_time(value: datetime | None) -> str:
 
 
 def _latest_dcs_data_run(*, company: Company) -> DataRun | None:
-    return (
-        DataRun.objects.filter(
-            tenant=company.tenant,
-            name=DCS_SCORE_DATA_RUN_NAME,
-            metadata__kind=DCS_SCORE_KIND,
-            metadata__company_id=str(company.id),
-        )
-        .order_by("-created_at")
-        .first()
-    )
+    """Latest terminal DCS score — aligned with worklist + writeback gate (B-03 / WB-04)."""
+    return get_latest_terminal_dcs_run(company=company)
 
 
 def _load_check_master_lookup() -> dict[str, CheckMaster]:
@@ -215,7 +209,7 @@ def _search_issues(
                 status=status,
                 master=master,
             ),
-            href=f"/data-consistency?check={check_id}",
+            href=f"/fix?issue={check_id}",
             meta={
                 "check_id": check_id,
                 "status": status,
@@ -285,13 +279,19 @@ def _search_audit(*, company: Company, q: str, limit: int) -> list[SearchHit]:
         subtitle = entry.action
         if relative:
             subtitle = f"{entry.action} · {relative}"
+        metadata = entry.metadata if isinstance(entry.metadata, dict) else {}
+        run_id = str(entry.run_id) if entry.run_id else None
         hits.append(
             SearchHit(
                 type="audit",
                 id=str(entry.id),
                 title=entry.summary,
                 subtitle=subtitle,
-                href="/activity",
+                href=resolve_audit_href(
+                    action=entry.action,
+                    metadata=metadata,
+                    run_id=run_id,
+                ),
                 meta={
                     "action": entry.action,
                     "tone": entry.tone,

@@ -74,12 +74,13 @@ class EvaluateCheckResultsTests(SimpleTestCase):
 
 
 class EnqueueDcsScoreTests(SimpleTestCase):
+    @patch("dataruns.dcs.enqueue.celery_workers_available", return_value=True)
     @patch("dataruns.dcs.enqueue.resolve_source_runs", return_value={"shopify": None, "manago_ai": None})
     @patch("dataruns.dcs.enqueue.DataRun.objects")
     @patch("dataruns.dcs.enqueue.Run.objects")
     @patch("dataruns.dcs.enqueue.find_active_dcs_data_run", return_value=None)
     def test_enqueue_creates_pending_data_run(
-        self, _find_active, mock_run_objects, mock_data_run_objects, _sources
+        self, _find_active, mock_run_objects, mock_data_run_objects, _sources, _mock_workers
     ):
         company = SimpleNamespace(
             id=uuid.uuid4(),
@@ -123,10 +124,12 @@ class RunDcsPipelineTests(SimpleTestCase):
     @patch("dataruns.dcs.orchestrate.build_foundation_context_for_company")
     @patch("dataruns.dcs.orchestrate.build_dcs_run_snapshot")
     @patch("dataruns.dcs.orchestrate.refresh_connected_platforms_for_dcs")
+    @patch("dataruns.dcs.orchestrate.assert_fresh_imports_cover_connected")
     @patch("dataruns.dcs.orchestrate.resolve_company_from_data_run")
     def test_pipeline_success_path(
         self,
         mock_resolve_company,
+        mock_assert_fresh_imports,
         mock_refresh,
         mock_snapshot,
         mock_build_ctx,
@@ -299,6 +302,10 @@ class RunDcsPipelineTests(SimpleTestCase):
         self.assertEqual(result["data_run_id"], 55)
         self.assertEqual(result["run_snapshot_as_of"], "2026-07-31T12:00:00Z")
         mock_refresh.assert_called_once()
+        mock_assert_fresh_imports.assert_called_once_with(
+            company=company,
+            fresh_imports=mock_refresh.return_value["fresh_imports"],
+        )
         mock_snapshot.assert_called_once()
         self.assertEqual(
             data_run.run_snapshot["as_of"], "2026-07-31T12:00:00Z"

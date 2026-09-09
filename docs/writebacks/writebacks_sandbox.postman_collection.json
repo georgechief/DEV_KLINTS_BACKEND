@@ -1,0 +1,353 @@
+{
+  "info": {
+    "name": "Klints WB-01B / WB-01C / WB-02 Sandbox Writebacks",
+    "description": "Possible/not sheet + unified /run/ (preview|execute|rollback). Aliases kept.\n\n**WB-02 FE Approve path** = preview → POST /approvals/ → POST /approvals/{id}/approve/ → execute with approval_id + diff_hash.\n\nSecrets redacted — set {{base_url}} and {{jwt}}.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000" },
+    { "key": "jwt", "value": "" },
+    { "key": "diff_hash", "value": "" },
+    { "key": "job_id", "value": "" },
+    { "key": "approval_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "WB-02 Approve chain (CC-03 · FE path)",
+      "item": [
+        {
+          "name": "1 · Run preview (CC-03)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"preview\",\n  \"check_id\": \"CC-03\",\n  \"max_rows\": 1\n}"
+            },
+            "url": "{{base_url}}/api/v1/writebacks/run/"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.diff_hash) { pm.collectionVariables.set('diff_hash', body.diff_hash); }",
+                  "if (body.job_id) { pm.collectionVariables.set('job_id', body.job_id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2 · Request approval",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"job_id\": \"{{job_id}}\"\n}"
+            },
+            "url": "{{base_url}}/api/v1/writebacks/approvals/"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.approval_id) { pm.collectionVariables.set('approval_id', body.approval_id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3 · Approve token (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": "{{base_url}}/api/v1/writebacks/approvals/{{approval_id}}/approve/"
+          }
+        },
+        {
+          "name": "4 · Run execute with approval_id",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"execute\",\n  \"check_id\": \"CC-03\",\n  \"diff_hash\": \"{{diff_hash}}\",\n  \"approval_id\": \"{{approval_id}}\",\n  \"max_rows\": 1\n}"
+            },
+            "url": "{{base_url}}/api/v1/writebacks/run/"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.job_id && body.summary && body.summary.executed > 0) {",
+                  "  pm.collectionVariables.set('job_id', body.job_id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5 · Run rollback",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"rollback\",\n  \"job_id\": \"{{job_id}}\"\n}"
+            },
+            "url": "{{base_url}}/api/v1/writebacks/run/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Possible / not sheet",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" }
+        ],
+        "url": "{{base_url}}/api/v1/writebacks/possible/"
+      }
+    },
+    {
+      "name": "List mappings",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" }
+        ],
+        "url": "{{base_url}}/api/v1/writebacks/mappings/"
+      }
+    },
+    {
+      "name": "Run preview (CC-03)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"action\": \"preview\",\n  \"check_id\": \"CC-03\",\n  \"max_rows\": 1\n}"
+        },
+        "url": "{{base_url}}/api/v1/writebacks/run/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const body = pm.response.json();",
+              "if (body.diff_hash) { pm.collectionVariables.set('diff_hash', body.diff_hash); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Run execute (CC-03)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"action\": \"execute\",\n  \"check_id\": \"CC-03\",\n  \"diff_hash\": \"{{diff_hash}}\",\n  \"max_rows\": 1\n}"
+        },
+        "url": "{{base_url}}/api/v1/writebacks/run/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const body = pm.response.json();",
+              "if (body.job_id && body.summary && body.summary.executed > 0) {",
+              "  pm.collectionVariables.set('job_id', body.job_id);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Run rollback",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"action\": \"rollback\",\n  \"job_id\": \"{{job_id}}\"\n}"
+        },
+        "url": "{{base_url}}/api/v1/writebacks/run/"
+      }
+    },
+    {
+      "name": "Manago CC-03 preview",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"check_id\": \"CC-03\",\n  \"max_rows\": 1\n}"
+        },
+        "url": "{{base_url}}/api/v1/writebacks/preview/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const body = pm.response.json();",
+              "if (body.diff_hash) { pm.collectionVariables.set('diff_hash', body.diff_hash); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Manago CC-03 execute",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"check_id\": \"CC-03\",\n  \"diff_hash\": \"{{diff_hash}}\",\n  \"max_rows\": 1\n}"
+        },
+        "url": "{{base_url}}/api/v1/writebacks/execute/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const body = pm.response.json();",
+              "if (body.job_id && body.summary && body.summary.executed > 0) {",
+              "  pm.collectionVariables.set('job_id', body.job_id);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Shopify WB-SHOP-01 preview",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"check_id\": \"WB-SHOP-01\",\n  \"max_rows\": 1\n}"
+        },
+        "url": "{{base_url}}/api/v1/writebacks/preview/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const body = pm.response.json();",
+              "if (body.diff_hash) { pm.collectionVariables.set('diff_hash', body.diff_hash); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Shopify WB-SHOP-01 execute",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"check_id\": \"WB-SHOP-01\",\n  \"diff_hash\": \"{{diff_hash}}\",\n  \"max_rows\": 1\n}"
+        },
+        "url": "{{base_url}}/api/v1/writebacks/execute/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const body = pm.response.json();",
+              "if (body.job_id && body.summary && body.summary.executed > 0) {",
+              "  pm.collectionVariables.set('job_id', body.job_id);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rollback job",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"job_id\": \"{{job_id}}\"\n}"
+        },
+        "url": "{{base_url}}/api/v1/writebacks/rollback/"
+      }
+    }
+  ]
+}

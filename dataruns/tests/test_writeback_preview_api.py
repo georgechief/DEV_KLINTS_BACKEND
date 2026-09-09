@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from django.test import TestCase, override_settings
+
+from dataruns.tests.writeback_helpers import enable_company_sandbox, sandbox_company, seed_writeback_allowlist
 from rest_framework.test import APIRequestFactory, force_authenticate
 
 from dataruns.dcs.enqueue import DCS_SCORE_DATA_RUN_NAME, DCS_SCORE_KIND
@@ -17,10 +19,7 @@ from tenants.models import Company, Connector, Tenant, User
 
 
 @override_settings(
-    WRITEBACKS_ENABLED=False,
-    WRITEBACK_CHECK_ALLOWLIST=["CI-01"],
-    WRITEBACK_SANDBOX_COMPANY_IDS=[],
-)
+    WRITEBACKS_ENABLED=False,)
 class WritebackPreviewApiTests(TestCase):
     def setUp(self):
         self.tenant = Tenant.objects.create(name="WB", slug="wb-api")
@@ -53,6 +52,7 @@ class WritebackPreviewApiTests(TestCase):
             ),
             status="connected",
         )
+        seed_writeback_allowlist("CI-01")
         self._seed_ci01_issue()
 
     def _seed_ci01_issue(self):
@@ -136,7 +136,9 @@ class WritebackPreviewApiTests(TestCase):
         )
         intent = response.data["intents"][0]
         self.assertEqual(intent["op_kind"], "contact_upsert")
+        # PRD-WB-07 §4 — API masks email entity keys.
         self.assertEqual(intent["entity_key"], "b***@example.com")
+        self.assertNotEqual(intent["entity_key"], "buyer@example.com")
 
     def test_preview_unknown_check_404(self):
         request = self.factory.post(

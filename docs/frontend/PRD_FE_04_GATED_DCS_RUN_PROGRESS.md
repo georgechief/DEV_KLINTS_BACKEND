@@ -1,7 +1,7 @@
 # PRD-FE-04 — Gated dashboard: DCS run progress (7 dimension stages)
 
 **Status:** Ready for implementation  
-**Module:** see folder path  
+**Owner track:** Engineering   
 **Depends on:** FE-03 gated dashboard (`DcsGatedDashboard`); `GET /api/v1/dcs/status/`; CheckMaster / DimensionMaster  
 **Repos:** Gated `/dashboard` when score is **Not calculated** / **Calculating…**  
 **Design inspiration:** Data Consistency “seven dimension” tiles (`DcsSubScores` variant=`tiles`)

@@ -4,6 +4,7 @@ from dataruns.dcs.assemble import AssembleValidationError, assemble_dcs_score
 from dataruns.dcs.enqueue import (
     DAILY_BEAT_TRIGGER,
     DcsAlreadyRunningError,
+    DcsQueueUnavailableError,
     enqueue_dcs_score,
 )
 from dataruns.dcs.executors import (
@@ -21,6 +22,7 @@ __all__ = [
     "ConnectorGateInput",
     "DAILY_BEAT_TRIGGER",
     "DcsAlreadyRunningError",
+    "DcsQueueUnavailableError",
     "DcsRun",
     "FoundationGateContext",
     "assemble_dcs_score",

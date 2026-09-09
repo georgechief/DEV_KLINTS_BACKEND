@@ -17,6 +17,11 @@ from tenants.models import Company, User
 logger = logging.getLogger(__name__)
 
 GENESIS_HASH = "0" * 64
+_CONNECTOR_ACTION_PREFIX = "connector."
+_DCS_ACTIONS = frozenset({"dcs.score_completed", "dcs.score_failed"})
+_REPORT_ACTION_PREFIX = "report."
+_QA_ACTION_PREFIX = "qa."
+_HANDOFF_ACTION_PREFIX = "workflow.handoff"
 _SECRET_METADATA_KEYS = frozenset(
     {
         "api_key",
@@ -98,6 +103,111 @@ def audit_meta_short_string(metadata: dict[str, Any] | None) -> str | None:
         if isinstance(value, str) and value:
             return value
     return None
+
+
+def _normalize_check_id(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    normalized = value.strip().upper()
+    return normalized or None
+
+
+def _normalize_link_string(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    stripped = value.strip()
+    return stripped or None
+
+
+def _is_same_origin_path(href: str) -> bool:
+    candidate = href.strip()
+    if not candidate.startswith("/"):
+        return False
+    return not candidate.startswith("//")
+
+
+def extract_audit_link_fields(metadata: dict[str, Any] | None) -> dict[str, str | None]:
+    """Deep-link ids from audit metadata (PRD-FE-13 §5 / M2-OPS-01 job focus)."""
+    meta = metadata if isinstance(metadata, dict) else {}
+    check_id = _normalize_check_id(meta.get("check_id"))
+    if check_id is None:
+        check_id = _normalize_check_id(meta.get("object_id"))
+    # Writeback execute/rollback audits store job_id; accept execute_job_id alias.
+    job_id = _normalize_link_string(meta.get("job_id"))
+    if job_id is None:
+        job_id = _normalize_link_string(meta.get("execute_job_id"))
+    return {
+        "check_id": check_id,
+        "package_id": _normalize_link_string(meta.get("package_id")),
+        "use_case_id": _normalize_link_string(meta.get("use_case_id")),
+        "report_id": _normalize_link_string(meta.get("report_id")),
+        "job_id": job_id,
+        "handoff_id": _normalize_link_string(meta.get("handoff_id")),
+        "qa_run_id": _normalize_link_string(meta.get("qa_run_id")),
+    }
+
+
+def _build_handoff_href(fields: dict[str, str | None]) -> str | None:
+    """PRD-HO-02 §7.3 / §9 — audit bell → /handoff with package + optional ids."""
+    package_id = fields.get("package_id")
+    if not package_id:
+        return None
+    params: list[str] = []
+    use_case_id = fields.get("use_case_id")
+    if use_case_id:
+        params.append(f"uc={use_case_id}")
+    params.append(f"package_id={package_id}")
+    handoff_id = fields.get("handoff_id")
+    if handoff_id:
+        params.append(f"handoff_id={handoff_id}")
+    qa_run_id = fields.get("qa_run_id")
+    if qa_run_id:
+        params.append(f"qa_run_id={qa_run_id}")
+    return f"/handoff?{'&'.join(params)}"
+
+
+def resolve_audit_href(
+    *,
+    action: str,
+    metadata: dict[str, Any] | None = None,
+    run_id: str | None = None,
+) -> str:
+    """Resolve a same-origin deep-link path for an audit event (PRD-FE-13 §5)."""
+    meta = metadata if isinstance(metadata, dict) else {}
+    explicit = meta.get("href")
+    if isinstance(explicit, str) and _is_same_origin_path(explicit):
+        return explicit.strip()
+
+    fields = extract_audit_link_fields(meta)
+    check_id = fields["check_id"]
+    package_id = fields["package_id"]
+    use_case_id = fields["use_case_id"]
+    report_id = fields["report_id"]
+    normalized_action = (action or "").strip()
+
+    if check_id:
+        return f"/fix?issue={check_id}"
+
+    if normalized_action.startswith(_HANDOFF_ACTION_PREFIX):
+        handoff_href = _build_handoff_href(fields)
+        if handoff_href:
+            return handoff_href
+
+    if package_id and use_case_id:
+        if normalized_action.startswith(_QA_ACTION_PREFIX) or ".qa_" in normalized_action:
+            return f"/qa?uc={use_case_id}&package_id={package_id}"
+        return f"/workflow?uc={use_case_id}&package_id={package_id}"
+
+    if report_id or normalized_action.startswith(_REPORT_ACTION_PREFIX):
+        return "/activity"
+
+    if run_id or normalized_action in _DCS_ACTIONS:
+        return "/data-consistency#dcs-score"
+
+    if normalized_action.startswith(_CONNECTOR_ACTION_PREFIX):
+        return "/integrations"
+
+    return "/activity"
 
 
 def resolve_performed_by_email(actor_user_id: str | None) -> str:

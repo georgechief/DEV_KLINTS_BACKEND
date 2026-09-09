@@ -4,8 +4,11 @@ from dataruns.writebacks.views import (
     WritebackExecuteView,
     WritebackKindsView,
     WritebackMappingsView,
+    WritebackPossibleView,
     WritebackPreviewView,
     WritebackRollbackView,
+    WritebackRunView,
+    WritebackStatusView,
 )
 from dataruns.writebacks.approvals.views import (
     WritebackApprovalApproveView,
@@ -17,6 +20,9 @@ from dataruns.writebacks.approvals.views import (
 urlpatterns = [
     path("mappings/", WritebackMappingsView.as_view(), name="writeback-mappings"),
     path("kinds/", WritebackKindsView.as_view(), name="writeback-kinds"),
+    path("possible/", WritebackPossibleView.as_view(), name="writeback-possible"),
+    path("status/", WritebackStatusView.as_view(), name="writeback-status"),
+    path("run/", WritebackRunView.as_view(), name="writeback-run"),
     path("preview/", WritebackPreviewView.as_view(), name="writeback-preview"),
     path("execute/", WritebackExecuteView.as_view(), name="writeback-execute"),
     path("rollback/", WritebackRollbackView.as_view(), name="writeback-rollback"),

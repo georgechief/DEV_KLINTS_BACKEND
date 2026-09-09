@@ -20,13 +20,13 @@ from dataruns.connectors.bootstrap_health import (
     postflight_health,
 )
 from dataruns.connectors.import_data import ImportFailedError, run_import
+from dataruns.dcs.enqueue import ELIGIBLE_CONNECTOR_NAMES, ELIGIBLE_CONNECTOR_STATUSES
 from dataruns.models import DataRun
 from tenants.models import Company, Connector
 
 logger = logging.getLogger(__name__)
 
-_PLATFORMS = ("shopify", "manago_ai")
-_CONNECTED = frozenset({"connected", "degraded"})
+_CONNECTED = frozenset(ELIGIBLE_CONNECTOR_STATUSES)
 
 
 class DcsFreshImportError(Exception):
@@ -108,7 +108,7 @@ def _ensure_shopify_token(*, connector: Connector, company: Company) -> None:
 
 def _connected_connectors(company: Company) -> list[Connector]:
     connectors: list[Connector] = []
-    for platform in _PLATFORMS:
+    for platform in ELIGIBLE_CONNECTOR_NAMES:
         try:
             connector = get_connector(company=company, platform=platform)
         except Connector.DoesNotExist:
@@ -116,6 +116,31 @@ def _connected_connectors(company: Company) -> list[Connector]:
         if connector.status in _CONNECTED:
             connectors.append(connector)
     return connectors
+
+
+def assert_fresh_imports_cover_connected(
+    *,
+    company: Company,
+    fresh_imports: dict[str, dict[str, Any]],
+) -> None:
+    """
+    PRD-DCS-10 Slice A — fail closed when a connected platform lacks fresh import.
+
+    Each ``connected|degraded`` Shopify/Manago connector must appear in
+    ``fresh_imports`` with a non-null ``data_run_id`` for this DCS run.
+    """
+    for connector in _connected_connectors(company):
+        platform = connector.name
+        block = fresh_imports.get(platform)
+        if not isinstance(block, dict):
+            data_run_id = None
+        else:
+            data_run_id = block.get("data_run_id")
+        if data_run_id is None:
+            raise DcsFreshImportError(
+                f"Fresh import missing for connected platform {platform}.",
+                platform=platform,
+            )
 
 
 def refresh_connected_platforms_for_dcs(
@@ -248,6 +273,11 @@ def refresh_connected_platforms_for_dcs(
             platform,
             import_data_run.id,
         )
+
+    assert_fresh_imports_cover_connected(
+        company=company,
+        fresh_imports=fresh_imports,
+    )
 
     return {
         "source_runs": source_runs,

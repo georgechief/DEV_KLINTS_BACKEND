@@ -1,6 +1,11 @@
 from django.contrib import admin
 
-from dataruns.models import DataRun, WritebackApprovalToken, WritebackJob
+from dataruns.models import (
+    DataRun,
+    WritebackAllowedCheck,
+    WritebackApprovalToken,
+    WritebackJob,
+)
 
 
 @admin.register(DataRun)
@@ -47,3 +52,11 @@ class WritebackApprovalTokenAdmin(admin.ModelAdmin):
     def approval_tier_display(self, obj: WritebackApprovalToken) -> str:
         metadata = obj.metadata if isinstance(obj.metadata, dict) else {}
         return str(metadata.get("approval_tier") or "")
+
+
+@admin.register(WritebackAllowedCheck)
+class WritebackAllowedCheckAdmin(admin.ModelAdmin):
+    list_display = ("check_id", "enabled", "note", "updated_at")
+    list_filter = ("enabled",)
+    search_fields = ("check_id", "note")
+    readonly_fields = ("created_at", "updated_at")

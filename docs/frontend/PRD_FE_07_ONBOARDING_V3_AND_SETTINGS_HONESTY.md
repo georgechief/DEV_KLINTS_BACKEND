@@ -1,7 +1,7 @@
 # PRD-FE-07 — Onboarding Manago API v3 key + Settings honesty
 
 **Status:** Ready for implementation  
-**Module:** see folder path  
+**Owner track:** Engineering   
 **Depends on:** CONN-06 APIs + `ManagoApiV3KeySection` (already on `/integrations`); Settings Account / Workspace / Team already live  
 **Surfaces:** `/onboarding` · `/settings`  
 **Out of scope:** CONN-07 primary owner · Data Center Re-run (FE #17) · Lifecycle / Architecture · building real Klints API-key or Billing backends  
@@ -13,7 +13,7 @@
 ```text
 Implement PRD-FE-07 (frontend only — reuse existing CONN-06 APIs).
 
-Read: docs/frontend/PRD_FE_07_ONBOARDING_V3_AND_SETTINGS_HONESTY.md
+Read: docs/engineering/PRD_FE_07_ONBOARDING_V3_AND_SETTINGS_HONESTY.md
 
 Part A — Onboarding Manago API v3 (after connect):
 1. After successful Manago connect on /onboarding, do NOT jump straight home.
@@ -238,4 +238,4 @@ Leave field read-only with current string **or** change label to make non-live o
 | Reuse? | CONN-06 APIs + existing Settings APIs |
 | Not this PRD? | Owner picker, Re-run, Billing product, API keys product |
 
-**PRD:** FE-07 · **Track:** delivery · **After:** CONN-06 on Integrations (done)
+**PRD:** FE-07 · **Track:** Engineering · **After:** CONN-06 on Integrations (done)

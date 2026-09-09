@@ -32,6 +32,8 @@ class MappingListItem:
     template_id: str | None
     op_kinds: list[str]
     approval_tier: str | None
+    irreversible: bool
+    operator_disclosure: str | None
 
 
 @lru_cache(maxsize=1)
@@ -129,6 +131,8 @@ def list_mappings() -> list[MappingListItem]:
         title = ""
         schema_version = "1.0.0"
         approval_tier = None
+        irreversible = False
+        operator_disclosure = None
         if isinstance(filename, str) and filename:
             path = _MAPPINGS_DIR / filename
             if path.exists():
@@ -138,6 +142,13 @@ def list_mappings() -> list[MappingListItem]:
                     title = str(spec.get("title") or "")
                     schema_version = str(spec.get("schema_version") or schema_version)
                     approval_tier = spec.get("approval_tier")
+                    irreversible = bool(spec.get("irreversible"))
+                    raw_disclosure = spec.get("operator_disclosure")
+                    operator_disclosure = (
+                        str(raw_disclosure).strip()
+                        if isinstance(raw_disclosure, str) and raw_disclosure.strip()
+                        else None
+                    )
                     for op in spec.get("operations") or []:
                         if isinstance(op, dict) and isinstance(op.get("op_kind"), str):
                             op_kinds.append(op["op_kind"])
@@ -150,6 +161,8 @@ def list_mappings() -> list[MappingListItem]:
                 template_id=entry.get("template_id"),
                 op_kinds=op_kinds,
                 approval_tier=approval_tier,
+                irreversible=irreversible,
+                operator_disclosure=operator_disclosure,
             )
         )
     return items

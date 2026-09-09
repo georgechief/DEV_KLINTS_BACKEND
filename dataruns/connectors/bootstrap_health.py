@@ -7,8 +7,12 @@ from typing import Any
 
 from django.utils import timezone
 
+from dataruns.connectors.base import (
+    find_latest_bootstrap_data_run,
+    find_latest_dcs_fresh_import_data_run,
+)
 from dataruns.models import DataRun
-from tenants.models import ConnectorSnapshot
+from tenants.models import Company, Connector, ConnectorSnapshot
 
 # Canonical scope names used in health_report and PRD messaging. Preflight treats
 # each name as an Admin API capability, not a literal OAuth handle.
@@ -162,7 +166,10 @@ def postflight_health(
                 message=f"0 contacts in last {days} days",
             )
         )
-    if orders_upserted == 0:
+    # Shopify owns commerce orders. Manago is a CDP: contacts/profiles are the
+    # primary bootstrap signal. Empty Manago transactions alone must not mark the
+    # connector degraded when contacts imported successfully (Shopify has orders).
+    if orders_upserted == 0 and platform != "manago_ai":
         issues.append(
             health_issue(
                 code="EMPTY_ORDERS_WINDOW",
@@ -496,6 +503,55 @@ def count_health_report_issues(health_report: dict[str, Any]) -> int:
         if isinstance(postflight_issues, list):
             total += sum(1 for issue in postflight_issues if isinstance(issue, dict))
     return total
+
+
+def _import_data_run_recency_key(data_run: DataRun) -> datetime:
+    if data_run.finished_at is not None:
+        return data_run.finished_at
+    if data_run.started_at is not None:
+        return data_run.started_at
+    return data_run.created_at
+
+
+def resolve_last_data_refresh_data_run(
+    *,
+    company: Company,
+    connector: Connector,
+) -> DataRun | None:
+    """
+    Return the newest bootstrap or DCS fresh-import DataRun (PRD-DCS-10 Slice F).
+
+    Prefer the newest **succeeded** import so a failed DCS refresh does not hide
+    honest counts from the last good bootstrap/import. When nothing succeeded,
+    surface the newest terminal/in-flight run for status visibility.
+    """
+    candidates = [
+        find_latest_bootstrap_data_run(company=company, connector=connector),
+        find_latest_dcs_fresh_import_data_run(company=company, connector=connector),
+    ]
+    present = [run for run in candidates if run is not None]
+    if not present:
+        return None
+
+    succeeded = [
+        run for run in present if run.status == DataRun.Status.SUCCEEDED
+    ]
+    if succeeded:
+        return max(succeeded, key=_import_data_run_recency_key)
+
+    return max(present, key=_import_data_run_recency_key)
+
+
+def build_last_data_refresh_payload(data_run: DataRun) -> dict[str, Any]:
+    """Build last_data_refresh object for GET /api/v1/connectors/ (PRD-DCS-10 Slice F)."""
+    payload = build_latest_bootstrap_payload(data_run)
+    metadata = data_run.metadata or {}
+    payload["source"] = (
+        "dcs_fresh_import"
+        if metadata.get("triggered_by") == "dcs_score"
+        else "bootstrap"
+    )
+    return payload
 
 
 def build_latest_bootstrap_payload(data_run: DataRun) -> dict[str, Any]:

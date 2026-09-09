@@ -16,9 +16,13 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Any
 
+from dataruns.connectors.bootstrap_health import load_snapshot_data
 from dataruns.dcs.identity_join import normalize_email
-from dataruns.models import Order
+from dataruns.models import DataRun, Order, RunConnector
 from tenants.models import Company, Connector, ConnectorSnapshot
+
+SourceRunIds = dict[str, int | None] | None
+PinnedSnapshotIds = dict[str, str | None] | None
 
 LE_GAP_SAMPLE = 50
 _PAID_FINANCIAL = frozenset({"paid", "partially_paid"})
@@ -73,6 +77,125 @@ def _ms_to_iso(ms: Any) -> str | None:
     except (OverflowError, OSError, ValueError):
         return None
     return _iso(dt)
+
+
+def _raw_from_snapshot_data(snapshot_data: dict[str, Any]) -> dict[str, Any]:
+    raw = snapshot_data.get("raw")
+    return raw if isinstance(raw, dict) else {}
+
+
+def _connector_raw_for_snapshot_id(
+    *,
+    snapshot_id: str | None,
+    company: Company,
+    platform: str,
+) -> dict[str, Any] | None:
+    """Pinned raw when snapshot belongs to ``company`` / ``platform``; else None."""
+    if snapshot_id is None or not str(snapshot_id).strip():
+        return None
+    try:
+        snapshot = ConnectorSnapshot.objects.select_related("connector").get(
+            pk=snapshot_id
+        )
+    except ConnectorSnapshot.DoesNotExist:
+        return None
+    connector = snapshot.connector
+    if str(connector.company_id) != str(company.id):
+        return None
+    if connector.name != platform:
+        return None
+    snap_data = snapshot.snapshot_data
+    if not isinstance(snap_data, dict):
+        return {}
+    return _raw_from_snapshot_data(snap_data)
+
+
+def _connector_raw_for_import_data_run(
+    data_run_id: int | None,
+    *,
+    company: Company | None = None,
+    platform: str | None = None,
+) -> dict[str, Any] | None:
+    """
+    Resolve ConnectorSnapshot raw for a bootstrap or DCS fresh-import DataRun.
+
+    PRD-DCS-10 Slice E — returns None when the DataRun cannot be resolved or
+    does not match ``company`` / ``platform`` (caller falls back to
+    ``_latest_connector_raw``). Returns ``{}`` only when the pinned snapshot
+    exists but raw is legitimately empty.
+    """
+    if data_run_id is None:
+        return None
+    try:
+        data_run = DataRun.objects.get(pk=data_run_id)
+    except DataRun.DoesNotExist:
+        return None
+
+    metadata = data_run.metadata or {}
+    if company is not None and str(metadata.get("company_id") or "") != str(
+        company.id
+    ):
+        return None
+    if platform is not None and metadata.get("platform") != platform:
+        return None
+
+    snapshot_id = metadata.get("snapshot_id")
+    if snapshot_id:
+        if company is not None and platform is not None:
+            pinned = _connector_raw_for_snapshot_id(
+                snapshot_id=str(snapshot_id),
+                company=company,
+                platform=platform,
+            )
+            if pinned is not None:
+                return pinned
+        else:
+            snapshot_data = load_snapshot_data(str(snapshot_id))
+            if snapshot_data:
+                return _raw_from_snapshot_data(snapshot_data)
+
+    run_id = metadata.get("run_id")
+    if run_id:
+        link = (
+            RunConnector.objects.filter(run_id=run_id)
+            .select_related("connector_snapshot")
+            .order_by("-connector_snapshot__version")
+            .first()
+        )
+        if link and link.connector_snapshot is not None:
+            snap_data = link.connector_snapshot.snapshot_data
+            if isinstance(snap_data, dict):
+                return _raw_from_snapshot_data(snap_data)
+
+    return None
+
+
+def _connector_raw_for_platform(
+    *,
+    company: Company,
+    platform: str,
+    source_run_id: int | None = None,
+    snapshot_id: str | None = None,
+) -> dict[str, Any]:
+    """Pinned import raw when ids resolve; else latest snapshot."""
+    if snapshot_id:
+        pinned = _connector_raw_for_snapshot_id(
+            snapshot_id=str(snapshot_id),
+            company=company,
+            platform=platform,
+        )
+        if pinned is not None:
+            return pinned
+
+    if source_run_id is not None:
+        pinned = _connector_raw_for_import_data_run(
+            source_run_id,
+            company=company,
+            platform=platform,
+        )
+        if pinned is not None:
+            return pinned
+    return _latest_connector_raw(company=company, platform=platform)
 
 
 def _latest_connector_raw(*, company: Company, platform: str) -> dict[str, Any]:
@@ -456,10 +579,27 @@ def _reconcile_order_events(
     }
 
 
-def build_lifecycle_snapshot(*, company: Company) -> dict[str, Any]:
+def build_lifecycle_snapshot(
+    *,
+    company: Company,
+    source_run_ids: SourceRunIds = None,
+    pinned_snapshot_ids: PinnedSnapshotIds = None,
+) -> dict[str, Any]:
     """Build lifecycle orders/events + summary for LE-* checks."""
-    shopify_raw = _latest_connector_raw(company=company, platform="shopify")
-    manago_raw = _latest_connector_raw(company=company, platform="manago_ai")
+    ids = source_run_ids or {}
+    snaps = pinned_snapshot_ids or {}
+    shopify_raw = _connector_raw_for_platform(
+        company=company,
+        platform="shopify",
+        source_run_id=ids.get("shopify"),
+        snapshot_id=snaps.get("shopify"),
+    )
+    manago_raw = _connector_raw_for_platform(
+        company=company,
+        platform="manago_ai",
+        source_run_id=ids.get("manago_ai"),
+        snapshot_id=snaps.get("manago_ai"),
+    )
 
     shopify_raw_orders = shopify_raw.get("orders")
     shopify_from_raw = isinstance(shopify_raw_orders, list) and len(shopify_raw_orders) > 0

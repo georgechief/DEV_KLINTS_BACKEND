@@ -55,6 +55,11 @@ class SeedDcsMasterCommandTests(TestCase):
         self.assertEqual(dimension.purpose, "")
         self.assertIsNone(dimension.percent_needed)
 
+    def test_business_reality_weight_matches_scoring_contract(self):
+        """Sheet 07 typo (90) is normalized to 10% on seed."""
+        dimension = DimensionMaster.objects.get(dimension_id="07")
+        self.assertEqual(dimension.weight_percent, 10)
+
     def test_root_cause_masters_table_and_remediation_pattern(self):
         root_cause = RootCauseMaster.objects.get(code="RC-01")
         self.assertEqual(root_cause.name, "Integration gap")

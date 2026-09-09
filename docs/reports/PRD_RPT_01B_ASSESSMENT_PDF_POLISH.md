@@ -1,9 +1,9 @@
 # PRD-RPT-01B — Assessment PDF content & design polish
 
 **Status:** Ready for implementation  
-**Module:** see folder path  
-**Depends on:** RPT-01 merged ([BE #38](https://github.com/Rohan070/klints_backend/pull/38) / [FE #26](https://github.com/Rohan070/klints_frontend/pull/26))  
-**Trigger:** Live sample `docs/reports/klints-assessment-lumera-skin-13-2026-08-12.pdf` — structure OK, **content/UX not stakeholder-ready**  
+**Owner track:** Engineering   
+**Depends on:** RPT-01 merged ([BE #38](https://github.com/georgechief/klints_backend/pull/38) / [FE #26](https://github.com/georgechief/klints_frontend/pull/26))  
+**Trigger:** Live sample `docs/engineering/klints-assessment-lumera-skin-13-2026-08-12.pdf` — structure OK, **content/UX not stakeholder-ready**  
 **Out of scope:** Free/paid gating · storing PDF bytes · LLM narratives · changing Overview Export brief wiring · FE redesign beyond what PDF needs
 
 ---
@@ -13,9 +13,9 @@
 ```text
 Implement PRD-RPT-01B — Assessment PDF polish (BE render + payload).
 
-Read: docs/reports/PRD_RPT_01_FULL_ASSESSMENT_REPORT_PDF.md
-Read: docs/reports/PRD_RPT_01B_ASSESSMENT_PDF_POLISH.md
-Sample gap: docs/reports/klints-assessment-lumera-skin-13-2026-08-12.pdf
+Read: docs/engineering/PRD_RPT_01_FULL_ASSESSMENT_REPORT_PDF.md
+Read: docs/engineering/PRD_RPT_01B_ASSESSMENT_PDF_POLISH.md
+Sample gap: docs/engineering/klints-assessment-lumera-skin-13-2026-08-12.pdf
 
 Must-fix vs sample:
 1. What to fix: NEVER show "-" for suggested_fix / fix_owner / fix_type
@@ -181,4 +181,4 @@ FE: **no change** unless a bug blocks Export brief.
 | API/FE? | Unchanged |
 | Who? | Engineering |
 
-**PRD:** RPT-01B · **Track:** delivery · **Bar:** stakeholder-readable full PDF  
+**PRD:** RPT-01B · **Track:** Engineering · **Bar:** stakeholder-readable full PDF  

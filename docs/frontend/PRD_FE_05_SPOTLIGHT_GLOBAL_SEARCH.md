@@ -1,7 +1,7 @@
 # PRD-FE-05 — Spotlight global search (Cmd+K) + search API
 
 **Status:** Ready for implementation  
-**Module:** see folder path  
+**Owner track:** Engineering   
 **Depends on:** FE-03 DCS app lock (`isNavRouteAllowed` / `dcsStatus`); AUDIT-01 events API; CONN-04 connectors list; DCS status API  
 **Surfaces:**  
 - FE: AppShell search trigger + `SpotlightSearch` (`cmdk` dialog, ⌘/Ctrl+K)  

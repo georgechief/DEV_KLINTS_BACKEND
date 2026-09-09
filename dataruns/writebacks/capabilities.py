@@ -1,4 +1,10 @@
-"""Capability status gate (PRD-WB-01 §10.1)."""
+"""Capability status gate (PRD-WB-01 §10.1).
+
+CAP-01 note (option B): this writeback registry stays separate from
+`dataruns/capabilities/matrix_seed.json` (Studio/package Matrix). Do not merge
+loaders here without a dedicated unify PR — CI-01 / CC-03 / WB-SHOP-01 must keep
+working. TODO(CAP-unify): shared capability loader when product asks.
+"""
 
 from __future__ import annotations
 
@@ -27,7 +33,15 @@ _SUPPORTED_OP_KINDS = (
     "erp_attribute_feed",
     "availability_gate",
 )
-_IMPLEMENTED_OP_KINDS = frozenset({"contact_upsert", "detail_set", "tag_add", "event_ingest"})
+_IMPLEMENTED_OP_KINDS = frozenset(
+    {
+        "contact_upsert",
+        "detail_set",
+        "tag_add",
+        "event_ingest",
+        "shopify_customer_update",
+    }
+)
 
 
 @lru_cache(maxsize=1)

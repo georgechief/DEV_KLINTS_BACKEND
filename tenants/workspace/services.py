@@ -44,6 +44,7 @@ def serialize_workspace_response(*, tenant: Tenant, company: Company) -> dict:
             "id": str(company.id),
             "name": company.name,
             "domain": company.domain,
+            "writeback_execute_enabled": company.writeback_execute_enabled,
         },
     }
 
@@ -54,6 +55,7 @@ def update_workspace(
     tenant_name: str | None = None,
     company_name: str | None = None,
     company_domain: str | None = None,
+    writeback_execute_enabled: bool | None = None,
 ) -> dict:
     tenant = Tenant.objects.filter(pk=user.tenant_id).first()
     if tenant is None:
@@ -65,6 +67,9 @@ def update_workspace(
 
     company_update_fields: list[str] = []
     changed_fields: list[str] = []
+    writeback_toggled = False
+    writeback_old: bool | None = None
+    writeback_new: bool | None = None
 
     with transaction.atomic():
         if tenant_name is not None:
@@ -82,6 +87,14 @@ def update_workspace(
             company_update_fields.append("domain")
             changed_fields.append("company_domain")
 
+        if writeback_execute_enabled is not None:
+            if company.writeback_execute_enabled != writeback_execute_enabled:
+                writeback_old = company.writeback_execute_enabled
+                writeback_new = writeback_execute_enabled
+                company.writeback_execute_enabled = writeback_execute_enabled
+                company_update_fields.append("writeback_execute_enabled")
+                writeback_toggled = True
+
         if company_update_fields:
             company.save(update_fields=company_update_fields)
 
@@ -95,6 +108,23 @@ def update_workspace(
             performed_by=user.email,
             actor_user_id=str(user.id),
             metadata={"fields": changed_fields},
+        )
+
+    if writeback_toggled:
+        from dataruns.audit import append_audit_event
+
+        summary = (
+            "Writeback execute enabled"
+            if writeback_new
+            else "Writeback execute disabled"
+        )
+        append_audit_event(
+            company=company,
+            action="writeback.execute_toggled",
+            summary=summary,
+            performed_by=user.email,
+            actor_user_id=str(user.id),
+            metadata={"old": writeback_old, "new": writeback_new},
         )
 
     return serialize_workspace_response(tenant=tenant, company=company)

@@ -524,6 +524,29 @@ class QaCheck(models.Model):
         return f"{self.check_type}: {self.result}"
 
 
+class WritebackAllowedCheck(models.Model):
+    """Checks permitted for writeback execute (DB allowlist; no env)."""
+
+    check_id = models.CharField(max_length=16, unique=True)
+    enabled = models.BooleanField(default=True)
+    note = models.CharField(max_length=255, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "writeback_allowed_checks"
+        ordering = ["check_id"]
+
+    def save(self, *args, **kwargs):
+        if self.check_id:
+            self.check_id = str(self.check_id).strip().upper()
+        super().save(*args, **kwargs)
+
+    def __str__(self) -> str:
+        state = "on" if self.enabled else "off"
+        return f"{self.check_id} ({state})"
+
+
 class WritebackJob(models.Model):
     """Persisted writeback preview / execute job (PRD-WB-01 §7).
 
@@ -554,6 +577,8 @@ class WritebackJob(models.Model):
         related_name="writeback_jobs",
     )
     metadata = models.JSONField(default=dict, blank=True)
+    dcs_data_run_id = models.IntegerField(null=True, blank=True, db_index=True)
+    rolled_back_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -562,6 +587,10 @@ class WritebackJob(models.Model):
         indexes = [
             models.Index(fields=["company", "-created_at"]),
             models.Index(fields=["company", "check_id", "-created_at"]),
+            models.Index(
+                fields=["company", "check_id", "dcs_data_run_id", "mode", "-created_at"],
+                name="wb_job_co_check_run_mode",
+            ),
         ]
 
     def __str__(self) -> str:
@@ -914,6 +943,11 @@ class AssessmentReport(models.Model):
     window_since = models.DateTimeField(null=True, blank=True)
     window_until = models.DateTimeField(null=True, blank=True)
     payload = models.JSONField(default=dict, blank=True)
+    ai_narratives = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="AI report_narrative stored outside the hashed payload (PRD-AI-01).",
+    )
     payload_hash = models.CharField(max_length=64)
     template_version = models.CharField(max_length=64)
     created_by = models.ForeignKey(

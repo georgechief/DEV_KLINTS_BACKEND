@@ -1,96 +1,54 @@
-"""get_or_create Fix AI suggestion (PRD-AI-01 §3 / §9.1)."""
+"""Get-or-create AI-01 tasks (PRD-AI-01 §3 / §9)."""
 
 from __future__ import annotations
 
-import json
 import logging
-from dataclasses import dataclass
 from typing import Any
 
-from django.conf import settings
-from django.db import transaction
-
-from dataruns.ai.allowlist import project_fix_suggestion_context
-from dataruns.ai.complete import complete_json
+from dataruns.ai.allowlist import (
+    project_explain_finding_context,
+    project_fix_suggestion_context,
+    project_nba_blurb_context,
+)
 from dataruns.ai.constants import (
-    DEFAULT_MODEL_ID,
-    DEFAULT_PROVIDER,
-    POLICY_VERSION,
+    PROMPT_EXPLAIN_FINDING_V1,
     PROMPT_FIX_SUGGESTION_V1,
+    PROMPT_NBA_BLURB_V1,
+    PROMPT_REPORT_NARRATIVE_V1,
+    TASK_EXPLAIN_FINDING,
     TASK_FIX_SUGGESTION,
+    TASK_NBA_BLURB,
+    TASK_REPORT_NARRATIVE,
 )
 from dataruns.ai.exceptions import (
     AiDisabledError,
     AiGateDeniedError,
     AiJsonRetryExhaustedError,
+    AiNotFoundError,
     AiProviderError,
 )
-from dataruns.ai.fingerprints import compute_fingerprint
-from dataruns.ai.issue_loader import load_issue_for_ai
-from dataruns.ai.persistence import create_ai_call, get_cached_suggestion, upsert_ai_suggestion
-from dataruns.ai.privacy_gate import ensure_safe_context
-from dataruns.ai.prompts import fix_suggestion_prompt_v1, system_prompt_v1
-from dataruns.ai.providers import get_ai_provider
+from dataruns.ai.issue_loader import load_issue_for_ai, resolve_dcs_run_for_ai
+from dataruns.ai.prompts import (
+    explain_finding_prompt_v1,
+    fix_suggestion_prompt_v1,
+    nba_blurb_prompt_v1,
+    report_narrative_prompt_v1,
+)
+from dataruns.ai.report_context import build_report_narrative_projected
+from dataruns.ai.runner import (
+    AiTaskResult,
+    ai_enabled,
+    policy_version,
+    run_gated_ai_task,
+    serialize_ai_result,
+)
 from dataruns.ai.providers.base import AiProvider
-from dataruns.models import AiCall, AiSuggestion
+from dataruns.models import AssessmentReport
 from tenants.models import Company
 
 logger = logging.getLogger(__name__)
 
-
-@dataclass
-class FixSuggestionResult:
-    suggestion: AiSuggestion
-    fingerprint: str
-    cached: bool
-    model: str
-    prompt_version: str
-    provider: str
-
-
-def _ai_enabled() -> bool:
-    return bool(getattr(settings, "AI_ENABLED", False))
-
-
-def _policy_version() -> str:
-    return str(
-        getattr(settings, "AI_PRIVACY_POLICY_VERSION", None) or POLICY_VERSION
-    ).strip() or POLICY_VERSION
-
-
-def _model_id() -> str:
-    return str(getattr(settings, "MISTRAL_MODEL", None) or DEFAULT_MODEL_ID).strip() or DEFAULT_MODEL_ID
-
-
-def _timeout_seconds() -> float:
-    return float(getattr(settings, "AI_CALL_TIMEOUT_SECONDS", 30) or 30)
-
-
-def _temperature() -> float:
-    return float(getattr(settings, "AI_TEMPERATURE", 0.3) or 0.3)
-
-
-def _provider_label(provider: AiProvider | None = None) -> str:
-    if provider is not None:
-        return getattr(provider, "name", DEFAULT_PROVIDER)
-    # Match get_ai_provider() — empty AI_PROVIDER falls back to mock, not mistral.
-    configured = str(getattr(settings, "AI_PROVIDER", "mock") or "mock").strip().lower()
-    return configured or "mock"
-
-
-def _max_retries_clamped() -> int:
-    """PRD-AI-01 §6: parse retry ≤3."""
-    try:
-        raw = int(getattr(settings, "AI_JSON_MAX_RETRIES", 3))
-    except (TypeError, ValueError):
-        raw = 3
-    return max(1, min(3, raw))
-
-
-def _build_user_prompt(context: dict[str, Any]) -> str:
-    task_prompt = fix_suggestion_prompt_v1().strip()
-    body = json.dumps(context, sort_keys=True, separators=(",", ":"))
-    return f"{task_prompt}\n\nALLOWLISTED_CONTEXT_JSON:\n{body}\n"
+FixSuggestionResult = AiTaskResult
 
 
 def get_or_create_fix_suggestion(
@@ -100,13 +58,13 @@ def get_or_create_fix_suggestion(
     dcs_run_id: int | None = None,
     provider: AiProvider | None = None,
     skip_cache: bool = False,
-) -> FixSuggestionResult:
+) -> AiTaskResult:
     """
     Allowlist → PrivacyGate → fingerprint → cache → provider → validate → persist.
 
     skip_cache is off by default (PRD: no billable re-call on fingerprint hit).
     """
-    if not _ai_enabled():
+    if not ai_enabled():
         raise AiDisabledError()
 
     data_run, issue = load_issue_for_ai(
@@ -116,166 +74,178 @@ def get_or_create_fix_suggestion(
     )
     normalized_check_id = str(issue.get("check_id") or check_id).strip().upper()
     prompt_version = PROMPT_FIX_SUGGESTION_V1
-    policy_version = _policy_version()
-    model = _model_id()
-
     projected = project_fix_suggestion_context(
         issue=issue,
         company_name=company.name,
         company_domain=getattr(company, "domain", None),
         dcs_run_id=data_run.id,
         prompt_version=prompt_version,
-        policy_version=policy_version,
+        policy_version=policy_version(),
     )
-    gate = ensure_safe_context(projected)
-    fingerprint = compute_fingerprint(
+    return run_gated_ai_task(
+        company=company,
         task_type=TASK_FIX_SUGGESTION,
         prompt_version=prompt_version,
-        allowlisted_context=gate.context if gate.ok and gate.context else projected,
-        policy_version=policy_version,
+        projected=projected,
+        task_prompt=fix_suggestion_prompt_v1(),
+        check_id=normalized_check_id,
+        data_run=data_run,
+        provider=provider,
+        skip_cache=skip_cache,
     )
 
-    if not gate.ok or gate.context is None:
-        create_ai_call(
-            company=company,
-            task_type=TASK_FIX_SUGGESTION,
-            fingerprint=fingerprint,
-            prompt_version=prompt_version,
-            policy_version=policy_version,
-            model=model,
-            provider=_provider_label(provider),
-            status=AiCall.Status.GATE_DENIED,
-            check_id=normalized_check_id,
-            dcs_data_run=data_run,
-            error_code=gate.reason_code,
-        )
-        raise AiGateDeniedError(reason=gate.reason_code)
 
-    safe_context = gate.context
+def get_or_create_explain_finding(
+    *,
+    company: Company,
+    check_id: str,
+    dcs_run_id: int | None = None,
+    provider: AiProvider | None = None,
+    skip_cache: bool = False,
+) -> AiTaskResult:
+    if not ai_enabled():
+        raise AiDisabledError()
 
-    if not skip_cache:
-        cached = get_cached_suggestion(
-            company=company,
-            task_type=TASK_FIX_SUGGESTION,
-            fingerprint=fingerprint,
-        )
-        if cached is not None:
-            cached_call = cached.ai_call if cached.ai_call_id else None
-            return FixSuggestionResult(
-                suggestion=cached,
-                fingerprint=fingerprint,
-                cached=True,
-                model=cached_call.model if cached_call else model,
-                prompt_version=prompt_version,
-                provider=cached_call.provider if cached_call else _provider_label(provider),
-            )
-
-    active_provider = provider
-    if active_provider is None:
-        try:
-            active_provider = get_ai_provider()
-        except AiProviderError as exc:
-            create_ai_call(
-                company=company,
-                task_type=TASK_FIX_SUGGESTION,
-                fingerprint=fingerprint,
-                prompt_version=prompt_version,
-                policy_version=policy_version,
-                model=model,
-                provider=_provider_label(None),
-                status=AiCall.Status.FAILED,
-                check_id=normalized_check_id,
-                dcs_data_run=data_run,
-                error_code=exc.code,
-            )
-            raise
-    try:
-        payload, provider_result, _attempts = complete_json(
-            provider=active_provider,
-            task_type=TASK_FIX_SUGGESTION,
-            system_prompt=system_prompt_v1(),
-            user_prompt=_build_user_prompt(safe_context),
-            context=safe_context,
-            model=model,
-            temperature=_temperature(),
-            timeout_seconds=_timeout_seconds(),
-            max_retries=_max_retries_clamped(),
-        )
-    except AiJsonRetryExhaustedError as exc:
-        create_ai_call(
-            company=company,
-            task_type=TASK_FIX_SUGGESTION,
-            fingerprint=fingerprint,
-            prompt_version=prompt_version,
-            policy_version=policy_version,
-            model=model,
-            provider=_provider_label(active_provider),
-            status=AiCall.Status.FAILED,
-            check_id=normalized_check_id,
-            dcs_data_run=data_run,
-            error_code=exc.code,
-        )
-        raise
-    except AiProviderError as exc:
-        create_ai_call(
-            company=company,
-            task_type=TASK_FIX_SUGGESTION,
-            fingerprint=fingerprint,
-            prompt_version=prompt_version,
-            policy_version=policy_version,
-            model=model,
-            provider=_provider_label(active_provider),
-            status=AiCall.Status.FAILED,
-            check_id=normalized_check_id,
-            dcs_data_run=data_run,
-            error_code=exc.code,
-        )
-        raise
-
-    with transaction.atomic():
-        call = create_ai_call(
-            company=company,
-            task_type=TASK_FIX_SUGGESTION,
-            fingerprint=fingerprint,
-            prompt_version=prompt_version,
-            policy_version=policy_version,
-            model=provider_result.model or model,
-            provider=provider_result.provider or _provider_label(active_provider),
-            status=AiCall.Status.SUCCESS,
-            check_id=normalized_check_id,
-            dcs_data_run=data_run,
-            langsmith_run_id=provider_result.langsmith_run_id,
-            latency_ms=provider_result.latency_ms,
-            input_tokens=provider_result.input_tokens,
-            output_tokens=provider_result.output_tokens,
-        )
-        suggestion = upsert_ai_suggestion(
-            company=company,
-            ai_call=call,
-            task_type=TASK_FIX_SUGGESTION,
-            fingerprint=fingerprint,
-            payload=payload,
-            check_id=normalized_check_id,
-            dcs_data_run=data_run,
-        )
-    return FixSuggestionResult(
-        suggestion=suggestion,
-        fingerprint=fingerprint,
-        cached=False,
-        model=call.model,
+    data_run, issue = load_issue_for_ai(
+        company=company,
+        check_id=check_id,
+        dcs_run_id=dcs_run_id,
+    )
+    normalized_check_id = str(issue.get("check_id") or check_id).strip().upper()
+    prompt_version = PROMPT_EXPLAIN_FINDING_V1
+    projected = project_explain_finding_context(
+        issue=issue,
+        company_name=company.name,
+        company_domain=getattr(company, "domain", None),
+        dcs_run_id=data_run.id,
         prompt_version=prompt_version,
-        provider=call.provider,
+        policy_version=policy_version(),
+    )
+    return run_gated_ai_task(
+        company=company,
+        task_type=TASK_EXPLAIN_FINDING,
+        prompt_version=prompt_version,
+        projected=projected,
+        task_prompt=explain_finding_prompt_v1(),
+        check_id=normalized_check_id,
+        data_run=data_run,
+        provider=provider,
+        skip_cache=skip_cache,
     )
 
 
-def serialize_fix_suggestion_result(result: FixSuggestionResult) -> dict[str, Any]:
-    suggestion = result.suggestion
+def get_or_create_nba_blurb(
+    *,
+    company: Company,
+    check_id: str,
+    dcs_run_id: int | None = None,
+    plan_rank: int | None = None,
+    provider: AiProvider | None = None,
+    skip_cache: bool = False,
+) -> AiTaskResult:
+    if not ai_enabled():
+        raise AiDisabledError()
+
+    data_run, issue = load_issue_for_ai(
+        company=company,
+        check_id=check_id,
+        dcs_run_id=dcs_run_id,
+    )
+    normalized_check_id = str(issue.get("check_id") or check_id).strip().upper()
+    prompt_version = PROMPT_NBA_BLURB_V1
+    projected = project_nba_blurb_context(
+        issue=issue,
+        plan_rank=plan_rank,
+        company_name=company.name,
+        company_domain=getattr(company, "domain", None),
+        dcs_run_id=data_run.id,
+        prompt_version=prompt_version,
+        policy_version=policy_version(),
+    )
+    return run_gated_ai_task(
+        company=company,
+        task_type=TASK_NBA_BLURB,
+        prompt_version=prompt_version,
+        projected=projected,
+        task_prompt=nba_blurb_prompt_v1(),
+        check_id=normalized_check_id,
+        data_run=data_run,
+        provider=provider,
+        skip_cache=skip_cache,
+    )
+
+
+def get_or_create_report_narrative(
+    *,
+    company: Company,
+    dcs_run_id: int | None = None,
+    provider: AiProvider | None = None,
+    skip_cache: bool = False,
+) -> AiTaskResult:
+    if not ai_enabled():
+        raise AiDisabledError()
+
+    data_run = resolve_dcs_run_for_ai(company=company, dcs_run_id=dcs_run_id)
+    prompt_version = PROMPT_REPORT_NARRATIVE_V1
+    projected = build_report_narrative_projected(
+        company=company,
+        data_run=data_run,
+        prompt_version=prompt_version,
+        policy_version=policy_version(),
+    )
+    return run_gated_ai_task(
+        company=company,
+        task_type=TASK_REPORT_NARRATIVE,
+        prompt_version=prompt_version,
+        projected=projected,
+        task_prompt=report_narrative_prompt_v1(),
+        check_id="",
+        data_run=data_run,
+        provider=provider,
+        skip_cache=skip_cache,
+    )
+
+
+def narratives_dict_from_result(result: AiTaskResult) -> dict[str, Any]:
     return {
-        "suggestion_id": str(suggestion.id),
-        "check_id": suggestion.check_id,
-        "fingerprint": f"sha256:{result.fingerprint}",
-        "cached": result.cached,
-        "model": result.model,
+        "report_narrative": result.suggestion.payload_json,
+        "suggestion_id": str(result.suggestion.id),
         "prompt_version": result.prompt_version,
-        "payload": suggestion.payload_json,
+        "model": result.model,
+        "cached": result.cached,
     }
+
+
+def attach_narratives_to_report(report: AssessmentReport, result: AiTaskResult) -> None:
+    report.ai_narratives = narratives_dict_from_result(result)
+    report.save(update_fields=["ai_narratives"])
+
+
+def attach_report_narrative_fail_open(report: AssessmentReport) -> None:
+    """Compose still succeeds if AI is off, gated, or down (PRD fail-open for reports)."""
+    try:
+        if not ai_enabled():
+            return
+        result = get_or_create_report_narrative(
+            company=report.company,
+            dcs_run_id=report.dcs_data_run_id,
+        )
+        attach_narratives_to_report(report, result)
+    except (
+        AiDisabledError,
+        AiGateDeniedError,
+        AiJsonRetryExhaustedError,
+        AiNotFoundError,
+        AiProviderError,
+    ) as exc:
+        logger.info(
+            "report_narrative_skipped report_id=%s code=%s",
+            report.id,
+            getattr(exc, "code", "unknown"),
+        )
+    except Exception:
+        logger.exception("report_narrative_attach_failed report_id=%s", report.id)
+
+
+def serialize_fix_suggestion_result(result: AiTaskResult) -> dict[str, Any]:
+    return serialize_ai_result(result)

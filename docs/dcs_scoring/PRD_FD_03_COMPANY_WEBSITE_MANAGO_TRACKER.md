@@ -1,7 +1,7 @@
 # PRD — Company website SalesManago / Manago tracker scrape
 
 **Status:** Ready for implementation (check ID corrected)  
-**Module:** see folder path  
+**Owner track:** Engineering   
 **Check ID:** `FD-07` (employer correction — not FD-03)  
 **Filename note:** Historical filename still says FD-03; implement under **FD-07**.  
 **Depends on:**  
@@ -17,7 +17,7 @@
 
 ## 0. Check-master alignment (read first)
 
-| Today in `docs/dcs_scoring/CHECK_MASTER_42.md` | Name |
+| Today in `CHECK_MASTER_42.md` | Name |
 |-------------------------------|------|
 | **FD-03** | ERP feed reachable and parseable → keep; `isOptional=true` |
 | **FD-07** | Manago site tracking code active → VISIT/smclient **+** this website scrape |
@@ -238,7 +238,7 @@ Scrape is network I/O: run inside the DCS Celery task (same as other gates). Cac
 | Context | Pass `company.domain` (or prebuilt website URL) into foundation context |
 | Fixtures | HTML samples with / without SM snippet under `dataruns/tests/fixtures/website/` |
 | Tests | `dataruns/tests/test_fd_03_website_tracker.py` |
-| Seed / master | `check_master_mvp1.json`, `seed_dcs_master`, `docs/dcs_scoring/CHECK_MASTER_42.md` |
+| Seed / master | `check_master_mvp1.json`, `seed_dcs_master`, `CHECK_MASTER_42.md` |
 | Docs | DCS-02 FD-03 row → link this PRD |
 
 ---

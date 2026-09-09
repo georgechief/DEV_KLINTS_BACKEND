@@ -40,6 +40,11 @@ RESULT_STATUS_HEADER = "Result status"
 CONFIDENCE_HEADER = "Confidence"
 FINAL_STATE_HEADER = "Final state"
 
+# Sheet 07 v1.4.1 lists 90 for dimension 07; scored dimensions 01–06 sum to 90%,
+# so Business Reality headline weight must be 10% (Lumera fixture / sheet 08).
+_BUSINESS_REALITY_WEIGHT_EXCEL_TYPO = 90
+_BUSINESS_REALITY_WEIGHT_CORRECT = 10
+
 
 class Command(BaseCommand):
     help = "Seed DCS master tables from the specification workbook."
@@ -225,6 +230,12 @@ class Command(BaseCommand):
                     "percent_needed": workbook_row["percent_needed"],
                     "weight_percent": workbook_row["weight_percent"],
                 }
+
+            if (
+                dimension_id == "07"
+                and defaults["weight_percent"] == _BUSINESS_REALITY_WEIGHT_EXCEL_TYPO
+            ):
+                defaults["weight_percent"] = _BUSINESS_REALITY_WEIGHT_CORRECT
 
             defaults.update(
                 {

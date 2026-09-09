@@ -8,15 +8,18 @@ PRDs and reference specs are organized by **product module** (not by individual 
 | [`workspace/`](./workspace/) | Password reset & workspace settings |
 | [`team/`](./team/) | Team invites |
 | [`connectors/`](./connectors/) | Shopify / Manago connectors, CSV export |
-| [`dcs_scoring/`](./dcs_scoring/) | DCS check master, scoring, daily Beat, diffs |
+| [`dcs_scoring/`](./dcs_scoring/) | DCS check master, scoring, daily Beat, gates, diffs |
 | [`frontend/`](./frontend/) | Operator UI guards, DCS UX, Fix bridge |
-| [`writebacks/`](./writebacks/) | Writeback / Fix adapter foundation |
-| [`architecture/`](./architecture/) | Architecture assessment |
+| [`writebacks/`](./writebacks/) | Writeback / Fix adapters & gates |
+| [`architecture/`](./architecture/) | Architecture assessment / Lifecycle |
 | [`orchestration/`](./orchestration/) | Canonical priority / opportunity planning |
 | [`use_cases/`](./use_cases/) | Pilot library & opportunities |
+| [`workflow/`](./workflow/) | Blueprint Studio, QA gate, Capability Matrix |
+| [`handoff/`](./handoff/) | Staged handoff package & Send (human activation) |
 | [`reports/`](./reports/) | Assessment report + PDF samples |
 | [`ai/`](./ai/) | AI narrative / fix suggestions + orchestration blueprint |
 | [`audit/`](./audit/) | Governance activity & notifications |
 | [`security/`](./security/) | Security & data-processing response |
+| [`ops/`](./ops/) | M2 gap SoT, demo path, staging harden, M3 observability PRD |
 
-Start here for Milestone 1: [`../MILESTONE_SUBMISSION.md`](../MILESTONE_SUBMISSION.md).
+**Milestone 2 claim (current):** [`../M2_MILESTONE_SUBMISSION.md`](../M2_MILESTONE_SUBMISSION.md)

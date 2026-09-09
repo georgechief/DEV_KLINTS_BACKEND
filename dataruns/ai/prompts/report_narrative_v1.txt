@@ -1,0 +1,22 @@
+# Prompt ID: ai01.report_narrative.v1
+# Task: Assessment report exec summary
+
+REQUIRED THIS TURN: Return ONLY the report_narrative JSON schema.
+Restate the allowlisted rollup. Do not invent scores or revenue.
+recommended_focus may name check_id values from the input only.
+Do not include any email, phone, or contact identifier.
+
+JSON schema (exact keys):
+{
+  "task_type": "report_narrative",
+  "exec_summary": "<3-5 sentences>",
+  "top_themes": ["<theme>", "<theme>"],
+  "recommended_focus": "<1-2 sentences pointing at top plan check_ids only>"
+}
+
+Constraints:
+- exec_summary 3–5 sentences
+- top_themes 1–8 short phrases
+- If revenue_impact_total is present you may restate it; never invent a number
+- Do not reorder or invent plan items
+- No contact examples, no fake emails, no invented SKUs

@@ -57,8 +57,8 @@ def run_dcs_score(self, data_run_id: int) -> dict[str, Any]:
     foundation gates, stubs remaining MVP1 checks as UNKNOWN, assembles score,
     and persists RunScore + RunIssue/Impact rows.
 
-    Shopify token refresh also runs when metadata.live_revalidate is true
-    (fresh import path refreshes Shopify tokens before fetch as well).
+    Shopify token refresh runs inside ``run_dcs_pipeline`` fresh import
+    (``refresh_connected_platforms_for_dcs``); failures notify via orchestrate.
     """
     from dataruns.dcs.constants import DCS_SCORE_KIND
     from dataruns.dcs.orchestrate import run_dcs_pipeline
@@ -71,56 +71,6 @@ def run_dcs_score(self, data_run_id: int) -> dict[str, Any]:
     metadata = data_run.metadata or {}
     if metadata.get("kind") != DCS_SCORE_KIND:
         return {"ok": False, "error": "Not a DCS score DataRun."}
-
-    if metadata.get("live_revalidate") is True:
-        company_id = metadata.get("company_id")
-        if company_id:
-            try:
-                company = Company.objects.get(pk=company_id)
-                connector = get_connector(company=company, platform="shopify")
-            except (Company.DoesNotExist, Connector.DoesNotExist):
-                connector = None
-            else:
-                if connector.status in ("connected", "degraded"):
-                    from dataruns.connectors.shopify_token import (
-                        ShopifyAuthExpiredError,
-                        classify_shopify_terminal_auth_failure,
-                        ensure_fresh_shopify_token,
-                        mark_shopify_auth_expired,
-                    )
-
-                    try:
-                        ensure_fresh_shopify_token(connector=connector)
-                    except (ShopifyAuthExpiredError, ShopifyOAuthError) as exc:
-                        reason_code = classify_shopify_terminal_auth_failure(exc)
-                        if reason_code is not None:
-                            mark_shopify_auth_expired(
-                                connector=connector,
-                                company=company,
-                                reason_code=reason_code,
-                                source="dcs_live_revalidate",
-                                error_message=str(exc),
-                            )
-                        data_run.status = DataRun.Status.FAILED
-                        data_run.finished_at = timezone.now()
-                        data_run.metadata = {
-                            **metadata,
-                            "error": str(exc),
-                            "auth_failed": True,
-                        }
-                        data_run.save(
-                            update_fields=[
-                                "status",
-                                "finished_at",
-                                "metadata",
-                                "updated_at",
-                            ]
-                        )
-                        return {
-                            "ok": False,
-                            "error": str(exc),
-                            "data_run_id": data_run.id,
-                        }
 
     result = run_dcs_pipeline(data_run)
     if isinstance(result, dict):

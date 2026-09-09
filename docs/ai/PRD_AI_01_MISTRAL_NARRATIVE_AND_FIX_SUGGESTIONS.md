@@ -1,9 +1,9 @@
 # PRD-AI-01 — Mistral narrative layer + Fix AI suggestion box
 
 **Status:** Ready for implementation  
-**Module:** see folder path — BE AI stack + Fix FE suggestion box  
+**Owner track:** Engineering  — BE AI stack + Fix FE suggestion box  
 **Depends on:** Live Fix issue bridge (Engineering FE-08 / worklist detail) · CheckMaster suggested_fix · DCS scored run · optional RPT-01 payload hooks  
-**Reference (patterns only):** [`docs/ai/AI_AGENT_ORCHESTRATION_BLUEPRINT.md`](./AI_AGENT_ORCHESTRATION_BLUEPRINT.md) — state > prompt, LLM proposes / code disposes, ensure\* gates, JSON retry, named ops, fail closed  
+**Reference (patterns only):** [`docs/AI_AGENT_ORCHESTRATION_BLUEPRINT.md`](../AI_AGENT_ORCHESTRATION_BLUEPRINT.md) — state > prompt, LLM proposes / code disposes, ensure\* gates, JSON retry, named ops, fail closed  
 **Security boundary:** [`docs/security/KLINTS_AI_SECURITY_AND_DATA_PROCESSING_RESPONSE.md`](../security/KLINTS_AI_SECURITY_AND_DATA_PROCESSING_RESPONSE.md) §7 — AI explains/narrates only; never scores, gates, or writebacks  
 **Out of scope:** Writeback Approve/execute · changing DCS pass/fail · ORCH priority/waves · LiteLLM self-host (adapter interface only) · chat agent / multi-turn support bot · OpenAI/Anthropic as primary
 
@@ -15,8 +15,8 @@
 Implement PRD-AI-01 — Mistral Small 4 narratives + Fix AI suggestion box.
 
 Read:
-- docs/ai/PRD_AI_01_MISTRAL_NARRATIVE_AND_FIX_SUGGESTIONS.md
-- docs/ai/AI_AGENT_ORCHESTRATION_BLUEPRINT.md (patterns only)
+- docs/engineering/PRD_AI_01_MISTRAL_NARRATIVE_AND_FIX_SUGGESTIONS.md
+- docs/AI_AGENT_ORCHESTRATION_BLUEPRINT.md (patterns only)
 - docs/security/KLINTS_AI_SECURITY_AND_DATA_PROCESSING_RESPONSE.md §7
 
 Must ship:
@@ -40,7 +40,7 @@ Acceptance: §12. Ops bootstrap: §11 (LangSmith + sheet + env).
 
 ## 1. Why
 
-The Fix UI surfaces **facts** on Fix (issue, evidence, CheckMaster fix text). That copy is often technical or thin for merchants.
+Engineering surfaces **facts** on Fix (issue, evidence, CheckMaster fix text). That copy is often technical or thin for merchants.
 
 AI-01 adds a **wording layer**:
 
@@ -346,7 +346,7 @@ Wire tracing in the shared `complete_json` helper so **no caller can forget** to
 
 ### 8.3 Credentials inventory (Google Sheet — ops)
 
-Create / update a private Google Sheet (access: founders + delivery team only), e.g. **`Klints — AI credentials inventory`**:
+Create / update a private Google Sheet (access: founders + Engineering only), e.g. **`Klints — AI credentials inventory`**:
 
 | Column | Example |
 |--------|---------|
@@ -445,7 +445,7 @@ Copy rules: Title Case titles; no raw JSON in the box (render fields). Show JSON
 
 ---
 
-## 11. Ops bootstrap (before merge to prod)
+## 11. Ops bootstrap (Rohan / Engineering — before merge to prod)
 
 Do this once; PRD does not embed secrets.
 
@@ -552,7 +552,7 @@ src/routes/fix.tsx     # mount box
 
 ---
 
-## 15. Sequencing vs other delivery work
+## 15. Sequencing vs other Engineering work
 
 | Order | Work | Notes |
 |-------|------|-------|
@@ -561,7 +561,7 @@ src/routes/fix.tsx     # mount box
 | 3 | Hook `report_narrative` into report compose | After 01B content solid |
 | 4 | ORCH-02 / BL-012 waves | Still no LLM ranking |
 
-Writeback work continues Approve / FE-11 Elements — **orthogonal**.
+Engineering continues writeback Approve / FE-11 Elements — **orthogonal**.
 
 ---
 

@@ -52,7 +52,7 @@ class FixSuggestionOutput(BaseModel):
 
 
 class ExplainFindingOutput(BaseModel):
-    """§6.2 explain_finding — stub for Phase F."""
+    """§6.2 explain_finding — Diagnose drawer."""
 
     task_type: Literal["explain_finding"] = "explain_finding"
     check_id: str = Field(min_length=1, max_length=32)
@@ -65,14 +65,46 @@ class ExplainFindingOutput(BaseModel):
     def _upper_check_id(cls, value: str) -> str:
         return value.strip().upper()
 
+    @field_validator("systems")
+    @classmethod
+    def _cap_systems(cls, value: list[str]) -> list[str]:
+        out: list[str] = []
+        for item in value:
+            if not isinstance(item, str):
+                continue
+            token = item.strip()[:64]
+            if token and token not in out:
+                out.append(token)
+            if len(out) >= 8:
+                break
+        return out
+
 
 class ReportNarrativeOutput(BaseModel):
-    """§6.3 report_narrative — stub for Phase F."""
+    """§6.3 report_narrative — assessment PDF / payload."""
 
     task_type: Literal["report_narrative"] = "report_narrative"
     exec_summary: str = Field(min_length=1, max_length=2000)
     top_themes: list[str] = Field(min_length=1, max_length=8)
     recommended_focus: str = Field(min_length=1, max_length=800)
+
+    @field_validator("top_themes")
+    @classmethod
+    def _cap_themes(cls, value: list[str]) -> list[str]:
+        return [item.strip()[:120] for item in value if isinstance(item, str) and item.strip()][:8]
+
+
+class NbaBlurbOutput(BaseModel):
+    """§5 nba_blurb — Overview next-best-action one-liner."""
+
+    task_type: Literal["nba_blurb"] = "nba_blurb"
+    check_id: str = Field(min_length=1, max_length=32)
+    blurb: str = Field(min_length=1, max_length=280)
+
+    @field_validator("check_id")
+    @classmethod
+    def _upper_check_id(cls, value: str) -> str:
+        return value.strip().upper()
 
 
 class AiCallEnvelope(BaseModel):
@@ -93,6 +125,7 @@ TASK_OUTPUT_MODELS: dict[str, type[BaseModel]] = {
     "fix_suggestion": FixSuggestionOutput,
     "explain_finding": ExplainFindingOutput,
     "report_narrative": ReportNarrativeOutput,
+    "nba_blurb": NbaBlurbOutput,
 }
 
 

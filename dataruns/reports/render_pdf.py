@@ -6,9 +6,9 @@ PDF bytes are built in memory — never written to media/S3.
 
 from __future__ import annotations
 
+import re
 from io import BytesIO
 from typing import Any
-import re
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_LEFT
@@ -32,6 +32,8 @@ from dataruns.reports.humanize import (
     format_generated_at,
     format_impact_cell,
 )
+from dataruns.reports.payload import REMEDIATION_FALLBACK
+from dataruns.reports.remediation_ai import compact_suggested_fix_for_pdf
 
 # Same payload should produce stable PDF bytes (PRD-RPT-01 replay).
 rl_config.invariant = 1
@@ -107,16 +109,23 @@ def _break_long_tokens(token: str, *, width: int = 36) -> str:
     return " ".join(parts)
 
 
-def _escape(value: Any, default: str = "-", *, limit: int = 280) -> str:
+def _escape(value: Any, default: str = "-", *, limit: int | None = 280) -> str:
     token = _text(value, default=default)
     token = (
         token.replace("&", "&amp;")
         .replace("<", "&lt;")
         .replace(">", "&gt;")
     )
-    if len(token) > limit:
+    if limit is not None and len(token) > limit:
         token = token[: limit - 3] + "..."
     return _break_long_tokens(token)
+
+
+def _escape_pdf_cell(value: Any, *, limit: int | None = 260) -> str:
+    token = _text(value, default="-")
+    if "<br/>" in token:
+        return "<br/>".join(_escape(part, limit=limit) for part in token.split("<br/>"))
+    return _escape(token, limit=limit)
 
 
 def _styles() -> dict[str, ParagraphStyle]:
@@ -249,19 +258,31 @@ def _draw_chrome(canvas, doc, *, footer_hash: str, template_version: str) -> Non
     canvas.restoreState()
 
 
-def _table(headers: list[str], rows: list[list[Any]], styles, col_widths: list[float]) -> Table:
+REMEDIATION_TABLE_COL_LIMITS: list[int | None] = [80, None, 160, 160, 160]
+
+
+def _table(
+    headers: list[str],
+    rows: list[list[Any]],
+    styles,
+    col_widths: list[float],
+    *,
+    col_limits: list[int | None] | None = None,
+) -> Table:
     if not rows:
         rows = [["-"] * len(headers)]
+    default_cell_limit = 260
     header = [Paragraph(_escape(h, limit=80), styles["th"]) for h in headers]
     body = []
     for row in rows:
         padded = list(row) + [""] * max(0, len(headers) - len(row))
-        body.append(
-            [
-                Paragraph(_escape(cell, limit=260), styles["cell"])
-                for cell in padded[: len(headers)]
-            ]
-        )
+        cells = []
+        for index, cell in enumerate(padded[: len(headers)]):
+            limit = default_cell_limit
+            if col_limits is not None and index < len(col_limits):
+                limit = col_limits[index]
+            cells.append(Paragraph(_escape_pdf_cell(cell, limit=limit), styles["cell"]))
+        body.append(cells)
     table = Table([header, *body], colWidths=col_widths, repeatRows=1)
     table.setStyle(
         TableStyle(
@@ -414,7 +435,56 @@ def _dimension_short(value: Any) -> str:
     return parts[0][:10]
 
 
-def render_assessment_pdf(payload: dict[str, Any]) -> bytes:
+def _remediation_pdf_cell(value: Any) -> str:
+    token = _text(value, default="")
+    if not token or token == REMEDIATION_FALLBACK:
+        return ""
+    return compact_suggested_fix_for_pdf(token)
+
+
+def _remediation_pdf_rows(items: list[Any]) -> list[list[Any]]:
+    """Only rows with real suggested_fix copy — skip See Data Center placeholders."""
+    rows: list[list[Any]] = []
+    for row in items:
+        if not isinstance(row, dict):
+            continue
+        suggested_fix = _remediation_pdf_cell(row.get("suggested_fix"))
+        if not suggested_fix:
+            continue
+        rows.append(
+            [
+                row.get("check_id"),
+                suggested_fix,
+                _remediation_pdf_cell(row.get("fix_owner")),
+                _remediation_pdf_cell(row.get("fix_type")),
+                row.get("fix_href"),
+            ]
+        )
+    return rows
+
+
+def _narrative_block(ai_narratives: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not isinstance(ai_narratives, dict) or not ai_narratives:
+        return None
+    body = ai_narratives.get("report_narrative")
+    if not isinstance(body, dict):
+        body = ai_narratives.get("payload") if isinstance(ai_narratives.get("payload"), dict) else None
+    if not isinstance(body, dict):
+        return None
+    summary = _text(body.get("exec_summary"), default="")
+    focus = _text(body.get("recommended_focus"), default="")
+    themes = body.get("top_themes") if isinstance(body.get("top_themes"), list) else []
+    theme_lines = [_text(item, default="") for item in themes if _text(item, default="")]
+    if not summary and not focus and not theme_lines:
+        return None
+    return {"exec_summary": summary, "recommended_focus": focus, "top_themes": theme_lines}
+
+
+def render_assessment_pdf(
+    payload: dict[str, Any],
+    *,
+    ai_narratives: dict[str, Any] | None = None,
+) -> bytes:
     """Render PDF bytes from an immutable composed payload. No live DCS reads."""
     if not isinstance(payload, dict) or not isinstance(payload.get("content"), dict):
         raise PdfRenderError("Report payload is missing content.")
@@ -489,6 +559,20 @@ def render_assessment_pdf(payload: dict[str, Any]) -> bytes:
         )
     )
     story.append(Spacer(1, 2.5 * mm))
+
+    narrative = _narrative_block(ai_narratives)
+    if narrative:
+        story.append(Paragraph("In brief", styles["h2"]))
+        if narrative["exec_summary"]:
+            story.append(Paragraph(_escape(narrative["exec_summary"], limit=2000), styles["body"]))
+        if narrative["top_themes"]:
+            theme_text = "  ·  ".join(narrative["top_themes"][:8])
+            story.append(Paragraph(_escape(theme_text, limit=800), styles["muted"]))
+        if narrative["recommended_focus"]:
+            story.append(
+                Paragraph(_escape(narrative["recommended_focus"], limit=800), styles["body"])
+            )
+        story.append(Spacer(1, 2.5 * mm))
 
     score = dcs.get("headline_score")
     incomplete_banner = dcs.get("incomplete_banner")
@@ -631,23 +715,13 @@ def render_assessment_pdf(payload: dict[str, Any]) -> bytes:
         story.append(Paragraph("No open FAIL or WARN checks in this run.", styles["body"]))
 
     items = remediation.get("items") if isinstance(remediation.get("items"), list) else []
-    fix_block: list[Any] = [Paragraph("What to fix", styles["h2"])]
-    if items:
-        rows = [
-            [
-                row.get("check_id"),
-                row.get("suggested_fix"),
-                row.get("fix_owner"),
-                row.get("fix_type"),
-                row.get("fix_href"),
-            ]
-            for row in items
-            if isinstance(row, dict)
-        ]
+    pdf_fix_rows = _remediation_pdf_rows(items)
+    if pdf_fix_rows:
+        fix_block: list[Any] = [Paragraph("What to fix", styles["h2"])]
         fix_block.append(
             _table(
                 ["ID", "Suggested fix", "Owner", "Type", "Path"],
-                rows,
+                pdf_fix_rows,
                 styles,
                 [
                     CONTENT_W * 0.10,
@@ -656,11 +730,10 @@ def render_assessment_pdf(payload: dict[str, Any]) -> bytes:
                     CONTENT_W * 0.16,
                     CONTENT_W * 0.14,
                 ],
+                col_limits=REMEDIATION_TABLE_COL_LIMITS,
             )
         )
-    else:
-        fix_block.append(Paragraph("No open issues to remediate.", styles["body"]))
-    story.append(KeepTogether(fix_block))
+        story.append(KeepTogether(fix_block))
 
     story.append(Paragraph("Architecture", styles["h2"]))
     if architecture.get("assessed"):

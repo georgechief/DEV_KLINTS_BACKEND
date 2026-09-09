@@ -127,3 +127,10 @@ class MePatchTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.data["needs_connector"])
+
+    def test_get_me_includes_writeback_execute_enabled(self):
+        response = self._get_me(user=self.user)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("writeback_execute_enabled", response.data["company"])
+        self.assertFalse(response.data["company"]["writeback_execute_enabled"])

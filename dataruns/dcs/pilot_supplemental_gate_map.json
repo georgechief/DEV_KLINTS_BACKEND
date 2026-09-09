@@ -1,0 +1,66 @@
+{
+  "schema_version": "1.0.0",
+  "gate_catalog_version": "MVP1-SUPP-12-v1.4.1",
+  "source": "pack:sheet 11 Required By",
+  "use_cases": {
+    "UC-02": {
+      "supplemental_check_ids": [
+        "CC-06",
+        "CI-08"
+      ]
+    },
+    "UC-04": {
+      "supplemental_check_ids": [
+        "PT-13"
+      ]
+    },
+    "UC-05": {
+      "supplemental_check_ids": [
+        "CC-06"
+      ]
+    },
+    "UC-06B": {
+      "supplemental_check_ids": [
+        "SP-10"
+      ]
+    },
+    "UC-08": {
+      "supplemental_check_ids": [
+        "BR-09"
+      ]
+    },
+    "UC-09": {
+      "supplemental_check_ids": [
+        "LE-10"
+      ]
+    },
+    "UC-11": {
+      "supplemental_check_ids": [
+        "BR-09",
+        "SP-04"
+      ]
+    },
+    "UC-12": {
+      "supplemental_check_ids": [
+        "PT-06"
+      ]
+    },
+    "UC-13": {
+      "supplemental_check_ids": [
+        "PT-05"
+      ]
+    },
+    "UC-21": {
+      "supplemental_check_ids": [
+        "LE-07",
+        "PT-06"
+      ]
+    },
+    "UC-28": {
+      "supplemental_check_ids": [
+        "BR-03",
+        "PT-11"
+      ]
+    }
+  }
+}

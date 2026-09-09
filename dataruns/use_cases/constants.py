@@ -63,3 +63,26 @@ PILOT_PRIMARY_STAGES: dict[str, tuple[str, ...]] = {
 }
 
 USE_CASE_ID_RE = r"^UC-[0-9]{2}[A-Z]?$"
+
+# DCS-09 supplemental preflight checks (PRD-WF-01 §3.2) — not in MVP1 42 headline score.
+SUPPLEMENTAL_PREFLIGHT_CHECKS = frozenset(
+    {
+        "BR-03",
+        "BR-09",
+        "CC-06",
+        "CI-08",
+        "LE-07",
+        "LE-10",
+        "PT-05",
+        "PT-06",
+        "PT-11",
+        "PT-13",
+        "SP-04",
+        "SP-10",
+    }
+)
+
+# GAP-01 Slice D — honest build-package handoff stub until Track B MCP runtime.
+# Pack blueprints may still label MCP_ACTION_OBJECT_AND_A2A_TASK_SPEC; runtime overrides.
+HANDOFF_PACKAGE_SPEC = "HANDOFF_PACKAGE_SPEC"
+MCP_ACTION_OBJECT_THEATER_FORMAT = "MCP_ACTION_OBJECT_AND_A2A_TASK_SPEC"

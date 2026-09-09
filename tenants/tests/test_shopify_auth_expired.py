@@ -269,11 +269,10 @@ class ShopifyAuthExpiredHelperTests(TestCase):
             0,
         )
 
-    @patch("dataruns.dcs.orchestrate.run_dcs_pipeline")
     @patch("tenants.emails.send_email")
     @patch("dataruns.connectors.shopify_token.refresh_offline_access_token")
     def test_live_revalidate_marks_connector_on_terminal_refresh_failure(
-        self, mock_refresh, mock_send_email, mock_pipeline
+        self, mock_refresh, mock_send_email
     ):
         from dataruns.dcs.constants import DCS_SCORE_KIND
         from dataruns.tasks import run_dcs_score
@@ -284,19 +283,24 @@ class ShopifyAuthExpiredHelperTests(TestCase):
         dcs_run = DataRun.objects.create(
             tenant=self.tenant,
             name="dcs-score",
-            status=DataRun.Status.RUNNING,
+            status=DataRun.Status.PENDING,
             metadata={
                 "kind": DCS_SCORE_KIND,
                 "company_id": str(self.company.id),
                 "live_revalidate": True,
             },
         )
-        result = run_dcs_score.run(dcs_run.id)
+        now = datetime(2026, 7, 29, 12, 0, tzinfo=dt_timezone.utc)
+        with patch("django.utils.timezone.now", return_value=now):
+            result = run_dcs_score.run(dcs_run.id)
         self.assertFalse(result["ok"])
+        self.assertEqual(result.get("fresh_import_failed_platform"), "shopify")
         self.connector.refresh_from_db()
         self.assertEqual(self.connector.status, "error")
-        mock_send_email.assert_called_once()
-        mock_pipeline.assert_not_called()
+        self.assertGreaterEqual(mock_send_email.call_count, 1)
         dcs_run.refresh_from_db()
         self.assertEqual(dcs_run.status, DataRun.Status.FAILED)
-        self.assertTrue(dcs_run.metadata.get("auth_failed"))
+        self.assertEqual(
+            dcs_run.metadata.get("fresh_import_failed_platform"),
+            "shopify",
+        )

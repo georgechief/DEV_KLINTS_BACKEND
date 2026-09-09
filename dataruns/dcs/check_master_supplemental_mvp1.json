@@ -1,0 +1,191 @@
+{
+  "schema_version": "1.0.0",
+  "gate_catalog_version": "MVP1-SUPP-12-v1.4.1",
+  "source": "pack:sheet 11 Pilot Supplemental Gates",
+  "count": 12,
+  "checks": [
+    {
+      "check_id": "BR-03",
+      "dimension": "07 Business Reality",
+      "title": "Out-of-stock exposure in active surfaces",
+      "detection_logic": "Products with zero/negative available stock currently present in recommendation frames, product collections, or scheduled campaign content.",
+      "systems": "Manago",
+      "severity": "High",
+      "required_by": [
+        "UC-28"
+      ],
+      "failure_behavior": "PASS required; FAIL blocks dependent pilot only; excluded from headline DCS",
+      "erp_sensitive": false,
+      "role": "PILOT_SUPPLEMENTAL",
+      "in_headline_score": false
+    },
+    {
+      "check_id": "BR-09",
+      "dimension": "07 Business Reality",
+      "title": "Replenishment input completeness",
+      "detection_logic": "For replenishment-eligible categories: product usage-cycle data (pack size, expected consumption days) present as catalog/detail inputs; coverage of the replenishment-candidate assortment.",
+      "systems": "ERP vs Manago",
+      "severity": "Medium",
+      "required_by": [
+        "UC-08",
+        "UC-11"
+      ],
+      "failure_behavior": "PASS required; FAIL blocks dependent pilot only; excluded from headline DCS",
+      "erp_sensitive": true,
+      "role": "PILOT_SUPPLEMENTAL",
+      "in_headline_score": false
+    },
+    {
+      "check_id": "CC-06",
+      "dimension": "05 Channel & Consent",
+      "title": "Double opt-in state integrity",
+      "detection_logic": "Share stuck in Not-confirmed beyond confirmation-window norms; confirmation email deliverability on the DOI flow; DOI policy consistency across signup sources.",
+      "systems": "Manago",
+      "severity": "Medium",
+      "required_by": [
+        "UC-02",
+        "UC-05"
+      ],
+      "failure_behavior": "PASS required; FAIL blocks dependent pilot only; excluded from headline DCS",
+      "erp_sensitive": false,
+      "role": "PILOT_SUPPLEMENTAL",
+      "in_headline_score": false
+    },
+    {
+      "check_id": "CI-08",
+      "dimension": "01 Customer Identity",
+      "title": "Email format validity",
+      "detection_logic": "Syntactic validation of contact emails (RFC-lite), disposable-domain flagging, obvious typo domains (gmial.com etc.).",
+      "systems": "Manago",
+      "severity": "Medium",
+      "required_by": [
+        "UC-02"
+      ],
+      "failure_behavior": "PASS required; FAIL blocks dependent pilot only; excluded from headline DCS",
+      "erp_sensitive": false,
+      "role": "PILOT_SUPPLEMENTAL",
+      "in_headline_score": false
+    },
+    {
+      "check_id": "LE-07",
+      "dimension": "02 Lifecycle Event",
+      "title": "Cart event coverage",
+      "detection_logic": "Shopify abandoned checkouts vs Manago CART events in window; measure capture rate and identity linkage (email present at abandonment).",
+      "systems": "Shopify vs Manago",
+      "severity": "High",
+      "required_by": [
+        "UC-21"
+      ],
+      "failure_behavior": "PASS required; FAIL blocks dependent pilot only; excluded from headline DCS",
+      "erp_sensitive": false,
+      "role": "PILOT_SUPPLEMENTAL",
+      "in_headline_score": false
+    },
+    {
+      "check_id": "LE-10",
+      "dimension": "02 Lifecycle Event",
+      "title": "Event type discipline",
+      "detection_logic": "Distribution of event types; detect misuse (e.g. PURCHASE used for reservations, OTHER as a dumping ground) and any type-changed events (which silently break automations).",
+      "systems": "Manago",
+      "severity": "Medium",
+      "required_by": [
+        "UC-09"
+      ],
+      "failure_behavior": "PASS required; FAIL blocks dependent pilot only; excluded from headline DCS",
+      "erp_sensitive": false,
+      "role": "PILOT_SUPPLEMENTAL",
+      "in_headline_score": false
+    },
+    {
+      "check_id": "PT-05",
+      "dimension": "03 Product & Transaction",
+      "title": "Price parity catalog vs commerce",
+      "detection_logic": "Catalog price/discountPrice vs current Shopify price per product/variant; staleness distribution; discount flag correctness.",
+      "systems": "Manago vs Shopify",
+      "severity": "High",
+      "required_by": [
+        "UC-13"
+      ],
+      "failure_behavior": "PASS required; FAIL blocks dependent pilot only; excluded from headline DCS",
+      "erp_sensitive": false,
+      "role": "PILOT_SUPPLEMENTAL",
+      "in_headline_score": false
+    },
+    {
+      "check_id": "PT-06",
+      "dimension": "03 Product & Transaction",
+      "title": "Stock quantity parity",
+      "detection_logic": "Catalog quantity vs Shopify inventory_levels vs ERP stock (three-way where ERP connected); flag negative, frozen, and stale quantities.",
+      "systems": "Manago vs Shopify vs ERP",
+      "severity": "High",
+      "required_by": [
+        "UC-12",
+        "UC-21"
+      ],
+      "failure_behavior": "PASS required; FAIL blocks dependent pilot only; excluded from headline DCS",
+      "erp_sensitive": true,
+      "role": "PILOT_SUPPLEMENTAL",
+      "in_headline_score": false
+    },
+    {
+      "check_id": "PT-11",
+      "dimension": "03 Product & Transaction",
+      "title": "Product attribute completeness",
+      "detection_logic": "Coverage of category, brand, image URL and product URL on catalog entries; attribute parity with Shopify source values.",
+      "systems": "Manago vs Shopify",
+      "severity": "Medium",
+      "required_by": [
+        "UC-28"
+      ],
+      "failure_behavior": "PASS required; FAIL blocks dependent pilot only; excluded from headline DCS",
+      "erp_sensitive": false,
+      "role": "PILOT_SUPPLEMENTAL",
+      "in_headline_score": false
+    },
+    {
+      "check_id": "PT-13",
+      "dimension": "03 Product & Transaction",
+      "title": "Coupon and discount consistency",
+      "detection_logic": "Coupons issued via Manago (addContactCoupon) vs discount codes existing/valid in Shopify; redemption events flowing back; expired codes still being sent.",
+      "systems": "Manago vs Shopify",
+      "severity": "High",
+      "required_by": [
+        "UC-04"
+      ],
+      "failure_behavior": "PASS required; FAIL blocks dependent pilot only; excluded from headline DCS",
+      "erp_sensitive": false,
+      "role": "PILOT_SUPPLEMENTAL",
+      "in_headline_score": false
+    },
+    {
+      "check_id": "SP-04",
+      "dimension": "04 Segment & Property",
+      "title": "Date-prefixed detail validity",
+      "detection_logic": "All date.-prefixed details parse as valid dates; plausibility window; coverage for details that proximity-triggered automations depend on. IMPORTANT (verify vs Manago docs before build): Manago's proximity trigger is 'Date from dictionary detail approaching' — confirm whether the reorder date must be written as a standard date. detail or a dictionary detail for the trigger to read it. Klints must write klints_next_refill as the EXACT type the trigger consumes, or UC-11/14/38/39 never fire.",
+      "systems": "Manago",
+      "severity": "High",
+      "required_by": [
+        "UC-11"
+      ],
+      "failure_behavior": "PASS required; FAIL blocks dependent pilot only; excluded from headline DCS",
+      "erp_sensitive": false,
+      "role": "PILOT_SUPPLEMENTAL",
+      "in_headline_score": false
+    },
+    {
+      "check_id": "SP-10",
+      "dimension": "04 Segment & Property",
+      "title": "RFM computability coverage",
+      "detection_logic": "Share of contacts with RFM segment assigned; unassigned share decomposed into no-purchase-history (legitimate) vs missing-events (LE-01/14 damage).",
+      "systems": "Manago",
+      "severity": "High",
+      "required_by": [
+        "UC-06B"
+      ],
+      "failure_behavior": "PASS required; FAIL blocks dependent pilot only; excluded from headline DCS",
+      "erp_sensitive": false,
+      "role": "PILOT_SUPPLEMENTAL",
+      "in_headline_score": false
+    }
+  ]
+}

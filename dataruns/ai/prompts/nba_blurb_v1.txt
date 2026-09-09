@@ -1,0 +1,18 @@
+# Prompt ID: ai01.nba_blurb.v1
+# Task: Overview next-best-action one-liner
+
+REQUIRED THIS TURN: Return ONLY the nba_blurb JSON schema.
+Explain in one sentence why this check is next. Do not rank, reorder, or compare other checks as higher/lower than the given plan_rank.
+Do not invent revenue. Do not include any email, phone, or contact identifier.
+
+JSON schema (exact keys):
+{
+  "task_type": "nba_blurb",
+  "check_id": "<same as input>",
+  "blurb": "<one sentence, max ~200 characters>"
+}
+
+Constraints:
+- blurb is one sentence
+- Do not change plan order or invent a new next action
+- No contact examples, no fake emails, no invented SKUs

@@ -1,7 +1,7 @@
 # PRD-FE-09 — DCS title casing + Fix evidence (no raw JSON)
 
 **Status:** Complete (frontend implemented Aug 2026)  
-**Module:** see folder path  
+**Owner track:** Engineering   
 **Surfaces:** `/data-consistency` · `/fix` (live path) · shared `src/lib/dcs.ts` / `src/lib/fix-live-plan.ts`  
 **Depends on:** FE-08 live Fix bridge (merged) · live worklist + issue detail APIs · existing `formatFriendlyEvidenceRows`  
 **Design source of truth:** frontend branch **`original-designs`** — human Title Case titles + human evidence tables (never JSON blobs)  
@@ -15,7 +15,7 @@
 ```text
 Implement PRD-FE-09 (frontend only).
 
-Read: docs/frontend/PRD_FE_09_DCS_COPY_AND_FIX_EVIDENCE.md
+Read: docs/engineering/PRD_FE_09_DCS_COPY_AND_FIX_EVIDENCE.md
 Design SoT: original-designs Data Center issue titles + Fix preview tables
   (human columns — never raw JSON in VALUE).
 
@@ -303,4 +303,4 @@ Operators get **design-grade readability** from live evidence. They do **not** g
 | Pack? | Evidence samples only; writeback preview later |
 | Engineering alone? | Yes — FE-only |
 
-**PRD:** FE-09 · **Track:** delivery · **Design SoT:** `original-designs` titles + human tables · **Extends:** FE-08
+**PRD:** FE-09 · **Track:** Engineering · **Design SoT:** `original-designs` titles + human tables · **Extends:** FE-08

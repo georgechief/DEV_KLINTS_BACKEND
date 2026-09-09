@@ -41,6 +41,8 @@ def extract_headline(task_type: str, payload: dict[str, Any]) -> str:
     if task_type == "report_narrative":
         summary = str(payload.get("exec_summary") or "").strip()
         return summary[:240] if summary else "Report narrative"
+    if task_type == "nba_blurb":
+        return str(payload.get("blurb") or "").strip()[:240]
     return str(payload.get("headline") or task_type)[:240]
 
 

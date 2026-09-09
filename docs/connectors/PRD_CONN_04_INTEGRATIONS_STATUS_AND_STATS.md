@@ -1,7 +1,7 @@
 # PRD-CONN-04 — Integrations card: real status + bootstrap stats; drop product/inventory scopes
 
 **Status:** Ready for implementation  
-**Module:** see folder path  
+**Owner track:** Engineering   
 **Depends on:** CONN-01 bootstrap health + `GET …/connectors/{id}/bootstrap/`; existing Integrations UI  
 **Repos:** `/integrations` connector cards  
 **Scope:** stop treating `read_products` / `read_inventory` as required or recommended; show live bootstrap stats on connected cards; treat `degraded` as still connected in UI

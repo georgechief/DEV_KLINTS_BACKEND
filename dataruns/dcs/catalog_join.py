@@ -15,7 +15,11 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any
 
-from dataruns.dcs.lifecycle_join import _latest_connector_raw
+from dataruns.dcs.lifecycle_join import (
+    PinnedSnapshotIds,
+    SourceRunIds,
+    _connector_raw_for_platform,
+)
 from tenants.models import Company
 
 PT_SAMPLE = 50
@@ -36,9 +40,26 @@ def _split_ids(raw: Any) -> list[str]:
     return [p.strip() for p in text.split(",") if p.strip()]
 
 
-def build_catalog_snapshot(*, company: Company) -> dict[str, Any]:
-    shopify_raw = _latest_connector_raw(company=company, platform="shopify")
-    manago_raw = _latest_connector_raw(company=company, platform="manago_ai")
+def build_catalog_snapshot(
+    *,
+    company: Company,
+    source_run_ids: SourceRunIds = None,
+    pinned_snapshot_ids: PinnedSnapshotIds = None,
+) -> dict[str, Any]:
+    ids = source_run_ids or {}
+    snaps = pinned_snapshot_ids or {}
+    shopify_raw = _connector_raw_for_platform(
+        company=company,
+        platform="shopify",
+        source_run_id=ids.get("shopify"),
+        snapshot_id=snaps.get("shopify"),
+    )
+    manago_raw = _connector_raw_for_platform(
+        company=company,
+        platform="manago_ai",
+        source_run_id=ids.get("manago_ai"),
+        snapshot_id=snaps.get("manago_ai"),
+    )
     orders = [o for o in (shopify_raw.get("orders") or []) if isinstance(o, dict)]
     shopify_products_raw = [
         p for p in (shopify_raw.get("products") or []) if isinstance(p, dict)

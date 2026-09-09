@@ -13,8 +13,10 @@ from decimal import Decimal
 from typing import Any
 
 from dataruns.dcs.enqueue import DCS_SCORE_DATA_RUN_NAME, DCS_SCORE_KIND
+from dataruns.dcs.evidence_elements import enrich_evidence_element
 from dataruns.dcs.gates import is_optional_check_id, load_optional_check_ids
 from dataruns.models import CheckMaster, Contact, DataRun, RunIssue
+from dataruns.writebacks.pii import mask_mapping_values
 from tenants.models import Company
 
 TERMINAL_STATUSES = (DataRun.Status.SUCCEEDED, DataRun.Status.FAILED)
@@ -323,6 +325,8 @@ def _normalize_evidence_item(
     item: Any,
     *,
     truncate: bool = True,
+    check_id: str = "",
+    mask_pii: bool = False,
 ) -> dict[str, Any] | None:
     if item is None:
         return None
@@ -347,12 +351,17 @@ def _normalize_evidence_item(
         if leftover:
             raw_value = leftover if len(leftover) > 1 else next(iter(leftover.values()))
     source = _infer_evidence_source(source=item.get("source"), locator=locator)
-    return {
+    normalized = {
         "source": source,
-        "locator": locator or "—",
+        "locator": locator,
         "observed_at": observed_at,
         "value": _truncate_value(raw_value) if truncate else raw_value,
     }
+    if check_id.strip():
+        normalized = enrich_evidence_element(check_id, item, normalized)
+    if mask_pii:
+        normalized = mask_mapping_values(normalized)
+    return normalized
 
 
 def build_evidence_preview(
@@ -360,6 +369,7 @@ def build_evidence_preview(
     details: dict[str, Any] | None,
     result: dict[str, Any] | None,
     max_items: int = EVIDENCE_PREVIEW_MAX,
+    check_id: str = "",
 ) -> list[dict[str, Any]]:
     """Prefer mismatches, then evidence, then matches — cap at max_items."""
     details = details if isinstance(details, dict) else {}
@@ -379,7 +389,9 @@ def build_evidence_preview(
     preview: list[dict[str, Any]] = []
     for item in candidates:
         # PRD §4.3: truncate large values on preview only.
-        normalized = _normalize_evidence_item(item, truncate=True)
+        normalized = _normalize_evidence_item(
+            item, truncate=True, check_id=check_id, mask_pii=True
+        )
         if normalized is None:
             continue
         preview.append(normalized)
@@ -633,7 +645,7 @@ def build_enriched_issue(
         "revenue_impact": revenue_impact,
         "currency": currency,
         "evidence_preview": build_evidence_preview(
-            details=details, result=result
+            details=details, result=result, check_id=check_id
         ),
     }
 
@@ -950,6 +962,50 @@ def enrich_dimensions_for_status(
     return enriched or None
 
 
+def resolve_dimensions_for_status(
+    *,
+    data_run: DataRun | None,
+    company: Company | None = None,
+) -> dict[str, Any] | None:
+    """
+    Dimension scores for status / Data Center tiles.
+
+    Prefer the latest terminal run. When that run is BLOCKED or otherwise has no
+    dimension payload, fall back to the previous scored run — same parity as
+    ``best_headline_score`` when the latest run has no headline.
+    """
+    if data_run is None:
+        return None
+
+    dimensions = extract_dimensions(data_run.metadata)
+    if dimensions:
+        return enrich_dimensions_for_status(
+            dimensions=dimensions,
+            company=company,
+            current_data_run_id=data_run.id,
+        )
+
+    if company is None:
+        return None
+
+    previous_run = get_previous_scored_dcs_run(
+        company=company,
+        before_data_run_id=data_run.id,
+    )
+    if previous_run is None:
+        return None
+
+    previous_dimensions = extract_dimensions(previous_run.metadata)
+    if not previous_dimensions:
+        return None
+
+    return enrich_dimensions_for_status(
+        dimensions=previous_dimensions,
+        company=company,
+        current_data_run_id=previous_run.id,
+    )
+
+
 def build_status_enrichment(
     *,
     data_run: DataRun | None,
@@ -974,10 +1030,9 @@ def build_status_enrichment(
     masters = load_check_master_by_id() if check_results else {}
     return {
         "check_summary": summary,
-        "dimensions": enrich_dimensions_for_status(
-            dimensions=extract_dimensions(metadata),
+        "dimensions": resolve_dimensions_for_status(
+            data_run=data_run,
             company=company,
-            current_data_run_id=data_run.id,
         ),
         "business_impact": extract_business_impact(metadata),
         "dimension_checks": (
@@ -1027,12 +1082,23 @@ def build_worklist_payload(*, company: Company) -> dict[str, Any]:
     }
 
 
-def _normalize_evidence_list(rows: Any, *, truncate: bool) -> list[dict[str, Any]]:
+def _normalize_evidence_list(
+    rows: Any,
+    *,
+    truncate: bool,
+    check_id: str = "",
+    mask_pii: bool = False,
+) -> list[dict[str, Any]]:
     if not isinstance(rows, list):
         return []
     out: list[dict[str, Any]] = []
     for item in rows:
-        normalized = _normalize_evidence_item(item, truncate=truncate)
+        normalized = _normalize_evidence_item(
+            item,
+            truncate=truncate,
+            check_id=check_id,
+            mask_pii=mask_pii,
+        )
         if normalized is not None:
             out.append(normalized)
     return out
@@ -1042,6 +1108,8 @@ def _synthesize_evidence_from_result(
     *,
     details: dict[str, Any],
     result: dict[str, Any],
+    check_id: str = "",
+    mask_pii: bool = False,
 ) -> list[dict[str, Any]]:
     """Build readable evidence rows when executors left lists empty."""
     observed = ""
@@ -1060,6 +1128,8 @@ def _synthesize_evidence_from_result(
                 "observed_at": observed,
             },
             truncate=False,
+            check_id=check_id,
+            mask_pii=mask_pii,
         )
         if normalized is not None:
             rows.append(normalized)
@@ -1093,6 +1163,7 @@ def _full_evidence_lists(
     *,
     details: dict[str, Any],
     result: dict[str, Any] | None,
+    check_id: str = "",
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
     """Full evidence for detail API — no preview truncation (PRD §4.5)."""
     details = details if isinstance(details, dict) else {}
@@ -1105,17 +1176,30 @@ def _full_evidence_lists(
     if not provenance and isinstance(details.get("provenance"), dict):
         provenance = details["provenance"]
 
-    evidence = _normalize_evidence_list(details.get("evidence"), truncate=False)
-    matches = _normalize_evidence_list(details.get("matches"), truncate=False)
-    mismatches = _normalize_evidence_list(details.get("mismatches"), truncate=False)
+    evidence = _normalize_evidence_list(
+        details.get("evidence"), truncate=False, check_id=check_id, mask_pii=True
+    )
+    matches = _normalize_evidence_list(
+        details.get("matches"), truncate=False, check_id=check_id, mask_pii=True
+    )
+    mismatches = _normalize_evidence_list(
+        details.get("mismatches"), truncate=False, check_id=check_id, mask_pii=True
+    )
 
     if not evidence:
-        evidence = _normalize_evidence_list(result.get("evidence"), truncate=False)
+        evidence = _normalize_evidence_list(
+            result.get("evidence"), truncate=False, check_id=check_id, mask_pii=True
+        )
     if not matches:
-        matches = _normalize_evidence_list(provenance.get("matches"), truncate=False)
+        matches = _normalize_evidence_list(
+            provenance.get("matches"), truncate=False, check_id=check_id, mask_pii=True
+        )
     if not mismatches:
         mismatches = _normalize_evidence_list(
-            provenance.get("mismatches"), truncate=False
+            provenance.get("mismatches"),
+            truncate=False,
+            check_id=check_id,
+            mask_pii=True,
         )
 
     status = str(result.get("status") or details.get("status") or "").upper()
@@ -1126,7 +1210,12 @@ def _full_evidence_lists(
             matches = list(evidence)
 
     if not evidence and not matches and not mismatches:
-        evidence = _synthesize_evidence_from_result(details=details, result=result)
+        evidence = _synthesize_evidence_from_result(
+            details=details,
+            result=result,
+            check_id=check_id,
+            mask_pii=True,
+        )
         if evidence and status in INCLUDE_STATUSES and not mismatches:
             mismatches = list(evidence)
 
@@ -1194,7 +1283,7 @@ def build_worklist_detail(
         else {}
     )
     evidence, matches, mismatches = _full_evidence_lists(
-        details=details, result=result
+        details=details, result=result, check_id=check_id
     )
     provenance: dict[str, Any] = {}
     if isinstance(result, dict) and isinstance(result.get("provenance"), dict):
@@ -1225,5 +1314,5 @@ def build_worklist_detail(
         "evidence": evidence,
         "matches": matches,
         "mismatches": mismatches,
-        "provenance": provenance,
+        "provenance": mask_mapping_values(provenance),
     }

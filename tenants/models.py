@@ -47,6 +47,10 @@ class Company(models.Model):
     )
     name = models.CharField(max_length=255)
     domain = models.CharField(max_length=255)
+    writeback_execute_enabled = models.BooleanField(
+        default=False,
+        help_text="Allow writeback execute on Fix (preview → approve → Manago/Shopify). Default off (PRD-WB-03).",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

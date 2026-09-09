@@ -12,6 +12,7 @@ from dataruns.architecture.constants import ARCHITECTURE_ASSESSMENT_KIND
 from dataruns.architecture.models import ArchitectureAssessment
 from dataruns.dcs.constants import DCS_SCORE_KIND
 from dataruns.dcs.enqueue import DCS_SCORE_DATA_RUN_NAME
+from dataruns.dcs.pilot_gates.store import save_pilot_gate_eval
 from dataruns.models import DataRun
 from dataruns.use_cases.constants import DEFAULT_MANIFEST_REL
 from dataruns.use_cases.loader import load_use_case_pilots_from_pack
@@ -21,6 +22,7 @@ from dataruns.use_cases.recommend import (
     STATUS_BLOCKED_DCS,
     STATUS_BLOCKED_MODE,
     STATUS_READY,
+    STATUS_READY_PROVISIONAL,
     build_recommendations_payload,
     evaluate_pilot,
     resolve_recommendation_context,
@@ -105,24 +107,36 @@ class UseCaseRecommendationEvalTests(TestCase):
             probe_coverage=probe,
         )
 
-    def _uc02_pass_checks(self) -> list[dict]:
-        return [
-            {"check_id": "CC-03", "status": "PASS"},
-            {"check_id": "CC-06", "status": "PASS"},
-            {"check_id": "CI-08", "status": "PASS"},
-        ]
+    def _uc02_hard_checks(self) -> list[dict]:
+        """42-scoped gates only — supplementals come from pilot_gate_eval store."""
+        return [{"check_id": "CC-03", "status": "PASS"}]
+
+    def _supplemental_pass(self, *, results: list[dict] | None = None) -> None:
+        save_pilot_gate_eval(
+            company=self.company,
+            results=results
+            or [
+                {"check_id": "CI-08", "status": "PASS"},
+                {"check_id": "CC-06", "status": "PASS"},
+            ],
+            erp_in_scope=False,
+            merge_with_previous=False,
+        )
 
     def test_uc02_ready_when_score_mode_and_checks_ok(self):
-        self._dcs(score=75, checks=self._uc02_pass_checks())
+        self._dcs(score=75, checks=self._uc02_hard_checks())
+        self._supplemental_pass()
         self._af(mode=ArchitectureAssessment.Mode.AUGMENT)
         ctx = resolve_recommendation_context(company=self.company)
         row = evaluate_pilot(self.pilot, ctx)
         self.assertEqual(row["status"], STATUS_READY)
+        self.assertFalse(row["provisional_supplemental"])
         self.assertEqual(row["blockers"], [])
         self.assertFalse(row["gap_suggested"])
 
     def test_uc02_blocked_dcs_when_score_below_70(self):
-        self._dcs(score=67, checks=self._uc02_pass_checks())
+        self._dcs(score=67, checks=self._uc02_hard_checks())
+        self._supplemental_pass()
         self._af(mode=ArchitectureAssessment.Mode.AUGMENT)
         ctx = resolve_recommendation_context(company=self.company)
         row = evaluate_pilot(self.pilot, ctx)
@@ -137,7 +151,8 @@ class UseCaseRecommendationEvalTests(TestCase):
         self.assertEqual(row["status"], STATUS_BLOCKED_DCS)
 
     def test_uc02_blocked_mode_when_incomplete(self):
-        self._dcs(score=80, checks=self._uc02_pass_checks())
+        self._dcs(score=80, checks=self._uc02_hard_checks())
+        self._supplemental_pass()
         self._af(mode=ArchitectureAssessment.Mode.INCOMPLETE)
         ctx = resolve_recommendation_context(company=self.company)
         row = evaluate_pilot(self.pilot, ctx)
@@ -147,18 +162,20 @@ class UseCaseRecommendationEvalTests(TestCase):
         )
 
     def test_uc02_blocked_mode_when_no_af(self):
-        self._dcs(score=80, checks=self._uc02_pass_checks())
+        self._dcs(score=80, checks=self._uc02_hard_checks())
+        self._supplemental_pass()
         ctx = resolve_recommendation_context(company=self.company)
         row = evaluate_pilot(self.pilot, ctx)
         self.assertEqual(row["status"], STATUS_BLOCKED_MODE)
 
     def test_uc02_blocked_checks_when_gate_fails(self):
-        checks = [
-            {"check_id": "CC-03", "status": "PASS"},
-            {"check_id": "CC-06", "status": "FAIL"},
-            {"check_id": "CI-08", "status": "PASS"},
-        ]
-        self._dcs(score=80, checks=checks)
+        self._dcs(score=80, checks=self._uc02_hard_checks())
+        self._supplemental_pass(
+            results=[
+                {"check_id": "CC-06", "status": "FAIL"},
+                {"check_id": "CI-08", "status": "PASS"},
+            ]
+        )
         self._af(mode=ArchitectureAssessment.Mode.SELECTIVE_REBUILD)
         ctx = resolve_recommendation_context(company=self.company)
         row = evaluate_pilot(self.pilot, ctx)
@@ -171,7 +188,7 @@ class UseCaseRecommendationEvalTests(TestCase):
         )
 
     def test_uc02_blocked_checks_when_gate_missing(self):
-        # Only CC-03 present — CC-06 and CI-08 missing ⇒ not silent ready
+        # Only CC-03 present — CC-06 and CI-08 are supplementals ⇒ provisional ready
         self._dcs(
             score=80,
             checks=[{"check_id": "CC-03", "status": "PASS"}],
@@ -179,24 +196,70 @@ class UseCaseRecommendationEvalTests(TestCase):
         self._af(mode=ArchitectureAssessment.Mode.REBUILD)
         ctx = resolve_recommendation_context(company=self.company)
         row = evaluate_pilot(self.pilot, ctx)
+        self.assertEqual(row["status"], STATUS_READY_PROVISIONAL)
+        self.assertTrue(row["provisional_supplemental"])
+        self.assertEqual(row["blockers"], [])
+        supplemental = row["supplemental_status"]
+        self.assertEqual(supplemental.get("CC-06"), "not_evaluated")
+        self.assertEqual(supplemental.get("CI-08"), "not_evaluated")
+        self.assertTrue(row["execution"]["build_available"])
+
+    def test_uc02_ready_provisional_when_supplementals_missing(self):
+        self._dcs(
+            score=80,
+            checks=[{"check_id": "CC-03", "status": "PASS"}],
+        )
+        self._af(mode=ArchitectureAssessment.Mode.AUGMENT)
+        ctx = resolve_recommendation_context(company=self.company)
+        row = evaluate_pilot(self.pilot, ctx)
+        self.assertEqual(row["status"], STATUS_READY_PROVISIONAL)
+        self.assertIn("CC-06", row["supplemental_status"])
+        self.assertEqual(row["cta"]["href"], "/workflow?uc=UC-02")
+
+    def test_uc02_dcs_injected_supplementals_ignored(self):
+        # Production path: DCS score must not unlock supplemental gates.
+        self._dcs(
+            score=80,
+            checks=[
+                {"check_id": "CC-03", "status": "PASS"},
+                {"check_id": "CC-06", "status": "PASS"},
+                {"check_id": "CI-08", "status": "PASS"},
+            ],
+        )
+        self._af(mode=ArchitectureAssessment.Mode.AUGMENT)
+        ctx = resolve_recommendation_context(company=self.company)
+        row = evaluate_pilot(self.pilot, ctx)
+        self.assertEqual(row["status"], STATUS_READY_PROVISIONAL)
+        self.assertEqual(row["supplemental_status"].get("CC-06"), "not_evaluated")
+        self.assertEqual(row["supplemental_status"].get("CI-08"), "not_evaluated")
+
+    def test_uc02_blocked_when_42_scoped_cc03_missing(self):
+        self._dcs(score=80, checks=[])
+        self._supplemental_pass()
+        self._af(mode=ArchitectureAssessment.Mode.AUGMENT)
+        ctx = resolve_recommendation_context(company=self.company)
+        row = evaluate_pilot(self.pilot, ctx)
         self.assertEqual(row["status"], STATUS_BLOCKED_CHECKS)
-        codes = {b["code"] for b in row["blockers"]}
-        self.assertIn("gate_not_in_latest_score", codes)
+        self.assertTrue(
+            any(b.get("check_id") == "CC-03" for b in row["blockers"])
+        )
 
     def test_uc02_warn_treated_as_blocked_checks(self):
-        checks = [
-            {"check_id": "CC-03", "status": "PASS"},
-            {"check_id": "CC-06", "status": "WARN"},
-            {"check_id": "CI-08", "status": "PASS"},
-        ]
-        self._dcs(score=80, checks=checks)
+        self._dcs(score=80, checks=self._uc02_hard_checks())
+        self._supplemental_pass(
+            results=[
+                {"check_id": "CC-06", "status": "WARN"},
+                {"check_id": "CI-08", "status": "PASS"},
+            ]
+        )
         self._af(mode=ArchitectureAssessment.Mode.AUGMENT)
         ctx = resolve_recommendation_context(company=self.company)
         row = evaluate_pilot(self.pilot, ctx)
         self.assertEqual(row["status"], STATUS_BLOCKED_CHECKS)
 
     def test_gap_suggested_when_stage_in_wf12_gaps(self):
-        self._dcs(score=80, checks=self._uc02_pass_checks())
+        self._dcs(score=80, checks=self._uc02_hard_checks())
+        self._supplemental_pass()
         self._af(
             mode=ArchitectureAssessment.Mode.AUGMENT,
             gaps=["stage_02", "stage_09"],
@@ -208,9 +271,9 @@ class UseCaseRecommendationEvalTests(TestCase):
         self.assertIn("stage_02", row["gap_stages"])
 
     def test_payload_summary_and_sort_ready_gap_first(self):
-        self._dcs(score=80, checks=self._uc02_pass_checks())
+        self._dcs(score=80, checks=self._uc02_hard_checks())
+        self._supplemental_pass()
         # Only UC-02 gates pass; others will be blocked_checks — but score+mode OK
-        # Seed enough checks so UC-02 is ready; leave others missing.
         self._af(
             mode=ArchitectureAssessment.Mode.AUGMENT,
             gaps=["stage_02"],
@@ -256,8 +319,6 @@ class UseCaseRecommendationsApiTests(TestCase):
                 "headline_score": 67,
                 "check_results": [
                     {"check_id": "CC-03", "status": "PASS"},
-                    {"check_id": "CC-06", "status": "PASS"},
-                    {"check_id": "CI-08", "status": "PASS"},
                 ],
             },
         )

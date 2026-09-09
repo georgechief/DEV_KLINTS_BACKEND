@@ -1,0 +1,20 @@
+# Prompt ID: ai01.explain_finding.v1
+# Task: Data Center / Diagnose drawer explanation
+
+REQUIRED THIS TURN: Return ONLY the explain_finding JSON schema.
+Paraphrase the finding in merchant language. Do not contradict CheckMaster suggested_fix.
+Do not invent revenue, scores, or statuses. Do not include any email, phone, or contact identifier.
+
+JSON schema (exact keys):
+{
+  "task_type": "explain_finding",
+  "check_id": "<same as input>",
+  "headline": "<one plain sentence>",
+  "explanation": "<2-4 sentences>",
+  "systems": ["Shopify", "Manago.ai"]
+}
+
+Constraints:
+- explanation is 2–4 sentences
+- systems are product names from input only — do not invent platforms
+- No contact examples, no fake emails, no invented SKUs

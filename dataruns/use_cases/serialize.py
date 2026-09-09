@@ -25,6 +25,25 @@ def _execution_meta(pilot: UseCasePilot) -> dict[str, Any]:
     }
 
 
+def _node_field_chips(node: dict[str, Any]) -> list[str]:
+    """Frontend_design step chips: config + who configures/executes."""
+    fields: list[str] = []
+    config = node.get("config") if isinstance(node.get("config"), dict) else {}
+    for key, value in config.items():
+        if key in {"description", "label", "name"} or value in (None, ""):
+            continue
+        if isinstance(value, (dict, list)):
+            continue
+        fields.append(f"{key} = {value}")
+    configured = node.get("configured_by")
+    executed = node.get("executed_by")
+    if configured:
+        fields.append(f"configured_by = {configured}")
+    if executed:
+        fields.append(f"executed_by = {executed}")
+    return fields
+
+
 def serialize_pilot_catalogue_row(pilot: UseCasePilot) -> dict[str, Any]:
     """Lightweight row for GET /use-cases/ — no full workflow nodes."""
     blueprint = getattr(pilot, "blueprint", None)
@@ -82,15 +101,47 @@ def serialize_pilot_detail(pilot: UseCasePilot) -> dict[str, Any]:
             {
                 "node_id": node.get("node_id"),
                 "node_type": node.get("node_type"),
-                "label": node.get("label") or node.get("name"),
+                "label": (
+                    node.get("label")
+                    or node.get("name")
+                    or node.get("platform_primitive")
+                ),
+                "platform_primitive": node.get("platform_primitive"),
+                "description": (
+                    (node.get("config") or {}).get("description")
+                    if isinstance(node.get("config"), dict)
+                    else None
+                ),
+                "configured_by": node.get("configured_by"),
+                "executed_by": node.get("executed_by"),
+                "fields": _node_field_chips(node),
             }
         )
+
+    data_contract = (
+        body.get("data_contract") if isinstance(body.get("data_contract"), dict) else {}
+    )
+    approval = body.get("approval") if isinstance(body.get("approval"), dict) else {}
+    suppressions_raw = body.get("suppressions")
+    suppressions = (
+        [str(item) for item in suppressions_raw if str(item).strip()]
+        if isinstance(suppressions_raw, list)
+        else []
+    )
+    target_platform = body.get("target_platform")
+    platforms = (
+        list(target_platform)
+        if isinstance(target_platform, list)
+        else []
+    )
 
     row.update(
         {
             "schema_version": blueprint.schema_version if blueprint else None,
             "content_hash": blueprint.content_hash if blueprint else None,
             "loaded_at": blueprint.loaded_at.isoformat() if blueprint else None,
+            "variant_id": body.get("variant_id"),
+            "target_platform": platforms,
             "trigger": {
                 "description": trigger.get("description"),
                 "timezone": trigger.get("timezone"),
@@ -100,9 +151,18 @@ def serialize_pilot_detail(pilot: UseCasePilot) -> dict[str, Any]:
                 "consent": audience.get("consent"),
             },
             "measurement": {
-                "primary_kpi": measurement.get("primary_kpi"),
+                "primary_kpi": measurement.get("primary_kpi")
+                or measurement.get("primary_metric"),
                 "success_criteria": measurement.get("success_criteria"),
             },
+            "data_contract": {
+                "required_fields": list(data_contract.get("required_fields") or []),
+                "required_entities": list(data_contract.get("required_entities") or []),
+            },
+            "approval": {
+                "roles": list(approval.get("roles") or []),
+            },
+            "suppressions": suppressions,
             "workflow_summary": {
                 "node_count": len(nodes),
                 "nodes": simplified_nodes,

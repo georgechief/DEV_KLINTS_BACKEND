@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build, migrate (via container entrypoint), ensure TLS, and start the stack.
+# Build, migrate + load_use_case_pilots (via web container CMD), ensure TLS, start stack.
 set -euo pipefail
 
 APP_DIR="${APP_DIR:-/opt/klints_backend}"
@@ -128,6 +128,13 @@ for i in $(seq 1 36); do
   fi
   sleep 5
 done
+
+echo "==> Verifying MVP1 pilot catalogue (OPS-UC-01)"
+if ! dc exec -T web python scripts/verify_use_case_pilots.py; then
+  echo "==> Pilot catalogue verify failed — check web logs:" >&2
+  dc logs --tail=80 web >&2 || true
+  exit 1
+fi
 
 # Reload nginx after recreate so any mid-deploy renew is picked up
 dc exec -T nginx nginx -s reload 2>/dev/null || true

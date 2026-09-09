@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import Any, Literal
 
 WriteMode = Literal["dry_run", "execute", "sandbox_execute"]
-WriteIntentStatus = Literal["ready", "skipped", "error", "executed"]
+WriteIntentStatus = Literal["ready", "skipped", "error", "executed", "rolled_back"]
 ApprovalTier = Literal["batch", "individual"]
 OpKind = Literal[
     "contact_upsert",
@@ -87,6 +87,7 @@ class WritebackResult:
     execute_eligible: ExecuteEligibility
     blocked_reason: str | None = None
     job_id: str | None = None
+    data_run_id: int | None = None
     approval_tier: ApprovalTier | None = None
     irreversible: bool = False
     operator_disclosure: str | None = None

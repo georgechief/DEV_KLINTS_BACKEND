@@ -136,9 +136,30 @@ class GlobalSearchServiceTests(TestCase):
         hits = search_company(company=self.company_a, q="CI-02", types={"issue"})
         self.assertEqual(len(hits), 1)
         self.assertEqual(hits[0].type, "issue")
-        self.assertEqual(hits[0].href, "/data-consistency?check=CI-02")
+        self.assertEqual(hits[0].href, "/fix?issue=CI-02")
         self.assertEqual(hits[0].meta["check_id"], "CI-02")
         self.assertEqual(hits[0].meta["status"], "FAIL")
+
+    def test_issue_search_uses_terminal_run_while_in_flight_score_exists(self):
+        """B-03 — Spotlight must not switch to a newer RUNNING run during re-score."""
+        in_flight = DataRun.objects.create(
+            tenant=self.tenant_a,
+            name=DCS_SCORE_DATA_RUN_NAME,
+            status=DataRun.Status.RUNNING,
+            metadata={
+                "kind": DCS_SCORE_KIND,
+                "company_id": str(self.company_a.id),
+                "check_results": [],
+            },
+        )
+        DataRun.objects.filter(pk=in_flight.pk).update(
+            created_at=timezone.now() + timedelta(minutes=5)
+        )
+
+        hits = search_company(company=self.company_a, q="CI-02", types={"issue"})
+        self.assertEqual(len(hits), 1)
+        self.assertEqual(hits[0].meta["check_id"], "CI-02")
+        self.assertEqual(hits[0].meta.get("run_id"), str(self.domain_run.id))
 
     def test_connector_search_matches_name_and_domain(self):
         by_name = search_company(company=self.company_a, q="shopify", types={"connector"})
@@ -157,7 +178,7 @@ class GlobalSearchServiceTests(TestCase):
         hits = search_company(company=self.company_a, q="connected", types={"audit"})
         self.assertEqual(len(hits), 1)
         self.assertEqual(hits[0].type, "audit")
-        self.assertEqual(hits[0].href, "/activity")
+        self.assertEqual(hits[0].href, "/integrations")
 
     def test_run_search_matches_status_and_id(self):
         hits = search_company(
@@ -203,7 +224,7 @@ class GlobalSearchServiceTests(TestCase):
         hits = search_company(company=self.company_a, q="CI-02", types={"issue"})
         self.assertEqual(len(hits), 1)
         self.assertEqual(hits[0].id, "CI-02")
-        self.assertEqual(hits[0].href, "/data-consistency?check=CI-02")
+        self.assertEqual(hits[0].href, "/fix?issue=CI-02")
 
     def test_company_isolation(self):
         other_run = Run.objects.create(
@@ -324,7 +345,7 @@ class GlobalSearchApiTests(TestCase):
         self.assertEqual(len(response.data["results"]), 1)
         result = response.data["results"][0]
         self.assertEqual(result["type"], "issue")
-        self.assertEqual(result["href"], "/data-consistency?check=CI-02")
+        self.assertEqual(result["href"], "/fix?issue=CI-02")
         self.assertEqual(result["meta"]["check_id"], "CI-02")
 
     def test_no_company_returns_empty_results(self):

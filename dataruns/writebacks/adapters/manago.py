@@ -14,8 +14,8 @@ from dataruns.writebacks.adapters.manago_transport import (
     resolve_manago_write_context,
     upsert_contacts,
 )
-from dataruns.writebacks.rollback_snapshot import refresh_rollback_snapshot
 from dataruns.writebacks.capabilities import capability_allows_execute
+from dataruns.writebacks.rollback_snapshot import refresh_rollback_snapshot
 from dataruns.writebacks.types import WriteIntent
 from tenants.models import Company
 
@@ -60,10 +60,11 @@ class ManagoWriteAdapter:
         try:
             ctx = resolve_manago_write_context(company)
         except Exception as exc:
+            logger.exception("Manago write context failed company=%s", company.id)
             for intent in intents:
                 intent.status = "error"
-                intent.error_reason = f"manago_context_failed:{type(exc).__name__}"
-                intent.execute_result = {"ok": False, "error": str(exc)}
+                intent.error_reason = "upstream_error"
+                intent.execute_result = {"ok": False}
             return intents
 
         updated: list[WriteIntent] = []
@@ -88,12 +89,12 @@ class ManagoWriteAdapter:
             except ManagoClientError as exc:
                 logger.warning("Manago write failed op=%s: %s", intent.operation, exc)
                 intent.status = "error"
-                intent.error_reason = "manago_write_failed"
-                intent.execute_result = {"ok": False, "error": str(exc)}
+                intent.error_reason = "upstream_error"
+                intent.execute_result = {"ok": False}
             except NotImplementedError:
                 intent.status = "error"
                 intent.error_reason = "adapter_not_implemented"
-                intent.execute_result = {"ok": False, "error": "adapter_not_implemented"}
+                intent.execute_result = {"ok": False}
             updated.append(intent)
         return updated
 
@@ -110,11 +111,16 @@ class ManagoWriteAdapter:
             detail_key = next(iter((payload.get("properties") or {}).keys()), None)
             if not detail_key:
                 raise ManagoClientError("rollback detail_set missing detail key")
+            # Manago upsert accepts property null with success=true but does not clear
+            # the standard detail; empty string is required to remove an absent prior.
             prior = snapshot.get(detail_key)
+            rollback_value = "" if prior is None else prior
+            email = str(payload.get("email") or "").strip()
+            contact_id = str(payload.get("contactId") or "").strip()
             contact = {
-                "email": payload.get("email"),
-                "contactId": payload.get("contactId"),
-                "properties": {detail_key: prior},
+                "email": email or None,
+                "contactId": contact_id or None,
+                "properties": {detail_key: rollback_value},
             }
             contact = {k: v for k, v in contact.items() if v is not None}
             response = upsert_contacts(ctx, [contact])
@@ -139,7 +145,7 @@ class ManagoWriteAdapter:
             contact = {
                 "email": email or None,
                 "contactId": payload.get("contactId") or snapshot.get("contactId"),
-                "properties": {"klints_backfill": None},
+                "properties": {"klints_backfill": ""},
             }
             contact = {k: v for k, v in contact.items() if v is not None}
             response = upsert_contacts(ctx, [contact])
@@ -170,9 +176,11 @@ class ManagoWriteAdapter:
                 "response": _safe_response(response),
             }
         if intent.op_kind == "detail_set":
+            email = str(payload.get("email") or "").strip()
+            contact_id = str(payload.get("contactId") or "").strip()
             contact = {
-                "email": payload.get("email"),
-                "contactId": payload.get("contactId"),
+                "email": email or None,
+                "contactId": contact_id or None,
                 "properties": payload.get("properties"),
             }
             contact = {k: v for k, v in contact.items() if v is not None}

@@ -225,6 +225,11 @@ def _walk_scrub_strings(obj: Any, *, depth: int = 0) -> Any:
     return _cap_str(scrub_text(str(obj)))
 
 
+def scan_for_leaks(obj: Any) -> str | None:
+    """Return a reason_code if PII/secrets remain in model I/O, else None."""
+    return _scan_for_leaks(obj)
+
+
 def _scan_for_leaks(obj: Any, *, depth: int = 0) -> str | None:
     """Return reason_code if PII/secrets remain, else None."""
     if depth > 8:

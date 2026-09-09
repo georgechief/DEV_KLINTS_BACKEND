@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 from dataruns.dcs.constants import DCS_SCORING_MODEL_VERSION
 from dataruns.dcs.enqueue import (
     DcsAlreadyRunningError,
+    DcsQueueUnavailableError,
     company_has_eligible_connector,
     enqueue_dcs_score,
 )
@@ -22,7 +23,12 @@ _DCS_READ_ROLES = (User.Role.ADMIN, User.Role.ANALYST, User.Role.VIEWER)
 
 
 class DcsStatusView(APIView):
-    """GET /api/v1/dcs/status/ — app-gate status for the current company."""
+    """GET /api/v1/dcs/status/ — app-gate status for the current company.
+
+    Run summaries include ``fresh_imports`` (per-platform ``data_run_id`` /
+    ``window_end``) and ``fresh_import_failed_platform`` when a DCS run failed
+    during mandatory fresh import (PRD-DCS-10 Slice B).
+    """
 
     permission_classes = [IsAuthenticated]
 
@@ -97,6 +103,17 @@ class DcsRunsView(APIView):
                     ),
                 },
                 status=409,
+            )
+        except DcsQueueUnavailableError:
+            return Response(
+                {
+                    "detail": (
+                        "Scoring is temporarily unavailable — no Celery workers "
+                        "are running or the queue could not be reached. Start Redis "
+                        "and Celery, then retry."
+                    ),
+                },
+                status=503,
             )
 
         data_run = result.data_run

@@ -9,9 +9,14 @@
       "file": "CC-03.consent_provenance.v1.json",
       "enabled": true
     },
+    "WB-SHOP-01": {
+      "file": "WB-SHOP-01.customer_note.v1.json",
+      "enabled": true
+    },
     "LE-04": {
       "file": "LE-04.duplicate_purchase.v1.json",
-      "enabled": true
+      "enabled": false,
+      "template_id": "T6"
     },
     "CI-03": {
       "file": "CI-03.contact_merge.v1.json",

@@ -7,12 +7,13 @@ from unittest.mock import patch
 
 from django.test import TestCase, override_settings
 
+from dataruns.tests.writeback_helpers import enable_company_sandbox, sandbox_company, seed_writeback_allowlist
+
 from dataruns.connectors.export_data import run_export
 from dataruns.models import Contact, Order, Run, WritebackJob
 from dataruns.writebacks.approvals.exceptions import ApprovalTokenError
 from dataruns.writebacks.approvals.service import request_approval
 from dataruns.writebacks.adapters.shopify import ShopifyWriteAdapter
-from dataruns.writebacks.service import writeback_run
 from dataruns.writebacks.types import WriteIntent
 from dataruns.writebacks.views import WritebackRollbackView
 from dataruns.writebacks.stub_factory import build_stub_spec
@@ -69,11 +70,10 @@ class StubFactoryTests(TestCase):
 
 
 @override_settings(
-    WRITEBACKS_ENABLED=False,
-    WRITEBACK_CHECK_ALLOWLIST=["CC-03"],
-)
+    WRITEBACKS_ENABLED=False,)
 class IndividualApprovalTierTests(TestCase):
     def setUp(self):
+        seed_writeback_allowlist("CC-03")
         tenant = Tenant.objects.create(name="IND", slug="ind")
         self.company = Company.objects.create(tenant=tenant, name="Co", domain="ind.test")
         self.admin = User.objects.create_user(
@@ -163,6 +163,8 @@ class ContactUpsertRollbackTests(TestCase):
         response = WritebackRollbackView.as_view()(request)
         self.assertEqual(response.status_code, 200)
         self.assertTrue(mock_upsert.called)
+        sent = mock_upsert.call_args.args[1][0]
+        self.assertEqual(sent["properties"]["klints_backfill"], "")
 
 
 class ShopifyAdapterTests(TestCase):
@@ -171,9 +173,11 @@ class ShopifyAdapterTests(TestCase):
         self.company = Company.objects.create(tenant=tenant, name="Co", domain="sh.test")
 
     @patch("dataruns.writebacks.adapters.shopify.update_customer")
+    @patch("dataruns.writebacks.adapters.shopify.get_customer")
     @patch("dataruns.writebacks.adapters.shopify.resolve_shopify_write_context")
-    def test_shopify_customer_update_execute(self, mock_ctx, mock_update):
+    def test_shopify_customer_update_execute(self, mock_ctx, mock_get, mock_update):
         mock_ctx.return_value = object()
+        mock_get.return_value = {"id": 123, "note": None}
         mock_update.return_value = {"customer": {"id": 1}}
         adapter = ShopifyWriteAdapter()
         intent = WriteIntent(
@@ -183,8 +187,9 @@ class ShopifyAdapterTests(TestCase):
             target_system="shopify",
             entity_type="customer",
             entity_key="gid://shopify/Customer/1",
-            payload={"id": "123", "email": "buyer@example.com"},
+            payload={"id": "123", "note": "klints_wb_test"},
             status="ready",
+            capability_id="SHOPIFY.CUSTOMER.UPDATE",
         )
         results = adapter.execute(self.company, [intent], approval_id=None, idempotency_key="k1")
         self.assertEqual(results[0].status, "executed")

@@ -311,6 +311,106 @@ class DcsAppStatusTests(TestCase):
         self.assertEqual(status["lock_reason"], "failed")
         self.assertEqual(status["issues"][0]["title"], "DCS run failed")
         self.assertIn("Shopify token expired", status["message"])
+        self.assertEqual(status["score_display"]["state"], "not_calculated")
+        self.assertIsNone(status["score_display"]["headline_score"])
+
+    def test_failed_after_prior_score_hides_ready_headline(self):
+        """Prior success must not surface best/last as a live ready score after failure."""
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        now = timezone.now()
+        self._create_dcs_run(
+            created_at=now - timedelta(days=3),
+            finished_at=now - timedelta(days=2),
+            metadata={
+                "kind": DCS_SCORE_KIND,
+                "company_id": str(self.company.id),
+                "triggered_by": "manual",
+                "dcs_run": {
+                    "run_state": "COMPLETE",
+                    "headline_score": 80.0,
+                },
+            },
+        )
+        self._create_dcs_run(
+            created_at=now - timedelta(days=2),
+            finished_at=now - timedelta(days=1),
+            metadata={
+                "kind": DCS_SCORE_KIND,
+                "company_id": str(self.company.id),
+                "triggered_by": "manual",
+                "dcs_run": {
+                    "run_state": "COMPLETE",
+                    "headline_score": 65.4,
+                },
+            },
+        )
+        self._create_dcs_run(
+            created_at=now - timedelta(days=1),
+            status=DataRun.Status.FAILED,
+            metadata={
+                "kind": DCS_SCORE_KIND,
+                "company_id": str(self.company.id),
+                "triggered_by": "manual",
+                "error": "Redis unavailable",
+            },
+        )
+
+        status = resolve_dcs_app_status(company=self.company)
+
+        self.assertEqual(status["app_access"], "unlocked")
+        self.assertTrue(status["has_ever_scored"])
+        self.assertEqual(status["best_headline_score"], 80.0)
+        self.assertEqual(status["score_display"]["state"], "not_calculated")
+        self.assertIsNone(status["score_display"]["headline_score"])
+        self.assertIn("Last successful score was 65", status["message"])
+
+    def test_retry_after_failed_keeps_last_successful_score(self):
+        """While a new run is scheduled, do not blank the last real score."""
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        self._create_dcs_run(
+            finished_at=timezone.now() - timedelta(days=1),
+            metadata={
+                "kind": DCS_SCORE_KIND,
+                "company_id": str(self.company.id),
+                "triggered_by": "manual",
+                "dcs_run": {
+                    "run_state": "COMPLETE",
+                    "headline_score": 65.4,
+                },
+            },
+        )
+        self._create_dcs_run(
+            status=DataRun.Status.FAILED,
+            finished_at=timezone.now() - timedelta(hours=1),
+            metadata={
+                "kind": DCS_SCORE_KIND,
+                "company_id": str(self.company.id),
+                "triggered_by": "manual",
+                "error": "Redis unavailable",
+            },
+        )
+        self._create_dcs_run(
+            status=DataRun.Status.RUNNING,
+            metadata={
+                "kind": DCS_SCORE_KIND,
+                "company_id": str(self.company.id),
+                "triggered_by": "manual",
+            },
+        )
+
+        status = resolve_dcs_app_status(company=self.company)
+
+        self.assertEqual(status["app_access"], "unlocked")
+        self.assertTrue(status["scheduled"])
+        self.assertEqual(status["score_display"]["state"], "ready")
+        self.assertEqual(status["score_display"]["headline_score"], 65.4)
+        self.assertIsNone(status["message"])
 
     def test_active_run_without_score_is_soft_locked(self):
         self._create_dcs_run(
@@ -355,6 +455,222 @@ class DcsAppStatusTests(TestCase):
 
         self.assertEqual(status["app_access"], "unlocked")
         self.assertTrue(status["scheduled"])
+
+    def test_latest_run_includes_fresh_imports_summary(self):
+        self._create_dcs_run(
+            metadata={
+                "kind": DCS_SCORE_KIND,
+                "company_id": str(self.company.id),
+                "triggered_by": "manual",
+                "dcs_run": {
+                    "run_state": "CONDITIONALLY_READY",
+                    "headline_score": 72.0,
+                },
+                "fresh_imports": {
+                    "shopify": {
+                        "data_run_id": 201,
+                        "snapshot_id": "snap-shop",
+                        "counts": {"contacts": 10, "orders": 5},
+                        "window_start": "2026-08-01T00:00:00Z",
+                        "window_end": "2026-08-28T00:00:00Z",
+                    },
+                    "manago_ai": {
+                        "data_run_id": 202,
+                        "counts": {"contacts": 8, "orders": 0},
+                        "window_end": "2026-08-27T12:00:00Z",
+                    },
+                },
+            },
+        )
+
+        status = resolve_dcs_app_status(company=self.company)
+        latest = status["latest_run"]
+
+        self.assertEqual(
+            latest["fresh_imports"],
+            {
+                "shopify": {
+                    "data_run_id": 201,
+                    "window_end": "2026-08-28T00:00:00Z",
+                },
+                "manago_ai": {
+                    "data_run_id": 202,
+                    "window_end": "2026-08-27T12:00:00Z",
+                },
+            },
+        )
+        self.assertNotIn("fresh_import_failed_platform", latest)
+
+    def test_failed_run_includes_fresh_import_failed_platform(self):
+        self._create_dcs_run(
+            status=DataRun.Status.FAILED,
+            metadata={
+                "kind": DCS_SCORE_KIND,
+                "company_id": str(self.company.id),
+                "triggered_by": "manual",
+                "error": "Fresh shopify import failed: timeout",
+                "fresh_import_failed_platform": "shopify",
+            },
+        )
+
+        status = resolve_dcs_app_status(company=self.company)
+        latest = status["latest_run"]
+
+        self.assertEqual(latest["fresh_import_failed_platform"], "shopify")
+        self.assertNotIn("fresh_imports", latest)
+
+    def test_active_run_exposes_fresh_imports_when_present(self):
+        self._create_dcs_run(
+            status=DataRun.Status.SUCCEEDED,
+            metadata={
+                "kind": DCS_SCORE_KIND,
+                "company_id": str(self.company.id),
+                "triggered_by": "manual",
+                "dcs_run": {
+                    "run_state": "CONDITIONALLY_READY",
+                    "headline_score": 80.0,
+                },
+            },
+        )
+        self._create_dcs_run(
+            status=DataRun.Status.RUNNING,
+            metadata={
+                "kind": DCS_SCORE_KIND,
+                "company_id": str(self.company.id),
+                "triggered_by": "manual",
+                "fresh_imports": {
+                    "shopify": {
+                        "data_run_id": 301,
+                        "window_end": "2026-08-28T06:00:00Z",
+                    },
+                },
+            },
+        )
+
+        status = resolve_dcs_app_status(company=self.company)
+        active = status["active_run"]
+
+        self.assertEqual(active["status"], "running")
+        self.assertEqual(
+            active["fresh_imports"],
+            {
+                "shopify": {
+                    "data_run_id": 301,
+                    "window_end": "2026-08-28T06:00:00Z",
+                },
+            },
+        )
+
+    def test_legacy_run_without_fresh_imports_omits_field(self):
+        self._create_dcs_run(
+            metadata={
+                "kind": DCS_SCORE_KIND,
+                "company_id": str(self.company.id),
+                "triggered_by": "management_command",
+                "dcs_run": {
+                    "run_state": "CONDITIONALLY_READY",
+                    "headline_score": 55.0,
+                },
+            },
+        )
+
+        status = resolve_dcs_app_status(company=self.company)
+
+        self.assertNotIn("fresh_imports", status["latest_run"])
+
+    def test_running_active_run_without_fresh_imports_omits_field(self):
+        self._create_dcs_run(
+            status=DataRun.Status.RUNNING,
+            metadata={
+                "kind": DCS_SCORE_KIND,
+                "company_id": str(self.company.id),
+                "triggered_by": "manual",
+                "stage_progress": {
+                    "current_dimension_id": "00",
+                    "stages": [{"dimension_id": "00", "state": "running"}],
+                },
+            },
+        )
+
+        status = resolve_dcs_app_status(company=self.company)
+        active = status["active_run"]
+
+        self.assertEqual(active["status"], "running")
+        self.assertNotIn("fresh_imports", active)
+        self.assertEqual(status["run_progress"]["current_dimension_id"], "00")
+
+    def test_fresh_imports_coerces_string_data_run_id(self):
+        self._create_dcs_run(
+            metadata={
+                "kind": DCS_SCORE_KIND,
+                "company_id": str(self.company.id),
+                "triggered_by": "manual",
+                "dcs_run": {
+                    "run_state": "CONDITIONALLY_READY",
+                    "headline_score": 60.0,
+                },
+                "fresh_imports": {
+                    "shopify": {
+                        "data_run_id": "401",
+                        "window_end": "2026-08-28T12:00:00Z",
+                    },
+                },
+            },
+        )
+
+        status = resolve_dcs_app_status(company=self.company)
+
+        self.assertEqual(
+            status["latest_run"]["fresh_imports"]["shopify"]["data_run_id"],
+            401,
+        )
+
+    def test_status_api_includes_fresh_import_fields(self):
+        self._create_dcs_run(
+            metadata={
+                "kind": DCS_SCORE_KIND,
+                "company_id": str(self.company.id),
+                "triggered_by": "manual",
+                "dcs_run": {
+                    "run_state": "CONDITIONALLY_READY",
+                    "headline_score": 71.0,
+                },
+                "fresh_imports": {
+                    "manago_ai": {
+                        "data_run_id": 501,
+                        "window_end": "2026-08-28T08:00:00Z",
+                    },
+                },
+            },
+        )
+
+        factory = APIRequestFactory()
+        request = factory.get("/api/v1/dcs/status/")
+        force_authenticate(request, user=self.viewer)
+        response = DcsStatusView.as_view()(request)
+
+        self.assertEqual(response.status_code, 200)
+        latest = response.data["latest_run"]
+        self.assertEqual(
+            latest["fresh_imports"]["manago_ai"]["data_run_id"],
+            501,
+        )
+
+    def test_invalid_fresh_import_failed_platform_is_omitted(self):
+        self._create_dcs_run(
+            status=DataRun.Status.FAILED,
+            metadata={
+                "kind": DCS_SCORE_KIND,
+                "company_id": str(self.company.id),
+                "triggered_by": "manual",
+                "error": "boom",
+                "fresh_import_failed_platform": "unknown_platform",
+            },
+        )
+
+        status = resolve_dcs_app_status(company=self.company)
+
+        self.assertNotIn("fresh_import_failed_platform", status["latest_run"])
 
     def test_viewer_can_get_status_api(self):
         factory = APIRequestFactory()

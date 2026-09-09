@@ -1,7 +1,7 @@
 # PRD-WB-01 — Writeback adapter foundation (dry-run + check mappings)
 
 **Status:** Implemented (backend complete)  
-**Module:** see folder path  
+**Owner track:** Engineering   
 **Backlog bridge:** Prepares **BL-017** (approval tokens) + pack Fix Type “Automated writeback (approved)”  
 **Depends on:** Shopify/Manago connectors (read already live) · DCS worklist evidence · CheckMaster `fix_type` / `fix_owner`  
 **Pack:** `Klints_MVP1_Rohan_Build_Pack_v1.2_20260718`  
@@ -17,7 +17,7 @@
 ```text
 Implement PRD-WB-01 — writeback adapter foundation (BE).
 
-Read: docs/writebacks/PRD_WB_01_WRITEBACK_ADAPTER_FOUNDATION.md
+Read: docs/engineering/PRD_WB_01_WRITEBACK_ADAPTER_FOUNDATION.md
 Pack: Klints_MVP1_Rohan_Build_Pack_v1.2_20260718
   - DCS sheet 02 Fix Type / Fix Template (T1–T11)
   - Manago Execution Capability Matrix (WRITE capabilities)
@@ -577,4 +577,4 @@ Cross-check vs `Klints_MVP1_Rohan_Build_Pack_v1.2_20260718`. Items below were ea
 | Prod writes? | Off until BL-017 |
 | Who? | Engineering |
 
-**PRD:** WB-01 · **Track:** delivery · **Sandbox prove** · **Prod kill-switch on**
+**PRD:** WB-01 · **Track:** Engineering · **Sandbox prove** · **Prod kill-switch on**

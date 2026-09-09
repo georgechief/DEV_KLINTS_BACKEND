@@ -119,11 +119,17 @@ class WritebackApprovalRejectView(APIView):
         if company is None:
             return Response({"detail": "No company is associated with this account."}, status=400)
 
+        body = request.data if isinstance(request.data, dict) else {}
+        reason = body.get("reason") or body.get("rejection_reason")
+        if reason is not None and not isinstance(reason, str):
+            reason = None
+
         try:
             token = reject_token(
                 company=company,
                 approval_id=approval_id,
                 actor=request.user,
+                reason=reason.strip() if isinstance(reason, str) else None,
             )
         except ApprovalTokenNotFound:
             return Response({"detail": "Approval token not found."}, status=404)

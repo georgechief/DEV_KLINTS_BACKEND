@@ -1,9 +1,9 @@
 # PRD-WB-01B — Sandbox proof (Shopify + Manago), LE-04 fix, Loom + write-surface matrix
 
-**Status:** Ready for implementation  
-**Module:** see folder path  
-**Depends on:** WB-01 ([PR #37](https://github.com/Rohan070/klints_backend/pull/37)) — merge after LE-04 fix or land WB-01B on same branch  
-**FE:** If [FE #25](https://github.com/Rohan070/klints_frontend/pull/25) hardcodes LE-04, drop it when BE disables LE-04  
+**Status:** Backend implemented (Loom evidence still required for PR acceptance)
+**Owner track:** Engineering 
+**Depends on:** WB-01 ([PR #37](https://github.com/georgechief/klints_backend/pull/37)) — merge after LE-04 fix or land WB-01B on same branch
+**FE:** If [FE #25](https://github.com/georgechief/klints_frontend/pull/25) hardcodes LE-04, drop it when BE disables LE-04
 **Out of scope:** Prod `WRITEBACKS_ENABLED=True` · FE Approve live · MCP · catalog/product write · contact merge · claiming order/transaction writes that are not implemented
 
 ---
@@ -13,7 +13,7 @@
 ```text
 Implement PRD-WB-01B — sandbox proof + LE-04 fix + Loom evidence (BE).
 
-Read: docs/writebacks/PRD_WB_01B_SANDBOX_PROOF_AND_LE04_FIX.md
+Read: docs/engineering/PRD_WB_01B_SANDBOX_PROOF_AND_LE04_FIX.md
 
 Goal: (1) fix LE-04, (2) prove sandbox writebacks on Manago AND Shopify,
 (3) ship a Loom walking through tests + honest write-surface matrix.
@@ -22,7 +22,7 @@ Goal: (1) fix LE-04, (2) prove sandbox writebacks on Manago AND Shopify,
 2. Shopify sandbox mapping WB-SHOP-01 (customer note or klints metafield).
 3. Manago sandbox: CC-03 (klints_ detail) and/or CI-01 (contact upsert).
 4. Keep WRITEBACKS_ENABLED=False; sandbox company + check allowlist only.
-5. Add docs/writebacks/WRITEBACK_SURFACE_MATRIX.md (or §3 of this PRD kept current)
+5. Add docs/engineering/WRITEBACK_SURFACE_MATRIX.md (or §3 of this PRD kept current)
    listing Contacts / Orders / Transactions for Manago + Shopify:
    writeable? klints_ namespace? native allowed? status.
 6. RECORD A LOOM (required PR deliverable) — see §7 script.
@@ -65,7 +65,7 @@ Optional third Manago enabled mapping: **SP-01** (tag) or **CI-06** (`klints_coh
 
 > **Convention:** Klints Django `Contact` / `Order` are **canonical read models**. Writes go to **connector APIs**. Manago “transactions” import as Klints `Order` (`map.json` `raw_sources.transactions` → entity `order`). Shopify “orders” → same.
 
-Ship this table in the PR (copy into `docs/writebacks/WRITEBACK_SURFACE_MATRIX.md` **or** keep this section authoritative and link from README).
+Ship this table in the PR (copy into `docs/engineering/WRITEBACK_SURFACE_MATRIX.md` **or** keep this section authoritative and link from README).
 
 ### 3.1 Manago
 
@@ -151,7 +151,7 @@ Post the Loom link in the GitHub PR description (BE follow-up PR or updated #37)
 
 ### 7.1 Length / structure (~8–12 min)
 
-**Primary proof path for approval:** **Postman (or equivalent HTTP client) → platform UI.**  
+**Primary proof path for approval:** **Postman (or equivalent HTTP client) → platform UI.**
 Do not rely on FE Fix page alone for the Loom — Rohan needs to see the API contract and then the same fields live in Manago / Shopify.
 
 | Segment | Show |
@@ -182,30 +182,30 @@ Collection tip: save a Postman collection in the PR or attach export (`writeback
 
 ### 7.3 Must say on camera
 
-- “This is sandbox only — `WRITEBACKS_ENABLED` is false for prod.”  
-- “Proof is **Postman writeback API**, then **details reflecting in Manago / Shopify**.”  
-- “`klints_` / `klints:` preferred for Klints-owned Manago writes.”  
-- “Shopify order and transaction writeback is **not** implemented.”  
-- “Manago purchase/transaction write = **event ingest**, not Shopify Order.”  
+- “This is sandbox only — `WRITEBACKS_ENABLED` is false for prod.”
+- “Proof is **Postman writeback API**, then **details reflecting in Manago / Shopify**.”
+- “`klints_` / `klints:` preferred for Klints-owned Manago writes.”
+- “Shopify order and transaction writeback is **not** implemented.”
+- “Manago purchase/transaction write = **event ingest**, not Shopify Order.”
 
 ### 7.4 Attachments with Loom
 
-- Loom URL (in GitHub PR description)  
-- Postman collection export (redacted) **or** screenshots of the three calls + platform UI  
-- Matrix file committed in repo  
+- Loom URL (in GitHub PR description)
+- Postman collection export (redacted) **or** screenshots of the three calls + platform UI
+- Matrix file committed in repo
 
 ---
 
 ## 8. Acceptance checklist
 
-- [ ] LE-04 disabled; FE not advertising it  
-- [ ] Write-surface matrix committed (§3 / `WRITEBACK_SURFACE_MATRIX.md`) — contacts, orders, transactions, both platforms, `klints_` called out  
-- [ ] Manago sandbox: execute + rollback proven  
-- [ ] Shopify sandbox: execute + rollback proven  
-- [ ] `WRITEBACKS_ENABLED` default False  
-- [ ] **Loom link in PR** covering §7 (matrix + tests + **Postman API** + **platform UI reflect** for Manago and Shopify)  
-- [ ] Loom clearly shows preview/execute(/rollback) responses and matching fields in Manago + Shopify Admin  
-- [ ] No claim of Shopify order/transaction writeback  
+- [ ] LE-04 disabled; FE not advertising it
+- [ ] Write-surface matrix committed (§3 / `WRITEBACK_SURFACE_MATRIX.md`) — contacts, orders, transactions, both platforms, `klints_` called out
+- [ ] Manago sandbox: execute + rollback proven
+- [ ] Shopify sandbox: execute + rollback proven
+- [ ] `WRITEBACKS_ENABLED` default False
+- [ ] **Loom link in PR** covering §7 (matrix + tests + **Postman API** + **platform UI reflect** for Manago and Shopify)
+- [ ] Loom clearly shows preview/execute(/rollback) responses and matching fields in Manago + Shopify Admin
+- [ ] No claim of Shopify order/transaction writeback
 
 ---
 
@@ -218,4 +218,4 @@ Collection tip: save a Postman collection in the PR or attach export (`writeback
 | Shopify writeables? | Customer (sandbox); metafield if implemented; **not** orders/transactions |
 | Evidence? | **Loom required** |
 
-**PRD:** WB-01B · **Track:** delivery · **Bar:** sandbox pass + Loom + honest matrix  
+**PRD:** WB-01B · **Track:** Engineering · **Bar:** sandbox pass + Loom + honest matrix

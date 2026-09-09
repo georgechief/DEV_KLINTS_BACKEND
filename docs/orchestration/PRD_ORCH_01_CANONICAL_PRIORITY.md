@@ -1,7 +1,7 @@
 # PRD-ORCH-01 — Canonical orchestration priority (BL-011)
 
 **Status:** Ready for implementation (pre-build locks in §15)  
-**Module:** see folder path — **BE + FE in this PRD**  
+**Owner track:** Engineering  — **BE + FE in this PRD**  
 **Backlog:** `BL-011` (P0, MVP1-B) — four-factor priority formula (0–3)  
 **Milestone:** MVP1-B (after AF-01 + UC-01 + UC-01B)  
 **Depends on:** Live DCS worklist enrichment · AF-01 latest · UC-01 recommendations (optional source) · FE-08 Fix `?issue=` · UC-01B tracker chrome (Plan queue sits with tracker)  
@@ -18,7 +18,7 @@
 ```text
 Implement PRD-ORCH-01 (BL-011) — BE priority plan + FE bind.
 
-Read: docs/orchestration/PRD_ORCH_01_CANONICAL_PRIORITY.md
+Read: docs/engineering/PRD_ORCH_01_CANONICAL_PRIORITY.md
 Pack: Orchestration Blueprint sheets 02 + 09; orchestration_task.schema.json
 
 BE:
@@ -599,7 +599,7 @@ Do **not** delete revenue sort helpers.
 | Next? | BL-012 waves |
 | Locks? | §15 pre-build decisions |
 
-**PRD:** ORCH-01 · **Backlog:** BL-011 · **Track:** delivery (BE + FE) · **Pack:** Onboarding Orchestration Blueprint v1.4.1
+**PRD:** ORCH-01 · **Backlog:** BL-011 · **Track:** Engineering (BE + FE) · **Pack:** Onboarding Orchestration Blueprint v1.4.1
 
 ---
 

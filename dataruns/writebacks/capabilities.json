@@ -12,6 +12,11 @@
     "RESTV2.PRODUCT.IMPORT": {
       "status": "DISCOVERY_REQUIRED",
       "batch_max": 100
+    },
+    "SHOPIFY.CUSTOMER.UPDATE": {
+      "status": "CONFIRMED_LIVE",
+      "batch_max": 1,
+      "scope_note": "write_customers — sandbox proof via customer note / Admin REST PUT customers/{id}.json"
     }
   }
 }

@@ -22,6 +22,20 @@ def collect_evidence_rows(
     check_id: str,
     max_rows: int | None,
 ) -> list[dict[str, Any]]:
+    normalized = (check_id or "").strip().upper()
+    if normalized == "WB-SHOP-01":
+        return _shopify_sandbox_evidence_rows(company=company, max_rows=max_rows)
+
+    rows = _worklist_evidence_rows(company=company, check_id=check_id)
+    if normalized == "CC-03":
+        rows = _cc03_evidence_rows(company=company, rows=rows, max_rows=max_rows)
+
+    if max_rows is not None and max_rows >= 0:
+        return rows[:max_rows]
+    return rows
+
+
+def _worklist_evidence_rows(*, company: Company, check_id: str) -> list[dict[str, Any]]:
     try:
         detail = build_worklist_detail(company=company, check_id=check_id)
     except WorklistDetailNotFound:
@@ -35,10 +49,124 @@ def collect_evidence_rows(
                 if isinstance(item, dict):
                     rows.append(item)
             break
-
-    if max_rows is not None and max_rows >= 0:
-        return rows[:max_rows]
     return rows
+
+
+def _evidence_side(row: dict[str, Any]) -> str:
+    side = row.get("side")
+    if side:
+        return str(side)
+    value = row.get("value")
+    if isinstance(value, dict) and value.get("side"):
+        return str(value.get("side"))
+    return ""
+
+
+def _cc03_evidence_rows(
+    *,
+    company: Company,
+    rows: list[dict[str, Any]],
+    max_rows: int | None,
+) -> list[dict[str, Any]]:
+    """Prefer DCS shopify_holds_evidence; sandbox falls back to a Manago contact.
+
+    Worklist detail is FAIL/WARN only. A PASS CC-03 on a sandbox tenant yields
+    zero rows, which made execute create a failed job that cannot be rolled back.
+    """
+    matched = [row for row in rows if _evidence_side(row) == "shopify_holds_evidence"]
+    if matched:
+        return matched
+    from dataruns.writebacks.gates import is_writeback_execute_enabled
+
+    if is_writeback_execute_enabled(company):
+        return _cc03_sandbox_evidence_rows(company=company, max_rows=max_rows)
+    return []
+
+
+def _cc03_sandbox_evidence_rows(
+    *,
+    company: Company,
+    max_rows: int | None,
+) -> list[dict[str, Any]]:
+    """Build synthetic CC-03 evidence from Manago Contact rows (PRD-WB-01B §4).
+
+    Prefer contacts that do not already have klints_consent_evidence=shopify_verified
+    so sandbox preview does not re-target a contact that was already written.
+    """
+    from dataruns.models import Contact
+
+    limit = 1 if max_rows is None else max(0, max_rows)
+    qs = (
+        Contact.objects.filter(company=company, source=Contact.Source.MANAGO_AI)
+        .exclude(external_id="")
+        .exclude(email="")
+        .order_by("id")
+    )
+    rows: list[dict[str, Any]] = []
+    for contact in qs[: max(limit * 20, limit)]:
+        if len(rows) >= limit:
+            break
+        email = str(contact.email or "").strip()
+        if "@" not in email:
+            continue
+        manago = find_manago_contact(
+            company,
+            email=email,
+            contact_id=str(contact.external_id or "").strip() or None,
+        )
+        existing = (
+            contact_detail_value(manago, "klints_consent_evidence") if manago else None
+        )
+        if existing == "shopify_verified":
+            continue
+        rows.append(
+            {
+                "side": "shopify_holds_evidence",
+                "person.email": email,
+                "manago_contact_id": str(contact.external_id),
+                "note": "Sandbox proof fallback — CC-03 not on FAIL/WARN worklist",
+            }
+        )
+    return rows
+
+
+def _shopify_sandbox_evidence_rows(
+    *,
+    company: Company,
+    max_rows: int | None,
+) -> list[dict[str, Any]]:
+    """Build synthetic evidence from Shopify Contact rows (PRD-WB-01B §4)."""
+    from dataruns.models import Contact
+
+    limit = 1 if max_rows is None else max(0, max_rows)
+    qs = (
+        Contact.objects.filter(company=company, source=Contact.Source.SHOPIFY)
+        .exclude(external_id="")
+        .order_by("id")
+    )
+    rows: list[dict[str, Any]] = []
+    for contact in qs[:limit]:
+        customer_id = _normalize_shopify_customer_id(str(contact.external_id or ""))
+        if not customer_id:
+            continue
+        email = str(contact.email or "").strip()
+        rows.append(
+            {
+                "side": "sandbox_customer_note",
+                "email": email or f"customer-{customer_id}@sandbox.invalid",
+                "shopify_customer_id": customer_id,
+            }
+        )
+    return rows
+
+
+def _normalize_shopify_customer_id(value: str) -> str:
+    raw = (value or "").strip()
+    if not raw:
+        return ""
+    if "/Customer/" in raw:
+        return raw.rsplit("/", 1)[-1].strip()
+    return raw
 
 
 def build_intents_from_mapping(
@@ -157,6 +285,9 @@ def _intent_from_operation(
     if operation.get("mark_klints_backfill") and not payload.get("_mark_klints_backfill"):
         payload["_mark_klints_backfill"] = True
 
+    # Manago already has the target value (e.g. prior CC-03 Approve) — do not
+    # advertise a no-op as Ready.
+    already_applied = _before_equals_after(before, after)
     return WriteIntent(
         check_id=check_id,
         op_kind=op_kind,
@@ -171,10 +302,19 @@ def _intent_from_operation(
         after=after,
         rollback_snapshot=rollback,
         source_evidence_ref=str(row.get("locator") or row_index),
-        status="ready",
+        status="skipped" if already_applied else "ready",
+        error_reason="already_at_target" if already_applied else None,
         capability_id=str(capability_id) if capability_id else None,
         rollback_strategy=rollback_strategy,
     )
+
+
+def _before_equals_after(before: dict[str, Any], after: dict[str, Any]) -> bool:
+    if not isinstance(before, dict) or not isinstance(after, dict):
+        return False
+    if not after:
+        return False
+    return before == after
 
 
 def _evidence_context(row: dict[str, Any]) -> dict[str, Any]:
@@ -265,7 +405,40 @@ def _build_payload_and_state(
             payload.update(extras)
             after = {**after, **extras}
         return payload, before, after, rollback
+    if op_kind == "shopify_customer_update" and target == "shopify":
+        return _shopify_customer_update_payload(
+            fields=fields,
+            entity_key=entity_key,
+            extras=extras,
+        )
     raise ValueError(f"unsupported_op_kind:{op_kind}")
+
+
+def _shopify_customer_update_payload(
+    *,
+    fields: dict[str, Any],
+    entity_key: str,
+    extras: dict[str, Any] | None = None,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
+    customer_id = _normalize_shopify_customer_id(
+        str(fields.get("customer_id") or entity_key or "")
+    )
+    note = fields.get("note")
+    email = str(fields.get("email") or (entity_key if "@" in entity_key else "") or "").strip()
+    payload: dict[str, Any] = {
+        "id": customer_id,
+        "note": note,
+    }
+    if email:
+        payload["email"] = email
+    if extras:
+        for key, value in extras.items():
+            if value is not None:
+                payload[key] = value
+    before = {"note": None, "id": customer_id}
+    after = {"note": note, "id": customer_id}
+    rollback = {"id": customer_id, "note": None}
+    return payload, before, after, rollback
 
 
 def _contact_upsert_payload(
@@ -315,8 +488,9 @@ def _detail_set_payload(
     email = entity_key if "@" in entity_key else ""
     contact = find_manago_contact(company, email=email or None, contact_id=contact_id or None)
     before_value = contact_detail_value(contact, detail_key) if contact else None
+    resolved_email = email or str((contact or {}).get("email") or "").strip()
     payload = {
-        "email": email or (contact or {}).get("email"),
+        "email": resolved_email or None,
         "contactId": contact_id or (contact or {}).get("contactId") or (contact or {}).get("id"),
         "properties": {detail_key: detail_value},
     }

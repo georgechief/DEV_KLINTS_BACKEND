@@ -11,12 +11,14 @@ from typing import Any
 
 from dataruns.dcs.identity_join import normalize_email
 from dataruns.dcs.lifecycle_join import (
-    _float_or_none,
-    _latest_connector_raw,
-    _PAID_FINANCIAL,
-    _REFUND_FINANCIAL,
+    PinnedSnapshotIds,
+    SourceRunIds,
     _CANCEL_FINANCIAL,
+    _connector_raw_for_platform,
+    _float_or_none,
+    _PAID_FINANCIAL,
     _PURCHASE_TYPES,
+    _REFUND_FINANCIAL,
 )
 from tenants.models import Company
 
@@ -25,9 +27,26 @@ PT_SAMPLE = 50
 PT04_DELTA_FAIL = 0.02
 
 
-def build_product_truth_snapshot(*, company: Company) -> dict[str, Any]:
-    shopify_raw = _latest_connector_raw(company=company, platform="shopify")
-    manago_raw = _latest_connector_raw(company=company, platform="manago_ai")
+def build_product_truth_snapshot(
+    *,
+    company: Company,
+    source_run_ids: SourceRunIds = None,
+    pinned_snapshot_ids: PinnedSnapshotIds = None,
+) -> dict[str, Any]:
+    ids = source_run_ids or {}
+    snaps = pinned_snapshot_ids or {}
+    shopify_raw = _connector_raw_for_platform(
+        company=company,
+        platform="shopify",
+        source_run_id=ids.get("shopify"),
+        snapshot_id=snaps.get("shopify"),
+    )
+    manago_raw = _connector_raw_for_platform(
+        company=company,
+        platform="manago_ai",
+        source_run_id=ids.get("manago_ai"),
+        snapshot_id=snaps.get("manago_ai"),
+    )
     customers = [
         c for c in (shopify_raw.get("customers") or []) if isinstance(c, dict)
     ]

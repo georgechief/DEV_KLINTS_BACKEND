@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Iterable
 
+from dataruns.connectors.bootstrap_health import missing_shopify_scopes
 from dataruns.dcs.catalogue import (
     build_failure_message,
     foundation_gate_meta,
@@ -217,6 +218,15 @@ def _granted_scopes(connector: ConnectorGateInput) -> set[str]:
     return set()
 
 
+def _fd02_missing_scopes(granted: set[str]) -> list[str]:
+    """Canonical FD-02 gaps; write_* Admin handles satisfy read_* (CONN-01 parity)."""
+    missing_required, _ = missing_shopify_scopes(
+        granted,
+        required=SHOPIFY_FD02_REQUIRED_SCOPES,
+    )
+    return missing_required
+
+
 def evaluate_fd_01(ctx: FoundationGateContext) -> CheckResult:
     """Manago API authentication valid (sheet 02 detection logic)."""
     manago = ctx.manago
@@ -424,7 +434,7 @@ def evaluate_fd_02(ctx: FoundationGateContext) -> CheckResult:
     scopes_missing_issue = _has_issue_code(issues, "SCOPES_MISSING")
 
     if has_explicit_scopes:
-        missing = sorted(SHOPIFY_FD02_REQUIRED_SCOPES - granted)
+        missing = _fd02_missing_scopes(granted)
         if missing:
             return _result(
                 check_id="FD-02",

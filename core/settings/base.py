@@ -4,6 +4,7 @@ Base settings shared across all environments.
 
 from pathlib import Path
 from zoneinfo import ZoneInfo
+import sys
 
 import environ
 from django_celery_beat.tzcrontab import TzAwareCrontab
@@ -18,16 +19,17 @@ env = environ.Env(
     CELERY_TASK_ALWAYS_EAGER=(bool, False),
     WRITEBACKS_ENABLED=(bool, False),
     WRITEBACK_CHECK_ALLOWLIST=(list, []),
-    WRITEBACK_SANDBOX_COMPANY_IDS=(list, []),
     WRITEBACK_SANDBOX_MAX_ROWS=(int, 10),
     WRITEBACK_DEFAULT_BATCH_SIZE=(int, 25),
     WRITEBACK_PARTIAL_ROLLBACK_MINUTES=(int, 15),
     WRITEBACK_APPROVAL_TTL_MINUTES=(int, 60),
+    WRITEBACK_EXECUTING_STALE_MINUTES=(int, 15),
     AI_ENABLED=(bool, False),
     AI_PROVIDER=(str, "mock"),
     AI_JSON_MAX_RETRIES=(int, 3),
     AI_CALL_TIMEOUT_SECONDS=(float, 30.0),
     AI_TEMPERATURE=(float, 0.3),
+    LANGSMITH_TRACING=(bool, False),
 )
 
 environ.Env.read_env(BASE_DIR / ".env")
@@ -269,11 +271,11 @@ MANAGO_API_BASE_URL = env(
 # Writeback adapter foundation (PRD-WB-01) — prod execute off by default.
 WRITEBACKS_ENABLED = env("WRITEBACKS_ENABLED")
 WRITEBACK_CHECK_ALLOWLIST = env("WRITEBACK_CHECK_ALLOWLIST")
-WRITEBACK_SANDBOX_COMPANY_IDS = env("WRITEBACK_SANDBOX_COMPANY_IDS")
 WRITEBACK_SANDBOX_MAX_ROWS = env("WRITEBACK_SANDBOX_MAX_ROWS")
 WRITEBACK_DEFAULT_BATCH_SIZE = env("WRITEBACK_DEFAULT_BATCH_SIZE")
 WRITEBACK_PARTIAL_ROLLBACK_MINUTES = env("WRITEBACK_PARTIAL_ROLLBACK_MINUTES")
 WRITEBACK_APPROVAL_TTL_MINUTES = env("WRITEBACK_APPROVAL_TTL_MINUTES")
+WRITEBACK_EXECUTING_STALE_MINUTES = env("WRITEBACK_EXECUTING_STALE_MINUTES")
 WRITEBACK_MANAGO_BATCH_MAX = 1000
 
 # AI narrative layer (PRD-AI-01) — fail closed when disabled; mock needs no keys.
@@ -288,3 +290,33 @@ MISTRAL_API_KEY = env("MISTRAL_API_KEY", default="")
 AI_JSON_MAX_RETRIES = env("AI_JSON_MAX_RETRIES")
 AI_CALL_TIMEOUT_SECONDS = env("AI_CALL_TIMEOUT_SECONDS")
 AI_TEMPERATURE = env("AI_TEMPERATURE")
+
+# LangSmith — accept both LANGSMITH_* (current) and LANGCHAIN_* (PRD aliases).
+def _env_truthy(value) -> bool:
+    if isinstance(value, bool):
+        return value
+    return str(value or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+LANGSMITH_TRACING = _env_truthy(env("LANGSMITH_TRACING")) or _env_truthy(
+    env("LANGCHAIN_TRACING_V2", default=False)
+)
+LANGSMITH_API_KEY = env("LANGSMITH_API_KEY", default="") or env(
+    "LANGCHAIN_API_KEY", default=""
+)
+LANGSMITH_PROJECT = env("LANGSMITH_PROJECT", default="") or env(
+    "LANGCHAIN_PROJECT", default="klints-mvp1-ai"
+)
+LANGSMITH_ENDPOINT = env("LANGSMITH_ENDPOINT", default="") or env(
+    "LANGCHAIN_ENDPOINT", default="https://api.smith.langchain.com"
+)
+LANGCHAIN_TRACING_V2 = LANGSMITH_TRACING
+LANGCHAIN_API_KEY = LANGSMITH_API_KEY
+LANGCHAIN_PROJECT = LANGSMITH_PROJECT
+LANGCHAIN_ENDPOINT = LANGSMITH_ENDPOINT
+AI_LANGSMITH_IN_TESTS = env.bool("AI_LANGSMITH_IN_TESTS", default=False)
+
+# Django test runner must never call live Mistral. override_settings still wins.
+if "test" in sys.argv:
+    AI_PROVIDER = "mock"
+    MISTRAL_API_KEY = ""

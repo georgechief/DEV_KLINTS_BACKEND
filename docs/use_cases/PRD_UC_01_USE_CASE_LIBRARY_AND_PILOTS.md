@@ -1,7 +1,7 @@
 # PRD-UC-01 — Use Case Library & MVP1 Pilots (BL-010)
 
 **Status:** BE Ready · **FE layout superseded by UC-01B**  
-**Module:** see folder path  
+**Owner track:** Engineering   
 **Backlog:** `BL-010` (load exact 16-pilot registry; preserve UC-06 parent / UC-06B variant)  
 **Milestone:** MVP1-B (after Architecture AF-01)  
 **Surfaces:** APIs under `/api/v1/use-cases/` · FE pilots band via **[PRD-UC-01B](./PRD_UC_01B_OPPORTUNITIES_ORIGINAL_DESIGNS_RECONNECT.md)** (not Opportunities hero)  
@@ -17,7 +17,7 @@
 ```text
 Implement PRD-UC-01 (BL-010) — Use Case Library for MVP1’s 16 pilots only.
 
-Read: docs/use_cases/PRD_UC_01_USE_CASE_LIBRARY_AND_PILOTS.md
+Read: docs/engineering/PRD_UC_01_USE_CASE_LIBRARY_AND_PILOTS.md
 
 1. Load pack pilot_manifest.json + 16 UC-*_blueprint.json into app
    (DB tables or versioned seed — validate against workflow_blueprint.schema.json).

@@ -15,8 +15,10 @@ from rest_framework.views import APIView
 from dataruns.audit import (
     audit_meta_short_string,
     count_unread_audit_events,
+    extract_audit_link_fields,
     mark_all_audit_events_read,
     mark_audit_event_read,
+    resolve_audit_href,
 )
 from dataruns.models import AuditLog
 from tenants.auth.services import get_user_company
@@ -44,6 +46,8 @@ def _parse_before_cursor(value: str) -> datetime | None:
 
 def _serialize_audit_event(entry: AuditLog) -> dict:
     metadata = entry.metadata if isinstance(entry.metadata, dict) else {}
+    run_id = str(entry.run_id) if entry.run_id else None
+    link_fields = extract_audit_link_fields(metadata)
     actor = entry.performed_by or "system"
     return {
         "id": str(entry.id),
@@ -54,8 +58,20 @@ def _serialize_audit_event(entry: AuditLog) -> dict:
         "actor": actor,
         "meta": audit_meta_short_string(metadata),
         "created_at": entry.created_at.isoformat().replace("+00:00", "Z"),
-        "run_id": str(entry.run_id) if entry.run_id else None,
+        "run_id": run_id,
         "audit_read": entry.audit_read,
+        "check_id": link_fields["check_id"],
+        "package_id": link_fields["package_id"],
+        "use_case_id": link_fields["use_case_id"],
+        "report_id": link_fields["report_id"],
+        "job_id": link_fields["job_id"],
+        "handoff_id": link_fields["handoff_id"],
+        "qa_run_id": link_fields["qa_run_id"],
+        "href": resolve_audit_href(
+            action=entry.action,
+            metadata=metadata,
+            run_id=run_id,
+        ),
     }
 
 

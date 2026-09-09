@@ -1,7 +1,7 @@
 # PRD-CONN-05 — Patch: Shopify offline token refresh failure handling
 
 **Status:** Ready for implementation  
-**Module:** see folder path  
+**Owner track:** Engineering   
 **Depends on:** [PRD-CONN-03](./PRD_CONN_03_SHOPIFY_OFFLINE_TOKEN_REFRESH.md) (shipped: `ensure_fresh_shopify_token`, `refresh_offline_access_token`, OAuth `expiring=1`)  
 **Related:** CONN-01 bootstrap `AUTH_FAILED`; DCS-07 daily beat eligibility; AUDIT-01 `connector.*` events; CONN-04 Integrations card status  
 **Scope:** improve **existing** refresh helpers — do **not** rebuild OAuth or the happy-path refresh algorithm  
@@ -209,7 +209,7 @@ If beat eligibility is “Shopify **or** Manago connected”, a company with Man
 | `tenants/emails.py` | `send_shopify_auth_expired_email` (+ tests) |
 | `tenants/tests/test_shopify_token_refresh.py` | Terminal → status `error` + email once; no spam while still `error`; rotation persistence |
 | `dataruns/tests/test_daily_dcs_beat.py` | Shopify `error` not treated as Shopify-eligible |
-| `docs/PRD_CONN_03_...md` | Status note: patched by CONN-05 (optional one-liner) |
+| `docs/engineering/PRD_CONN_03_...md` | Status note: patched by CONN-05 (optional one-liner) |
 
 ## 11. Ops note (current Lumera)
 

@@ -1,0 +1,663 @@
+{
+  "schema_version": "1.0.0",
+  "source": "pack:Capability Matrix v1.1",
+  "generated_from": "Klints_MVP1_Rohan_Build_Pack_v1.2_20260718/02_Execution_Capabilities/Klints_Manago_ExecutionCapabilityMatrix_v1.1_20260718.xlsx#02 Capability Matrix",
+  "count": 40,
+  "capabilities": [
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "RESTV2.AUTH.VALIDATE",
+      "channel": "REST_V2",
+      "mode": "READ",
+      "status": "CONFIRMED_LIVE",
+      "input_contract": "clientId/apiKey/sha/requestTime/owner",
+      "output_contract": "success + error envelope",
+      "fallback": "Block onboarding",
+      "evidence": [
+        {
+          "source": "pack:Capability Matrix v1.1",
+          "locator": "02 Capability Matrix/RESTV2.AUTH.VALIDATE",
+          "value": "Manago API v2 documentation",
+          "observed_at": "2026-07-18T12:00:00+02:00"
+        }
+      ],
+      "verified_at": "2026-07-18T12:00:00+02:00"
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "RESTV3.AUTH.OAUTH",
+      "channel": "REST_V3",
+      "mode": "READ",
+      "status": "CONFIRMED_LIMITED",
+      "input_contract": "tenant credentials/scopes",
+      "output_contract": "token/session",
+      "fallback": "REST v2 fallback where available",
+      "evidence": [
+        {
+          "source": "pack:Capability Matrix v1.1",
+          "locator": "02 Capability Matrix/RESTV3.AUTH.OAUTH",
+          "value": "Manago API v3 documentation",
+          "observed_at": "2026-07-18T12:00:00+02:00"
+        }
+      ],
+      "verified_at": "2026-07-18T12:00:00+02:00"
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "RESTV2.CONTACT.LOOKUP",
+      "channel": "REST_V2",
+      "mode": "READ",
+      "status": "CONFIRMED_LIVE",
+      "input_contract": "contact identifiers ≤ documented batch cap",
+      "output_contract": "contacts",
+      "fallback": "Paged REST calls",
+      "evidence": [
+        {
+          "source": "pack:Capability Matrix v1.1",
+          "locator": "02 Capability Matrix/RESTV2.CONTACT.LOOKUP",
+          "value": "Manago API v2 documentation",
+          "observed_at": "2026-07-18T12:00:00+02:00"
+        }
+      ],
+      "verified_at": "2026-07-18T12:00:00+02:00"
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "RESTV2.CONTACT.UPSERT",
+      "channel": "REST_V2",
+      "mode": "WRITE",
+      "status": "CONFIRMED_LIVE",
+      "input_contract": "contacts ≤1000/request",
+      "output_contract": "per-record result",
+      "fallback": "Approval + idempotency key",
+      "evidence": [
+        {
+          "source": "pack:Capability Matrix v1.1",
+          "locator": "02 Capability Matrix/RESTV2.CONTACT.UPSERT",
+          "value": "Manago API v2 documentation",
+          "observed_at": "2026-07-18T12:00:00+02:00"
+        }
+      ],
+      "verified_at": "2026-07-18T12:00:00+02:00"
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "RESTV2.EVENT.INGEST",
+      "channel": "REST_V2",
+      "mode": "WRITE",
+      "status": "CONFIRMED_LIVE",
+      "input_contract": "event payload",
+      "output_contract": "event result",
+      "fallback": "Queue/retry + dedupe externalId",
+      "evidence": [
+        {
+          "source": "pack:Capability Matrix v1.1",
+          "locator": "02 Capability Matrix/RESTV2.EVENT.INGEST",
+          "value": "Manago API v2 documentation",
+          "observed_at": "2026-07-18T12:00:00+02:00"
+        }
+      ],
+      "verified_at": "2026-07-18T12:00:00+02:00"
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "RESTV2.PRODUCT.IMPORT",
+      "channel": "REST_V2",
+      "mode": "WRITE",
+      "status": "CONFIRMED_LIVE",
+      "input_contract": "product/location payload",
+      "output_contract": "import result",
+      "fallback": "Staged file/API import",
+      "evidence": [
+        {
+          "source": "pack:Capability Matrix v1.1",
+          "locator": "02 Capability Matrix/RESTV2.PRODUCT.IMPORT",
+          "value": "Manago API v2 documentation",
+          "observed_at": "2026-07-18T12:00:00+02:00"
+        }
+      ],
+      "verified_at": "2026-07-18T12:00:00+02:00"
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "RESTV2.WORKFLOW.LIST",
+      "channel": "REST_V2",
+      "mode": "READ",
+      "status": "CONFIRMED_LIVE",
+      "input_contract": "owner/account",
+      "output_contract": "workflow IDs and names",
+      "fallback": "MCP discovery for richer graph",
+      "evidence": [
+        {
+          "source": "pack:Capability Matrix v1.1",
+          "locator": "02 Capability Matrix/RESTV2.WORKFLOW.LIST",
+          "value": "Manago API v2 documentation",
+          "observed_at": "2026-07-18T12:00:00+02:00"
+        }
+      ],
+      "verified_at": "2026-07-18T12:00:00+02:00"
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "RESTV2.WORKFLOW.STATS",
+      "channel": "REST_V2",
+      "mode": "READ",
+      "status": "CONFIRMED_LIVE",
+      "input_contract": "workflow ID/time window",
+      "output_contract": "aggregate stats",
+      "fallback": "Agent targeted read",
+      "evidence": [
+        {
+          "source": "pack:Capability Matrix v1.1",
+          "locator": "02 Capability Matrix/RESTV2.WORKFLOW.STATS",
+          "value": "Manago agent capability documentation",
+          "observed_at": "2026-07-18T12:00:00+02:00"
+        }
+      ],
+      "verified_at": "2026-07-18T12:00:00+02:00"
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "AGENT.WORKFLOW.READ",
+      "channel": "MANAGO_AGENT",
+      "mode": "READ",
+      "status": "CONFIRMED_LIMITED",
+      "input_contract": "natural-language targeted query",
+      "output_contract": "summary/list/stats",
+      "fallback": "REST paging for full inventory",
+      "evidence": [
+        {
+          "source": "pack:Capability Matrix v1.1",
+          "locator": "02 Capability Matrix/AGENT.WORKFLOW.READ",
+          "value": "Manago agent current capabilities",
+          "observed_at": "2026-07-18T12:00:00+02:00"
+        }
+      ],
+      "verified_at": "2026-07-18T12:00:00+02:00"
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "AGENT.WORKFLOW.CREATE",
+      "channel": "MANAGO_AGENT",
+      "mode": "WRITE",
+      "status": "NOT_SUPPORTED",
+      "input_contract": "workflow blueprint",
+      "output_contract": "workflow ID/version",
+      "fallback": "Human-operated build",
+      "evidence": [
+        {
+          "source": "pack:Capability Matrix v1.1",
+          "locator": "02 Capability Matrix/AGENT.WORKFLOW.CREATE",
+          "value": "Manago agent current capabilities",
+          "observed_at": "2026-07-18T12:00:00+02:00"
+        }
+      ],
+      "verified_at": "2026-07-18T12:00:00+02:00"
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "AGENT.SEGMENT.CREATE",
+      "channel": "MANAGO_AGENT",
+      "mode": "WRITE",
+      "status": "CONFIRMED_LIVE",
+      "input_contract": "segment definition",
+      "output_contract": "segment ID/draft",
+      "fallback": "Human review before use",
+      "evidence": [
+        {
+          "source": "pack:Capability Matrix v1.1",
+          "locator": "02 Capability Matrix/AGENT.SEGMENT.CREATE",
+          "value": "Manago agent current capabilities",
+          "observed_at": "2026-07-18T12:00:00+02:00"
+        }
+      ],
+      "verified_at": "2026-07-18T12:00:00+02:00"
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "AGENT.EMAIL.DRAFT",
+      "channel": "MANAGO_AGENT",
+      "mode": "WRITE",
+      "status": "CONFIRMED_LIVE",
+      "input_contract": "content brief + audience context",
+      "output_contract": "draft email",
+      "fallback": "Klints QA + human approval",
+      "evidence": [
+        {
+          "source": "pack:Capability Matrix v1.1",
+          "locator": "02 Capability Matrix/AGENT.EMAIL.DRAFT",
+          "value": "Manago agent current capabilities",
+          "observed_at": "2026-07-18T12:00:00+02:00"
+        }
+      ],
+      "verified_at": "2026-07-18T12:00:00+02:00"
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "AGENT.EMAIL.SCHEDULE",
+      "channel": "MANAGO_AGENT",
+      "mode": "WRITE",
+      "status": "CONFIRMED_LIVE",
+      "input_contract": "approved draft + schedule",
+      "output_contract": "schedule confirmation",
+      "fallback": "Human approval gate",
+      "evidence": [
+        {
+          "source": "pack:Capability Matrix v1.1",
+          "locator": "02 Capability Matrix/AGENT.EMAIL.SCHEDULE",
+          "value": "Manago agent current capabilities",
+          "observed_at": "2026-07-18T12:00:00+02:00"
+        }
+      ],
+      "verified_at": "2026-07-18T12:00:00+02:00"
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "AGENT.RECO.DEFINE",
+      "channel": "MANAGO_AGENT",
+      "mode": "WRITE",
+      "status": "CONFIRMED_LIVE",
+      "input_contract": "strategy brief",
+      "output_contract": "strategy definition",
+      "fallback": "QA + human approval",
+      "evidence": [
+        {
+          "source": "pack:Capability Matrix v1.1",
+          "locator": "02 Capability Matrix/AGENT.RECO.DEFINE",
+          "value": "Manago agent current capabilities",
+          "observed_at": "2026-07-18T12:00:00+02:00"
+        }
+      ],
+      "verified_at": "2026-07-18T12:00:00+02:00"
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "AGENT.ANALYTICS.READ",
+      "channel": "MANAGO_AGENT",
+      "mode": "READ",
+      "status": "CONFIRMED_LIVE",
+      "input_contract": "targeted analytics question",
+      "output_contract": "summary/metrics",
+      "fallback": "REST/API export for bulk",
+      "evidence": [
+        {
+          "source": "pack:Capability Matrix v1.1",
+          "locator": "02 Capability Matrix/AGENT.ANALYTICS.READ",
+          "value": "Manago agent current capabilities",
+          "observed_at": "2026-07-18T12:00:00+02:00"
+        }
+      ],
+      "verified_at": "2026-07-18T12:00:00+02:00"
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "RESTV3.WEBPUSH.SEND",
+      "channel": "REST_V3",
+      "mode": "WRITE",
+      "status": "CONFIRMED_LIMITED",
+      "input_contract": "consented audience + content",
+      "output_contract": "send result",
+      "fallback": "Manual/platform fallback",
+      "evidence": [
+        {
+          "source": "pack:Capability Matrix v1.1",
+          "locator": "02 Capability Matrix/RESTV3.WEBPUSH.SEND",
+          "value": "Manago API v3 documentation",
+          "observed_at": "2026-07-18T12:00:00+02:00"
+        }
+      ],
+      "verified_at": "2026-07-18T12:00:00+02:00"
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "SDK.IDENTITY",
+      "channel": "FRONTEND_SDK",
+      "mode": "WRITE",
+      "status": "CONFIRMED_LIVE",
+      "input_contract": "browser/contact identity",
+      "output_contract": "tracking acknowledgement",
+      "fallback": "Server-side event fallback",
+      "evidence": [
+        {
+          "source": "pack:Capability Matrix v1.1",
+          "locator": "02 Capability Matrix/SDK.IDENTITY",
+          "value": "Manago Front-end SDK documentation",
+          "observed_at": "2026-07-18T12:00:00+02:00"
+        }
+      ],
+      "verified_at": "2026-07-18T12:00:00+02:00"
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "SDK.EVENT.TRACK",
+      "channel": "FRONTEND_SDK",
+      "mode": "WRITE",
+      "status": "CONFIRMED_LIVE",
+      "input_contract": "event + smclient context",
+      "output_contract": "tracking acknowledgement",
+      "fallback": "Server-side v2 event",
+      "evidence": [
+        {
+          "source": "pack:Capability Matrix v1.1",
+          "locator": "02 Capability Matrix/SDK.EVENT.TRACK",
+          "value": "Manago Front-end SDK documentation",
+          "observed_at": "2026-07-18T12:00:00+02:00"
+        }
+      ],
+      "verified_at": "2026-07-18T12:00:00+02:00"
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "CALLBACK.DELIVERY",
+      "channel": "CALLBACK",
+      "mode": "READ",
+      "status": "CONFIRMED_LIMITED",
+      "input_contract": "callback subscription",
+      "output_contract": "event notification",
+      "fallback": "Scheduled polling",
+      "evidence": [
+        {
+          "source": "pack:Capability Matrix v1.1",
+          "locator": "02 Capability Matrix/CALLBACK.DELIVERY",
+          "value": "Manago API documentation",
+          "observed_at": "2026-07-18T12:00:00+02:00"
+        }
+      ],
+      "verified_at": "2026-07-18T12:00:00+02:00"
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "MCP.AUTH.DISCOVER",
+      "channel": "MANAGO_MCP",
+      "mode": "READ",
+      "status": "DISCOVERY_REQUIRED",
+      "input_contract": "tenant MCP endpoint + OAuth",
+      "output_contract": "tool catalog + scopes",
+      "fallback": "REST + agent channels",
+      "evidence": [],
+      "verified_at": null
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "MCP.WORKFLOW.LIST",
+      "channel": "MANAGO_MCP",
+      "mode": "READ",
+      "status": "DISCOVERY_REQUIRED",
+      "input_contract": "account/scope/page",
+      "output_contract": "workflow inventory",
+      "fallback": "REST v2 ID+name list",
+      "evidence": [],
+      "verified_at": null
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "MCP.WORKFLOW.DEFINITION",
+      "channel": "MANAGO_MCP",
+      "mode": "READ",
+      "status": "DISCOVERY_REQUIRED",
+      "input_contract": "workflow ID",
+      "output_contract": "versioned graph",
+      "fallback": "Human UI export/inspection",
+      "evidence": [],
+      "verified_at": null
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "MCP.WORKFLOW.STATS",
+      "channel": "MANAGO_MCP",
+      "mode": "READ",
+      "status": "DISCOVERY_REQUIRED",
+      "input_contract": "workflow ID/window",
+      "output_contract": "metrics + attribution",
+      "fallback": "REST v2/agent stats",
+      "evidence": [],
+      "verified_at": null
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "MCP.WORKFLOW.UPSERT",
+      "channel": "MANAGO_MCP",
+      "mode": "WRITE",
+      "status": "DISCOVERY_REQUIRED",
+      "input_contract": "workflow blueprint + idempotency key",
+      "output_contract": "draft/version/result",
+      "fallback": "HUMAN.WORKFLOW.BUILD",
+      "evidence": [],
+      "verified_at": null
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "MCP.WORKFLOW.PUBLISH",
+      "channel": "MANAGO_MCP",
+      "mode": "WRITE",
+      "status": "DISCOVERY_REQUIRED",
+      "input_contract": "workflow version + approval token",
+      "output_contract": "activation result",
+      "fallback": "Human activation in UI",
+      "evidence": [],
+      "verified_at": null
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "MCP.SEGMENT.LIST",
+      "channel": "MANAGO_MCP",
+      "mode": "READ",
+      "status": "DISCOVERY_REQUIRED",
+      "input_contract": "account/page",
+      "output_contract": "segment definitions",
+      "fallback": "Agent targeted lookup/manual export",
+      "evidence": [],
+      "verified_at": null
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "MCP.SEGMENT.WHEREUSED",
+      "channel": "MANAGO_MCP",
+      "mode": "READ",
+      "status": "DISCOVERY_REQUIRED",
+      "input_contract": "segment ID",
+      "output_contract": "dependent asset IDs",
+      "fallback": "Manual dependency mapping",
+      "evidence": [],
+      "verified_at": null
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "MCP.TAG.PROPERTY.LIST",
+      "channel": "MANAGO_MCP",
+      "mode": "READ",
+      "status": "DISCOVERY_REQUIRED",
+      "input_contract": "account/page",
+      "output_contract": "tag/property definitions",
+      "fallback": "REST paging/manual export",
+      "evidence": [],
+      "verified_at": null
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "MCP.SURFACE.LIST",
+      "channel": "MANAGO_MCP",
+      "mode": "READ",
+      "status": "DISCOVERY_REQUIRED",
+      "input_contract": "account/page",
+      "output_contract": "surface definitions",
+      "fallback": "Human UI inventory",
+      "evidence": [],
+      "verified_at": null
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "MCP.SURFACE.UPSERT",
+      "channel": "MANAGO_MCP",
+      "mode": "WRITE",
+      "status": "DISCOVERY_REQUIRED",
+      "input_contract": "versioned surface config",
+      "output_contract": "draft/version/result",
+      "fallback": "Human UI build",
+      "evidence": [],
+      "verified_at": null
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "MCP.SMS.CONFIGURE",
+      "channel": "MANAGO_MCP",
+      "mode": "WRITE",
+      "status": "DISCOVERY_REQUIRED",
+      "input_contract": "consented audience + node config",
+      "output_contract": "draft/result",
+      "fallback": "Human workflow build",
+      "evidence": [],
+      "verified_at": null
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "MCP.ANALYTICS.READ",
+      "channel": "MANAGO_MCP",
+      "mode": "READ",
+      "status": "DISCOVERY_REQUIRED",
+      "input_contract": "metric/window/grouping",
+      "output_contract": "rows + provenance",
+      "fallback": "REST/agent/export",
+      "evidence": [],
+      "verified_at": null
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "MCP.BULK.PAGING",
+      "channel": "MANAGO_MCP",
+      "mode": "READ",
+      "status": "DISCOVERY_REQUIRED",
+      "input_contract": "cursor/page size",
+      "output_contract": "stable cursor/rows",
+      "fallback": "Documented REST paging",
+      "evidence": [],
+      "verified_at": null
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "MCP.ERRORS.LIMITS",
+      "channel": "MANAGO_MCP",
+      "mode": "READ",
+      "status": "DISCOVERY_REQUIRED",
+      "input_contract": "controlled invalid/limit tests",
+      "output_contract": "error codes/retry hints",
+      "fallback": "Connector adaptive throttling",
+      "evidence": [],
+      "verified_at": null
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "HUMAN.WORKFLOW.BUILD",
+      "channel": "HUMAN_OPERATOR",
+      "mode": "WRITE",
+      "status": "CONFIRMED_LIVE",
+      "input_contract": "platform-specific build guide",
+      "output_contract": "workflow ID + screenshots/export",
+      "fallback": "Required MVP1 fallback",
+      "evidence": [
+        {
+          "source": "pack:Capability Matrix v1.1",
+          "locator": "02 Capability Matrix/HUMAN.WORKFLOW.BUILD",
+          "value": "Klints MVP1 operating model",
+          "observed_at": "2026-07-18T12:00:00+02:00"
+        }
+      ],
+      "verified_at": "2026-07-18T12:00:00+02:00"
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "HUMAN.APPROVAL",
+      "channel": "HUMAN_OPERATOR",
+      "mode": "WRITE",
+      "status": "CONFIRMED_LIVE",
+      "input_contract": "diff + evidence + QA",
+      "output_contract": "approval record",
+      "fallback": "No autonomous fallback",
+      "evidence": [
+        {
+          "source": "pack:Capability Matrix v1.1",
+          "locator": "02 Capability Matrix/HUMAN.APPROVAL",
+          "value": "Klints MVP1 specification",
+          "observed_at": "2026-07-18T12:00:00+02:00"
+        }
+      ],
+      "verified_at": "2026-07-18T12:00:00+02:00"
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "KLINTS.REPORT.COMPOSE",
+      "channel": "KLINTS_BACKEND",
+      "mode": "READ",
+      "status": "REQUIRED_BUILD",
+      "input_contract": "tenant + variant + immutable snapshot IDs",
+      "output_contract": "validated report payload",
+      "fallback": "Explicit INCOMPLETE report",
+      "evidence": [
+        {
+          "source": "pack:Capability Matrix v1.1",
+          "locator": "02 Capability Matrix/KLINTS.REPORT.COMPOSE",
+          "value": "Klints v1.4.1 report contract",
+          "observed_at": "2026-07-18T12:00:00+02:00"
+        }
+      ],
+      "verified_at": "2026-07-18T12:00:00+02:00"
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "KLINTS.REPORT.RENDER.PDF",
+      "channel": "KLINTS_BACKEND",
+      "mode": "WRITE_ARTIFACT",
+      "status": "REQUIRED_BUILD",
+      "input_contract": "payload hash + template version",
+      "output_contract": "immutable PDF artifact + SHA-256",
+      "fallback": "JSON export + retry",
+      "evidence": [
+        {
+          "source": "pack:Capability Matrix v1.1",
+          "locator": "02 Capability Matrix/KLINTS.REPORT.RENDER.PDF",
+          "value": "Klints v1.4.1 report contract",
+          "observed_at": "2026-07-18T12:00:00+02:00"
+        }
+      ],
+      "verified_at": "2026-07-18T12:00:00+02:00"
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "KLINTS.REPORT.EXPORT.JSON",
+      "channel": "KLINTS_BACKEND",
+      "mode": "WRITE_ARTIFACT",
+      "status": "REQUIRED_BUILD",
+      "input_contract": "validated report payload",
+      "output_contract": "immutable JSON artifact + SHA-256",
+      "fallback": "In-app payload",
+      "evidence": [
+        {
+          "source": "pack:Capability Matrix v1.1",
+          "locator": "02 Capability Matrix/KLINTS.REPORT.EXPORT.JSON",
+          "value": "Klints v1.4.1 report contract",
+          "observed_at": "2026-07-18T12:00:00+02:00"
+        }
+      ],
+      "verified_at": "2026-07-18T12:00:00+02:00"
+    },
+    {
+      "schema_version": "1.0.0",
+      "capability_id": "KLINTS.REPORT.DOWNLOAD",
+      "channel": "KLINTS_BACKEND",
+      "mode": "READ_ARTIFACT",
+      "status": "REQUIRED_BUILD",
+      "input_contract": "tenant/report/artifact/auth context",
+      "output_contract": "short-lived scoped download",
+      "fallback": "No download",
+      "evidence": [
+        {
+          "source": "pack:Capability Matrix v1.1",
+          "locator": "02 Capability Matrix/KLINTS.REPORT.DOWNLOAD",
+          "value": "Klints v1.4.1 report contract",
+          "observed_at": "2026-07-18T12:00:00+02:00"
+        }
+      ],
+      "verified_at": "2026-07-18T12:00:00+02:00"
+    }
+  ]
+}

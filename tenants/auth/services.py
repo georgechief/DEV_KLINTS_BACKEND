@@ -139,6 +139,7 @@ def serialize_me_response(user: User) -> dict:
                 "id": str(company.id),
                 "name": company.name,
                 "domain": company.domain,
+                "writeback_execute_enabled": company.writeback_execute_enabled,
             }
             if company
             else None

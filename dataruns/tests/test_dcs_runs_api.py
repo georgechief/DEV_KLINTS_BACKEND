@@ -9,7 +9,11 @@ from uuid import uuid4
 from django.test import TestCase
 from rest_framework.test import APIRequestFactory, force_authenticate
 
-from dataruns.dcs.enqueue import DcsAlreadyRunningError, DcsEnqueueResult
+from dataruns.dcs.enqueue import (
+    DcsAlreadyRunningError,
+    DcsEnqueueResult,
+    DcsQueueUnavailableError,
+)
 from dataruns.dcs.views import DcsRunsView
 from tenants.models import Company, Connector, Tenant, User
 
@@ -102,3 +106,13 @@ class DcsRunsApiTests(TestCase):
         self._connect("shopify")
         response = self._post(self.admin)
         self.assertEqual(response.status_code, 409)
+
+    @patch(
+        "dataruns.dcs.views.enqueue_dcs_score",
+        side_effect=DcsQueueUnavailableError("redis down"),
+    )
+    def test_503_when_queue_unavailable(self, _mock_enqueue):
+        self._connect("shopify")
+        response = self._post(self.admin)
+        self.assertEqual(response.status_code, 503)
+        self.assertIn("unavailable", response.data["detail"].lower())

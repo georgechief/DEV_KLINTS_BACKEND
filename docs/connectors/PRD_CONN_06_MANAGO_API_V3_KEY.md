@@ -1,7 +1,7 @@
 # PRD-CONN-06 — Manago API v3 key on Connected stack
 
 **Status:** Ready for implementation  
-**Module:** see folder path  
+**Owner track:** Engineering   
 **Depends on:** Manago connect (API v2 client id + api secret) already on `/integrations`; connector encrypt/mask helpers; DCS catalog ingest that reads `api_v3_key`  
 **Surface:** **Connected stack only** (`/integrations`) — Manago.ai card, when connector is linked (`connected` / `degraded`)  
 **Scope:** Let the operator paste a Manago **API v3** key (created in Manago → API access details → API v3), store it encrypted, and show it **masked** with a show/hide control after save

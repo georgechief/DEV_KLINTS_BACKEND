@@ -93,7 +93,7 @@ FE should mirror: required + basic client check (non-empty; optionally warn if n
 
 ### `POST /api/v1/auth/register/`
 
-Unchanged request shape (already documented in `docs/auth/API_AUTH_CONNECTORS.md`):
+Unchanged request shape (already documented in `docs/API_AUTH_CONNECTORS.md`):
 
 ```json
 {
@@ -177,4 +177,4 @@ Optional: light client normalize for UX (strip protocol) before send; server rem
 
 ### Docs / series
 
-- [ ] Indexed in `docs/README.md` (this PRD)
+- [ ] Indexed in `docs/engineering/README.md` (this PRD)

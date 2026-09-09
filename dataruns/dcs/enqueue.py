@@ -26,6 +26,20 @@ class DcsAlreadyRunningError(RuntimeError):
     """Raised when a DCS score DataRun is already pending/running for the company."""
 
 
+class DcsQueueUnavailableError(RuntimeError):
+    """Raised when Celery/Redis cannot accept the DCS score task."""
+
+
+# PENDING (never picked up by a worker) — Celery off but Redis up queues forever.
+DCS_PENDING_STALE_AFTER = timedelta(seconds=90)
+# Manual re-run: fail orphaned PENDING faster so Re-run is not blocked by 409.
+DCS_MANUAL_PENDING_RETRY_AFTER = timedelta(seconds=30)
+# RUNNING (worker started) — longer safety net so real scores aren't killed early.
+DCS_RUNNING_STALE_AFTER = timedelta(minutes=45)
+# Back-compat alias used by FE docs / imports (pending budget).
+DCS_ACTIVE_STALE_AFTER = DCS_PENDING_STALE_AFTER
+
+
 @dataclass(frozen=True)
 class DcsEnqueueResult:
     data_run: DataRun | None
@@ -33,6 +47,26 @@ class DcsEnqueueResult:
     domain_run: Run | None = None
     skipped: bool = False
     skip_reason: str | None = None
+
+
+def celery_workers_available(*, timeout: float = 1.0) -> bool:
+    """
+    Return True when at least one Celery worker responds to inspect ping.
+
+    Redis may accept tasks while no worker consumes them — this catches that case.
+    """
+    from django.conf import settings
+
+    if getattr(settings, "CELERY_TASK_ALWAYS_EAGER", False):
+        return True
+
+    try:
+        from core.celery import app
+
+        ping = app.control.inspect(timeout=timeout).ping()
+    except Exception:  # noqa: BLE001 — broker/inspect failures vary
+        return False
+    return bool(ping)
 
 
 def find_active_dcs_data_run(*, company: Company) -> DataRun | None:
@@ -45,6 +79,92 @@ def find_active_dcs_data_run(*, company: Company) -> DataRun | None:
         )
         .order_by("-created_at")
         .first()
+    )
+
+
+def _mark_dcs_runs_failed(
+    *,
+    data_run: DataRun,
+    domain_run: Run | None,
+    error: str,
+) -> None:
+    """Mark orphaned enqueue/worker runs failed so status unlocks."""
+    meta = dict(data_run.metadata or {})
+    meta["error"] = error
+    data_run.status = DataRun.Status.FAILED
+    data_run.finished_at = timezone.now()
+    data_run.metadata = meta
+    data_run.save(update_fields=["status", "finished_at", "metadata"])
+    if domain_run is not None and domain_run.status == Run.Status.RUNNING:
+        domain_run.status = Run.Status.COMPLETED
+        domain_run.completed_at = timezone.now()
+        domain_run.save(update_fields=["status", "completed_at"])
+
+
+def fail_stale_active_dcs_runs(
+    *,
+    company: Company,
+    older_than: timedelta | None = None,
+) -> DataRun | None:
+    """
+    If an active DCS DataRun is older than its status-specific budget, mark failed.
+
+    - PENDING: default 90s (queue never consumed — Celery off)
+    - RUNNING: default 45m (worker hung)
+
+    Returns the failed run when one was stale, else None.
+    """
+    active = find_active_dcs_data_run(company=company)
+    if active is None:
+        return None
+    started = getattr(active, "started_at", None) or getattr(active, "created_at", None)
+    if started is None:
+        return None
+    if timezone.is_naive(started):
+        started = timezone.make_aware(started, timezone.get_current_timezone())
+
+    if older_than is not None:
+        limit = older_than
+    elif active.status == DataRun.Status.PENDING:
+        limit = DCS_PENDING_STALE_AFTER
+    else:
+        limit = DCS_RUNNING_STALE_AFTER
+
+    if timezone.now() - started < limit:
+        return None
+
+    domain_run = None
+    run_id = (active.metadata or {}).get("run_id")
+    if run_id:
+        domain_run = Run.objects.filter(pk=run_id, company=company).first()
+
+    if active.status == DataRun.Status.PENDING:
+        error = (
+            "DCS score run timed out waiting for a worker. "
+            "Start Redis and Celery, then re-run checks."
+        )
+    else:
+        error = (
+            "DCS score run timed out while running. "
+            "Check Celery workers and re-run checks."
+        )
+
+    _mark_dcs_runs_failed(
+        data_run=active,
+        domain_run=domain_run,
+        error=error,
+    )
+    return active
+
+
+def fail_stale_pending_for_manual_retry(*, company: Company) -> DataRun | None:
+    """Fail a PENDING run older than the manual retry budget (Re-run button)."""
+    active = find_active_dcs_data_run(company=company)
+    if active is None or active.status != DataRun.Status.PENDING:
+        return None
+    return fail_stale_active_dcs_runs(
+        company=company,
+        older_than=DCS_MANUAL_PENDING_RETRY_AFTER,
     )
 
 
@@ -114,6 +234,13 @@ def maybe_enqueue_dcs_after_bootstrap(company: Company) -> DcsEnqueueResult | No
             task_queued=False,
             skipped=True,
             skip_reason="already_running",
+        )
+    except DcsQueueUnavailableError:
+        return DcsEnqueueResult(
+            data_run=None,
+            task_queued=False,
+            skipped=True,
+            skip_reason="queue_unavailable",
         )
 
 
@@ -240,6 +367,15 @@ def enqueue_dcs_score(
             skip_reason="already_ran_today",
         )
 
+    fail_stale_active_dcs_runs(company=company)
+    if triggered_by == "manual":
+        fail_stale_pending_for_manual_retry(company=company)
+
+    if queue and not celery_workers_available():
+        raise DcsQueueUnavailableError(
+            "No Celery workers are running. Start the worker stack and retry."
+        )
+
     existing = find_active_dcs_data_run(company=company)
     if existing is not None:
         raise DcsAlreadyRunningError(
@@ -264,6 +400,7 @@ def enqueue_dcs_score(
         tenant=company.tenant,
         name=DCS_SCORE_DATA_RUN_NAME,
         status=DataRun.Status.PENDING,
+        started_at=timezone.now(),
         metadata=build_dcs_score_metadata(
             company=company,
             triggered_by=triggered_by,
@@ -279,7 +416,21 @@ def enqueue_dcs_score(
     if queue:
         from dataruns.tasks import run_dcs_score
 
-        run_dcs_score.delay(data_run.id)
+        try:
+            run_dcs_score.delay(data_run.id)
+        except Exception as exc:  # noqa: BLE001 — broker/Redis failures vary by client
+            # Never leave PENDING orphans when the broker is unreachable.
+            _mark_dcs_runs_failed(
+                data_run=data_run,
+                domain_run=domain_run,
+                error=(
+                    "Could not queue DCS score: scoring worker unavailable "
+                    "(Redis/Celery). Start the worker stack and retry."
+                ),
+            )
+            raise DcsQueueUnavailableError(
+                "Scoring worker queue unavailable (Redis/Celery)."
+            ) from exc
         task_queued = True
 
     return DcsEnqueueResult(

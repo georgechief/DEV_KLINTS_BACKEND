@@ -32,6 +32,11 @@ _ALLOWED_TOP_LEVEL = frozenset(
         "allowlist_version",
         "dcs_run_id",
         "prompt_version",
+        "headline_score",
+        "revenue_impact_total",
+        "top_checks",
+        "plan_check_ids",
+        "plan_rank",
     }
 )
 
@@ -88,21 +93,17 @@ def _finding_summary_from_issue(issue: dict[str, Any]) -> dict[str, Any]:
     return summary
 
 
-def project_fix_suggestion_context(
+def _issue_base_fields(
     *,
     issue: dict[str, Any],
-    company_name: str | None = None,
-    company_domain: str | None = None,
-    industry_vertical: str | None = None,
-    dcs_run_id: int | str | None = None,
-    prompt_version: str | None = None,
-    policy_version: str | None = None,
+    company_name: str | None,
+    company_domain: str | None,
+    industry_vertical: str | None,
+    dcs_run_id: int | str | None,
+    prompt_version: str | None,
+    policy_version: str | None,
+    task_type: str,
 ) -> dict[str, Any]:
-    """
-    Build allowlisted context for task_type=fix_suggestion.
-
-    Input is typically an enriched worklist issue dict. Non-allowlisted keys are dropped.
-    """
     check_id = str(issue.get("check_id") or "").strip().upper()
     check_name = format_customer_title(
         str(issue.get("title") or issue.get("check_name") or check_id)
@@ -110,7 +111,6 @@ def project_fix_suggestion_context(
     systems = _platform_names(
         str(issue.get("systems_compared") or issue.get("systems") or "")
     )
-
     revenue = issue.get("revenue_impact")
     if isinstance(revenue, bool):
         revenue = None
@@ -121,14 +121,12 @@ def project_fix_suggestion_context(
             revenue = float(revenue) if revenue is not None else None
         except (TypeError, ValueError):
             revenue = None
-
     currency = issue.get("currency")
     currency_s = str(currency).strip().upper() if currency else None
     if currency_s and len(currency_s) != 3:
         currency_s = None
-
-    ctx: dict[str, Any] = {
-        "task_type": "fix_suggestion",
+    return {
+        "task_type": task_type,
         "check_id": check_id,
         "check_name": check_name,
         "dimension": _cap(str(issue.get("dimension") or ""), limit=120) or None,
@@ -153,7 +151,147 @@ def project_fix_suggestion_context(
         "policy_version": (policy_version or POLICY_VERSION),
         "allowlist_version": ALLOWLIST_VERSION,
     }
+
+
+def project_fix_suggestion_context(
+    *,
+    issue: dict[str, Any],
+    company_name: str | None = None,
+    company_domain: str | None = None,
+    industry_vertical: str | None = None,
+    dcs_run_id: int | str | None = None,
+    prompt_version: str | None = None,
+    policy_version: str | None = None,
+) -> dict[str, Any]:
+    """
+    Build allowlisted context for task_type=fix_suggestion.
+
+    Input is typically an enriched worklist issue dict. Non-allowlisted keys are dropped.
+    """
+    return project(
+        _issue_base_fields(
+            issue=issue,
+            company_name=company_name,
+            company_domain=company_domain,
+            industry_vertical=industry_vertical,
+            dcs_run_id=dcs_run_id,
+            prompt_version=prompt_version,
+            policy_version=policy_version,
+            task_type="fix_suggestion",
+        )
+    )
+
+
+def project_explain_finding_context(
+    *,
+    issue: dict[str, Any],
+    company_name: str | None = None,
+    company_domain: str | None = None,
+    industry_vertical: str | None = None,
+    dcs_run_id: int | str | None = None,
+    prompt_version: str | None = None,
+    policy_version: str | None = None,
+) -> dict[str, Any]:
+    return project(
+        _issue_base_fields(
+            issue=issue,
+            company_name=company_name,
+            company_domain=company_domain,
+            industry_vertical=industry_vertical,
+            dcs_run_id=dcs_run_id,
+            prompt_version=prompt_version,
+            policy_version=policy_version,
+            task_type="explain_finding",
+        )
+    )
+
+
+def project_nba_blurb_context(
+    *,
+    issue: dict[str, Any],
+    plan_rank: int | None = None,
+    company_name: str | None = None,
+    company_domain: str | None = None,
+    industry_vertical: str | None = None,
+    dcs_run_id: int | str | None = None,
+    prompt_version: str | None = None,
+    policy_version: str | None = None,
+) -> dict[str, Any]:
+    ctx = _issue_base_fields(
+        issue=issue,
+        company_name=company_name,
+        company_domain=company_domain,
+        industry_vertical=industry_vertical,
+        dcs_run_id=dcs_run_id,
+        prompt_version=prompt_version,
+        policy_version=policy_version,
+        task_type="nba_blurb",
+    )
+    if isinstance(plan_rank, int) and plan_rank > 0:
+        ctx["plan_rank"] = plan_rank
     return project(ctx)
+
+
+def project_report_narrative_context(
+    *,
+    headline_score: float | None,
+    currency: str | None,
+    revenue_impact_total: float | None,
+    top_checks: list[dict[str, Any]],
+    plan_check_ids: list[str],
+    architecture_verdict: str | None = None,
+    company_name: str | None = None,
+    company_domain: str | None = None,
+    dcs_run_id: int | str | None = None,
+    prompt_version: str | None = None,
+    policy_version: str | None = None,
+) -> dict[str, Any]:
+    """Allowlisted rollup only — no full worklist dumps (PRD §6.3)."""
+    cleaned_checks: list[dict[str, Any]] = []
+    for row in top_checks[:8]:
+        if not isinstance(row, dict):
+            continue
+        check_id = str(row.get("check_id") or "").strip().upper()
+        if not check_id:
+            continue
+        item: dict[str, Any] = {
+            "check_id": check_id,
+            "check_name": _cap(str(row.get("check_name") or check_id), limit=160),
+            "severity": _cap(str(row.get("severity") or ""), limit=32),
+            "status": _cap(str(row.get("status") or "").upper(), limit=16),
+        }
+        impact = row.get("revenue_impact")
+        if isinstance(impact, (int, float)) and not isinstance(impact, bool):
+            item["revenue_impact"] = float(impact)
+        cleaned_checks.append(item)
+
+    ids: list[str] = []
+    for token in plan_check_ids[:8]:
+        cid = str(token or "").strip().upper()
+        if cid and cid not in ids:
+            ids.append(cid)
+
+    currency_s = str(currency).strip().upper() if currency else None
+    if currency_s and len(currency_s) != 3:
+        currency_s = None
+
+    return project(
+        {
+            "task_type": "report_narrative",
+            "headline_score": headline_score,
+            "currency": currency_s,
+            "revenue_impact_total": revenue_impact_total,
+            "top_checks": cleaned_checks,
+            "plan_check_ids": ids,
+            "architecture_verdict": _cap(architecture_verdict, limit=64) or None,
+            "company_display_name": _cap(company_name, limit=120) or None,
+            "company_hostname": strip_domain_to_hostname(company_domain),
+            "dcs_run_id": dcs_run_id,
+            "prompt_version": prompt_version,
+            "policy_version": (policy_version or POLICY_VERSION),
+            "allowlist_version": ALLOWLIST_VERSION,
+        }
+    )
 
 
 def project(raw: dict[str, Any]) -> dict[str, Any]:

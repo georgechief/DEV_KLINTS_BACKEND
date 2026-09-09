@@ -18,8 +18,8 @@ from dataruns.reports.humanize import (
     format_generated_at,
     humanize_check_detail,
 )
-from dataruns.reports.payload import _build_remediation, build_report_payload
-from dataruns.reports.render_pdf import render_assessment_pdf
+from dataruns.reports.payload import REMEDIATION_FALLBACK, _build_remediation, build_report_payload
+from dataruns.reports.render_pdf import _remediation_pdf_rows, render_assessment_pdf
 from tenants.models import Company, Connector, Tenant, User
 
 
@@ -304,6 +304,59 @@ class ReportRemediationEnrichmentTests(TestCase):
         self.assertIsNone(payload["content"]["render_context"]["company_domain"])
         pdf = render_assessment_pdf(payload)
         self.assertTrue(pdf.startswith(b"%PDF"))
+        self.assertEqual(len(_remediation_pdf_rows(payload["content"]["remediation"]["items"])), 1)
+        self.assertIn("Deduplicate", _remediation_pdf_rows(payload["content"]["remediation"]["items"])[0][1])
+
+    def test_pdf_hides_what_to_fix_when_only_see_data_center(self):
+        payload = build_report_payload(
+            report_id=__import__("uuid").uuid4(),
+            company=self.company,
+            dcs_run=self._create_dcs_run(),
+            architecture_assessment=None,
+            open_issues=[
+                {
+                    "check_id": "ZZ-99",
+                    "title": "Mystery check",
+                    "status": "FAIL",
+                    "severity": "high",
+                    "detail": "Something broke.",
+                    "suggested_fix": "",
+                    "fix_type": None,
+                    "fix_owner": None,
+                    "systems_compared": "Manago.ai",
+                    "revenue_impact": 100.0,
+                    "currency": "USD",
+                    "root_cause_ids": [],
+                }
+            ],
+            plan_tasks=[],
+            created_by_email=self.admin.email,
+            period_from="2026-07-29",
+            period_to="2026-08-12",
+        )
+        rem = payload["content"]["remediation"]["items"][0]
+        self.assertEqual(rem["suggested_fix"], REMEDIATION_FALLBACK)
+        self.assertEqual(_remediation_pdf_rows(payload["content"]["remediation"]["items"]), [])
+
+        pdf = render_assessment_pdf(payload)
+        self.assertTrue(pdf.startswith(b"%PDF"))
+
+    def test_remediation_pdf_rows_skip_placeholder_owner_and_type(self):
+        rows = _remediation_pdf_rows(
+            [
+                {
+                    "check_id": "LE-04",
+                    "suggested_fix": "Deduplicate PURCHASE events by order externalId.",
+                    "fix_owner": REMEDIATION_FALLBACK,
+                    "fix_type": REMEDIATION_FALLBACK,
+                    "fix_href": "/fix?issue=LE-04",
+                }
+            ]
+        )
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0][1], "Deduplicate PURCHASE events by order externalId.")
+        self.assertEqual(rows[0][2], "")
+        self.assertEqual(rows[0][3], "")
 
     def test_systems_falls_back_to_check_master_when_issue_blank(self):
         from dataruns.reports.payload import _build_check_register

@@ -20,4 +20,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
     CMD curl -fsS http://127.0.0.1:8000/health/ || exit 1
 
-CMD ["sh", "-c", "python manage.py collectstatic --noinput && python manage.py migrate --noinput && exec gunicorn core.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"]
+# migrate = schema; load_use_case_pilots = idempotent MVP1 catalogue seed (PRD-OPS-UC-01 / UC-01).
+CMD ["sh", "-c", "set -e && python manage.py collectstatic --noinput && python manage.py migrate --noinput && python manage.py load_use_case_pilots && exec gunicorn core.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"]

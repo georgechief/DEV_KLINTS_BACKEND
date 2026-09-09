@@ -98,7 +98,11 @@ def successful_run_import_side_effect(
     attach_run_to_data_run(data_run=data_run, run=run)
     normalized = map_raw_payload(raw=raw, connector_map=connector_map, config=config)
     with transaction.atomic():
-        counts = persist_normalized_records(company=company, normalized=normalized)
+        counts = persist_normalized_records(
+            company=company,
+            normalized=normalized,
+            platform=platform,
+        )
         contact_metrics_written = _persist_contact_metrics(run=run, company=company)
         snapshot_data = _build_snapshot_data(
             platform=platform,

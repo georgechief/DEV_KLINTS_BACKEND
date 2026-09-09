@@ -515,6 +515,70 @@ class DcsWorklistTests(TestCase):
         )
         self.assertEqual(len(issues[0]["evidence_preview"]), 5)
 
+    def test_worklist_evidence_masks_emails(self):
+        domain_run = Run.objects.create(
+            company=self.company,
+            run_type=Run.RunType.FULL,
+            status=Run.Status.COMPLETED,
+        )
+        self._create_dcs_run(
+            metadata={
+                "kind": DCS_SCORE_KIND,
+                "company_id": str(self.company.id),
+                "run_id": str(domain_run.id),
+                "dcs_run": {
+                    "run_id": str(domain_run.id),
+                    "run_state": "CONDITIONALLY_READY",
+                    "headline_score": 70.0,
+                },
+                "check_results": [
+                    {
+                        "check_id": "CI-01",
+                        "status": "FAIL",
+                        "severity": "high",
+                        "message": "Contact count mismatch",
+                    }
+                ],
+            },
+        )
+        RunIssue.objects.create(
+            run=domain_run,
+            entity_type="dcs_check",
+            entity_id=self.company.id,
+            issue_type="CI-01",
+            severity="High",
+            details={
+                "check_id": "CI-01",
+                "status": "FAIL",
+                "mismatches": [
+                    {
+                        "side": "shopify_only",
+                        "email": "buyer@example.com",
+                        "shopify_customer_id": "gid://shopify/Customer/1",
+                    }
+                ],
+            },
+        )
+
+        payload = build_worklist_payload(company=self.company)
+        ci01 = next(issue for issue in payload["issues"] if issue["check_id"] == "CI-01")
+        preview = ci01["evidence_preview"][0]
+        self.assertEqual(preview["value"]["email"], "b***@example.com")
+        self.assertNotIn("buyer@example.com", str(preview))
+
+        detail = build_worklist_detail(company=self.company, check_id="CI-01")
+        row = detail["mismatches"][0]
+        self.assertEqual(row["value"]["email"], "b***@example.com")
+        self.assertNotIn("buyer@example.com", str(detail))
+
+        request = self.factory.get("/api/v1/dcs/worklist/CI-01/")
+        force_authenticate(request, user=self.viewer)
+        response = DcsWorklistDetailView.as_view()(request, check_id="CI-01")
+        self.assertEqual(response.status_code, 200)
+        api_row = response.data["mismatches"][0]
+        self.assertEqual(api_row["value"]["email"], "b***@example.com")
+        self.assertNotIn("buyer@example.com", str(response.data))
+
     def test_worklist_viewer_can_access(self):
         self._seed_run_with_issues()
         request = self.factory.get("/api/v1/dcs/worklist/")

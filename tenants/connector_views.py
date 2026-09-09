@@ -18,7 +18,11 @@ from dataruns.connectors.base import (
     enqueue_connector_bootstrap,
     find_latest_bootstrap_data_run,
 )
-from dataruns.connectors.bootstrap_health import build_latest_bootstrap_payload
+from dataruns.connectors.bootstrap_health import (
+    build_last_data_refresh_payload,
+    build_latest_bootstrap_payload,
+    resolve_last_data_refresh_data_run,
+)
 from dataruns.audit import append_audit_event
 from dataruns.models import AuditLog
 from tenants import shopify
@@ -124,6 +128,20 @@ def _latest_bootstrap_for_connector(
     return build_latest_bootstrap_payload(data_run)
 
 
+def _last_data_refresh_for_connector(
+    *,
+    company: Company,
+    connector: Connector,
+) -> dict | None:
+    data_run = resolve_last_data_refresh_data_run(
+        company=company,
+        connector=connector,
+    )
+    if data_run is None:
+        return None
+    return build_last_data_refresh_payload(data_run)
+
+
 def _serialize_connector_list_item(
     *,
     company: Company,
@@ -138,6 +156,10 @@ def _serialize_connector_list_item(
         "config": masked_config(connector.config),
         "created_at": connector.created_at,
         "latest_bootstrap": _latest_bootstrap_for_connector(
+            company=company,
+            connector=connector,
+        ),
+        "last_data_refresh": _last_data_refresh_for_connector(
             company=company,
             connector=connector,
         ),

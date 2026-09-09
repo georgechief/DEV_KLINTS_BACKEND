@@ -91,16 +91,19 @@ def approve_token(
     approval_id: str,
     actor: User,
 ) -> WritebackApprovalToken:
-    token = _get_token(company=company, approval_id=approval_id)
-    _expire_if_needed(token)
-    if token.status != WritebackApprovalToken.Status.PENDING:
-        raise ApprovalTokenError("approval_not_pending", "Approval token is not pending.")
+    with transaction.atomic():
+        token = _get_token_for_update(company=company, approval_id=approval_id)
+        _expire_if_needed(token)
+        if token.status != WritebackApprovalToken.Status.PENDING:
+            raise ApprovalTokenError(
+                "approval_not_pending", "Approval token is not pending."
+            )
 
-    now = timezone.now()
-    token.status = WritebackApprovalToken.Status.APPROVED
-    token.approved_at = now
-    token.approver_user = actor
-    token.save(update_fields=["status", "approved_at", "approver_user"])
+        now = timezone.now()
+        token.status = WritebackApprovalToken.Status.APPROVED
+        token.approved_at = now
+        token.approver_user = actor
+        token.save(update_fields=["status", "approved_at", "approver_user"])
 
     append_audit_event(
         company=company,
@@ -122,15 +125,24 @@ def reject_token(
     company: Company,
     approval_id: str,
     actor: User,
+    reason: str | None = None,
 ) -> WritebackApprovalToken:
-    token = _get_token(company=company, approval_id=approval_id)
-    _expire_if_needed(token)
-    if token.status != WritebackApprovalToken.Status.PENDING:
-        raise ApprovalTokenError("approval_not_pending", "Approval token is not pending.")
+    cleaned_reason = (reason or "").strip()
+    with transaction.atomic():
+        token = _get_token_for_update(company=company, approval_id=approval_id)
+        _expire_if_needed(token)
+        if token.status != WritebackApprovalToken.Status.PENDING:
+            raise ApprovalTokenError(
+                "approval_not_pending", "Approval token is not pending."
+            )
 
-    token.status = WritebackApprovalToken.Status.REJECTED
-    token.approver_user = actor
-    token.save(update_fields=["status", "approver_user"])
+        token.status = WritebackApprovalToken.Status.REJECTED
+        token.approver_user = actor
+        metadata = dict(token.metadata) if isinstance(token.metadata, dict) else {}
+        if cleaned_reason:
+            metadata["rejection_reason"] = cleaned_reason
+        token.metadata = metadata
+        token.save(update_fields=["status", "approver_user", "metadata"])
 
     append_audit_event(
         company=company,
@@ -142,6 +154,7 @@ def reject_token(
             "approval_id": str(token.id),
             "check_id": token.object_id,
             "diff_hash": token.diff_hash,
+            **({"rejection_reason": cleaned_reason} if cleaned_reason else {}),
         },
     )
     return token
@@ -179,11 +192,76 @@ def validate_approval_for_execute(
 
 
 def consume_approval_token(*, company: Company, approval_id: str) -> None:
-    token = _get_token(company=company, approval_id=approval_id)
-    if token.consumed_at is not None:
-        return
-    token.consumed_at = timezone.now()
-    token.save(update_fields=["consumed_at"])
+    # Atomic no-op if already consumed (safe even without outer company lock).
+    WritebackApprovalToken.objects.filter(
+        company=company,
+        pk=approval_id,
+        consumed_at__isnull=True,
+    ).update(consumed_at=timezone.now())
+
+
+def revoke_approval_on_diff_hash_mismatch(
+    *,
+    company: Company,
+    approval_id: str | None,
+) -> bool:
+    """
+    C2 — execute saw a stale preview hash; revoke APPROVED unconsumed grant so
+    status stops hydrating Approve & write against the dead preview.
+    """
+    if not approval_id or not str(approval_id).strip():
+        return False
+    try:
+        with transaction.atomic():
+            token = _get_token_for_update(
+                company=company, approval_id=str(approval_id).strip()
+            )
+            if token.status != WritebackApprovalToken.Status.APPROVED:
+                return False
+            if token.consumed_at is not None:
+                return False
+            token.status = WritebackApprovalToken.Status.REVOKED
+            metadata = dict(token.metadata) if isinstance(token.metadata, dict) else {}
+            metadata["revoke_reason"] = "diff_hash_mismatch"
+            token.metadata = metadata
+            token.save(update_fields=["status", "metadata"])
+    except ApprovalTokenNotFound:
+        return False
+    return True
+
+
+def revoke_superseded_grants_for_new_preview(
+    *,
+    company: Company,
+    check_id: str,
+    preview_job: WritebackJob,
+) -> int:
+    """
+    C4 — a newer dry-run must kill older APPROVED unconsumed grants for this
+    check/run so identical-hash re-previews cannot execute via the old token.
+    """
+    normalized = (check_id or "").strip().upper()
+    if not normalized or preview_job is None:
+        return 0
+    qs = WritebackApprovalToken.objects.filter(
+        company=company,
+        object_id=normalized,
+        status=WritebackApprovalToken.Status.APPROVED,
+        consumed_at__isnull=True,
+    ).exclude(writeback_job_id=preview_job.id)
+    if preview_job.dcs_data_run_id is not None:
+        qs = qs.filter(writeback_job__dcs_data_run_id=preview_job.dcs_data_run_id)
+    revoked = 0
+    with transaction.atomic():
+        for token in qs.select_for_update():
+            token.status = WritebackApprovalToken.Status.REVOKED
+            metadata = dict(token.metadata) if isinstance(token.metadata, dict) else {}
+            metadata["revoke_reason"] = "superseded_by_new_preview"
+            metadata["superseded_by_job_id"] = str(preview_job.id)
+            token.metadata = metadata
+            token.save(update_fields=["status", "metadata"])
+            revoked += 1
+    return revoked
 
 
 def serialize_token(token: WritebackApprovalToken) -> dict[str, Any]:
@@ -221,8 +299,26 @@ def _get_token(*, company: Company, approval_id: str) -> WritebackApprovalToken:
         raise ApprovalTokenNotFound() from None
 
 
+def _get_token_for_update(*, company: Company, approval_id: str) -> WritebackApprovalToken:
+    """Row lock for approve/reject — call inside transaction.atomic()."""
+    try:
+        return (
+            WritebackApprovalToken.objects.select_for_update()
+            .select_related("writeback_job")
+            .get(company=company, pk=approval_id)
+        )
+    except (WritebackApprovalToken.DoesNotExist, ValueError, TypeError):
+        raise ApprovalTokenNotFound() from None
+
+
 def _expire_if_needed(token: WritebackApprovalToken) -> None:
-    if token.status != WritebackApprovalToken.Status.PENDING:
+    """Expire PENDING or unconsumed APPROVED when past expires_at (C3)."""
+    if token.consumed_at is not None:
+        return
+    if token.status not in (
+        WritebackApprovalToken.Status.PENDING,
+        WritebackApprovalToken.Status.APPROVED,
+    ):
         return
     if timezone.now() >= token.expires_at:
         token.status = WritebackApprovalToken.Status.EXPIRED

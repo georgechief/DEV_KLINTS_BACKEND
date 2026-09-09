@@ -21,6 +21,7 @@ from dataruns.dcs.executors.foundation import evaluate_foundation_gates
 from dataruns.dcs.executors.registry import get_executor
 from dataruns.dcs.fresh_import import (
     DcsFreshImportError,
+    assert_fresh_imports_cover_connected,
     refresh_connected_platforms_for_dcs,
 )
 from dataruns.dcs.issues import persist_dcs_issues
@@ -503,6 +504,11 @@ def run_dcs_pipeline(data_run: DataRun) -> dict[str, Any]:
         source_runs = refresh["source_runs"]
         fresh_imports = refresh["fresh_imports"]
         window_days = refresh["window_days"]
+
+        assert_fresh_imports_cover_connected(
+            company=company,
+            fresh_imports=fresh_imports,
+        )
 
         snapshot = build_dcs_run_snapshot(
             company=company,

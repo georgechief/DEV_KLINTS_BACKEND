@@ -284,6 +284,40 @@ def format_impact_cell(
     return amount_s
 
 
+def format_impact_overview(
+    amount: Any,
+    currency: Any,
+    *,
+    empty: str = "-",
+) -> str:
+    """Overview brief only — whole dollars, no false precision."""
+    if amount is None:
+        return empty
+    try:
+        value = float(amount)
+    except (TypeError, ValueError):
+        return empty
+    if value == 0:
+        return empty
+    rounded = int(round(value))
+    if rounded == 0:
+        return empty
+    code = str(currency).strip().upper() if currency else ""
+    amount_s = f"{rounded:,}"
+    if code and re.fullmatch(r"[A-Z]{3}", code):
+        return f"{code} {amount_s}"
+    return amount_s
+
+
+def format_dimension_display(raw: str | None) -> str:
+    """01 Customer Identity -> Customer Identity (Overview brief)."""
+    token = (raw or "").strip()
+    if not token:
+        return ""
+    stripped = re.sub(r"^\d+\s+", "", token)
+    return format_customer_title(stripped) if stripped else ""
+
+
 def connector_strip_labels(connectors: list[dict[str, str]]) -> str:
     """
     Build `Manago connected · Shopify connected · ERP unknown`.

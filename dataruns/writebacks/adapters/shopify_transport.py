@@ -8,7 +8,7 @@ import urllib.request
 from dataclasses import dataclass
 from typing import Any
 
-from dataruns.connectors.base import decrypt_connector_config, get_connector
+from dataruns.connectors.base import get_connector
 from dataruns.connectors.shopify.client import ShopifyClientError, _resolve_credentials
 from tenants.models import Company
 
@@ -21,14 +21,52 @@ class ShopifyWriteContext:
 
 
 def resolve_shopify_write_context(company: Company) -> ShopifyWriteContext:
+    from dataruns.connectors.shopify_token import ensure_fresh_shopify_token
+
     connector = get_connector(company=company, platform="shopify")
-    config = decrypt_connector_config(connector.config)
+    config = ensure_fresh_shopify_token(connector=connector)
     shop, access_token, api_version = _resolve_credentials(config)
     return ShopifyWriteContext(
         shop=shop,
         access_token=access_token,
         api_version=api_version,
     )
+
+
+def get_customer(
+    ctx: ShopifyWriteContext,
+    *,
+    customer_id: str,
+    timeout: float = 30.0,
+) -> dict[str, Any]:
+    url = (
+        f"https://{ctx.shop}/admin/api/{ctx.api_version}/customers/"
+        f"{customer_id}.json"
+    )
+    request = urllib.request.Request(
+        url,
+        method="GET",
+        headers={
+            "X-Shopify-Access-Token": ctx.access_token,
+            "Accept": "application/json",
+        },
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            raw = response.read().decode("utf-8")
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")
+        raise ShopifyClientError(f"Shopify customer get failed: {detail}") from exc
+    except urllib.error.URLError as exc:
+        raise ShopifyClientError(f"Shopify customer get failed: {exc}") from exc
+
+    data = json.loads(raw) if raw else {}
+    if not isinstance(data, dict):
+        raise ShopifyClientError("Shopify customer get returned invalid JSON")
+    customer = data.get("customer")
+    if not isinstance(customer, dict):
+        raise ShopifyClientError("Shopify customer get missing customer object")
+    return customer
 
 
 def update_customer(

@@ -1,8 +1,6 @@
-"""Execute gates and sandbox eligibility (PRD-WB-01 §5.2–5.3)."""
+"""Execute gates and company writeback eligibility (PRD-WB-01 §5.2, PRD-WB-03)."""
 
 from __future__ import annotations
-
-import uuid
 
 from django.conf import settings
 
@@ -10,15 +8,21 @@ from dataruns.writebacks.approvals.service import validate_approval_for_execute
 from tenants.models import Company
 
 
-def is_sandbox_company(company: Company) -> bool:
-    company_id = str(company.id)
-    return company_id in {str(value) for value in settings.WRITEBACK_SANDBOX_COMPANY_IDS}
+def is_writeback_execute_enabled(company: Company) -> bool:
+    """True when this workspace opted in to Fix Approve → execute (PRD-WB-03)."""
+    return bool(company.writeback_execute_enabled)
 
 
 def is_check_allowlisted(check_id: str) -> bool:
     normalized = (check_id or "").strip().upper()
-    allowlist = {str(value).strip().upper() for value in settings.WRITEBACK_CHECK_ALLOWLIST}
-    return normalized in allowlist
+    if not normalized:
+        return False
+    from dataruns.models import WritebackAllowedCheck
+
+    return WritebackAllowedCheck.objects.filter(
+        check_id=normalized,
+        enabled=True,
+    ).exists()
 
 
 def execute_allowed(
@@ -30,9 +34,9 @@ def execute_allowed(
 ) -> tuple[bool, str | None]:
     if not is_check_allowlisted(check_id):
         return False, "check_not_allowlisted"
-    if is_sandbox_company(company):
-        return True, None
-    if settings.WRITEBACKS_ENABLED:
+    # Company opt-in (WB-03) still requires approval + diff bind — FE always sends
+    # approval_id; do not skip the chain for direct API callers.
+    if is_writeback_execute_enabled(company) or settings.WRITEBACKS_ENABLED:
         if not approval_id:
             return False, "approval_id_required"
         valid, reason = validate_approval_for_execute(
@@ -45,13 +49,3 @@ def execute_allowed(
             return False, reason
         return True, None
     return False, "writebacks_disabled"
-
-
-def parse_sandbox_company_ids() -> set[uuid.UUID]:
-    parsed: set[uuid.UUID] = set()
-    for raw in settings.WRITEBACK_SANDBOX_COMPANY_IDS:
-        try:
-            parsed.add(uuid.UUID(str(raw)))
-        except (ValueError, TypeError):
-            continue
-    return parsed

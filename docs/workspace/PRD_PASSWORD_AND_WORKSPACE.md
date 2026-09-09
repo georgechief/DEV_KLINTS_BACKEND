@@ -10,7 +10,7 @@ Auth header on protected routes: `Authorization: Bearer <access>`
 3. Edit **workspace details** from **Settings → Workspace**
 4. Hydrate Account / Workspace from real `/auth/me/` data (stop using mock Lumera fields)
 
-**Out of scope (v1):** change email, timezone/industry/currency DB fields, 2FA, team invites (see `docs/team/PRD_TEAM_INVITES.md`).
+**Out of scope (v1):** change email, timezone/industry/currency DB fields, 2FA, team invites (see `PRD_TEAM_INVITES.md`).
 
 ---
 

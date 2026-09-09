@@ -1,7 +1,7 @@
 # PRD-FE-08 — Fix screen ↔ live Data Center issue bridge
 
 **Status:** Complete (frontend implemented Aug 2026)  
-**Module:** see folder path  
+**Owner track:** Engineering   
 **Surfaces:** `/fix` · `/data-consistency` (links only)  
 **Depends on:** Live DCS worklist (`GET /api/v1/dcs/worklist/`) · existing Fix UI chrome  
 **Design reference (authoritative UX):** frontend branch **`original-designs`** — `src/routes/fix.tsx` + `src/styles/fix.css` + fixture `fixPlans` layout  
@@ -14,7 +14,7 @@
 ```text
 Implement PRD-FE-08 (frontend only).
 
-Read: docs/frontend/PRD_FE_08_FIX_LIVE_ISSUE_BRIDGE.md
+Read: docs/engineering/PRD_FE_08_FIX_LIVE_ISSUE_BRIDGE.md
 Design reference: git show origin/original-designs:src/routes/fix.tsx
   (and fix.css) — KEEP the same visual structure / CSS classes.
 
@@ -343,4 +343,4 @@ export type FixTarget =
 | Writes? | None — Coming soon |
 | Engineering alone? | Yes — FE-only |
 
-**PRD:** FE-08 · **Track:** delivery · **Design ref:** `original-designs` `/fix`
+**PRD:** FE-08 · **Track:** Engineering · **Design ref:** `original-designs` `/fix`

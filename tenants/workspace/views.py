@@ -26,5 +26,8 @@ class WorkspaceView(APIView):
             tenant_name=serializer.validated_data.get("tenant_name"),
             company_name=serializer.validated_data.get("company_name"),
             company_domain=serializer.validated_data.get("company_domain"),
+            writeback_execute_enabled=serializer.validated_data.get(
+                "writeback_execute_enabled"
+            ),
         )
         return Response(payload, status=status.HTTP_200_OK)

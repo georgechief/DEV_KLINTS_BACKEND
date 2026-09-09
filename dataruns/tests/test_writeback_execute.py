@@ -5,6 +5,13 @@ from __future__ import annotations
 from unittest.mock import patch
 
 from django.test import TestCase, override_settings
+
+from dataruns.tests.writeback_helpers import (
+    enable_company_sandbox,
+    issue_approved_writeback_token,
+    sandbox_company,
+    seed_writeback_allowlist,
+)
 from rest_framework.test import APIRequestFactory, force_authenticate
 
 from dataruns.dcs.enqueue import DCS_SCORE_DATA_RUN_NAME, DCS_SCORE_KIND
@@ -18,7 +25,6 @@ from tenants.models import Company, Connector, Tenant, User
 
 @override_settings(
     WRITEBACKS_ENABLED=False,
-    WRITEBACK_CHECK_ALLOWLIST=["CI-01", "CC-03"],
     WRITEBACK_SANDBOX_MAX_ROWS=10,
 )
 class WritebackExecuteTests(TestCase):
@@ -53,10 +59,11 @@ class WritebackExecuteTests(TestCase):
             ),
             status="connected",
         )
+        seed_writeback_allowlist("CI-01", "CC-03")
         self._seed_ci01_issue()
 
     def _settings_with_sandbox(self):
-        return self.settings(WRITEBACK_SANDBOX_COMPANY_IDS=[str(self.company.id)])
+        return sandbox_company(self.company)
 
     def _seed_ci01_issue(self):
         domain_run = Run.objects.create(
@@ -103,6 +110,8 @@ class WritebackExecuteTests(TestCase):
         )
 
     def test_execute_denied_without_sandbox(self):
+        self.company.writeback_execute_enabled = False
+        self.company.save(update_fields=["writeback_execute_enabled"])
         preview = writeback_run(
             company=self.company,
             check_id="CI-01",
@@ -140,15 +149,22 @@ class WritebackExecuteTests(TestCase):
                 mode="dry_run",
                 actor=self.admin,
             )
+            token = issue_approved_writeback_token(
+                company=self.company,
+                job_id=preview.job_id,
+                requester=self.admin,
+                approver=self.admin,
+            )
             result = writeback_run(
                 company=self.company,
                 check_id="CI-01",
                 mode="sandbox_execute",
                 expected_diff_hash=preview.diff_hash,
+                approval_id=str(token.id),
                 actor=self.admin,
             )
 
-        self.assertEqual(result.mode, "sandbox_execute")
+        self.assertEqual(result.mode, "execute")
         self.assertEqual(result.summary.executed, 1)
         self.assertTrue(mock_upsert.called)
         job = WritebackJob.objects.get(pk=result.job_id)
@@ -157,12 +173,7 @@ class WritebackExecuteTests(TestCase):
             AuditLog.objects.filter(company=self.company, action="writeback.executed").exists()
         )
 
-    @patch("dataruns.writebacks.adapters.manago.upsert_contacts")
-    @patch("dataruns.writebacks.adapters.manago.resolve_manago_write_context")
-    def test_execute_api_diff_hash_mismatch_409(self, mock_ctx, mock_upsert):
-        mock_ctx.return_value = object()
-        mock_upsert.return_value = {"success": True}
-
+    def test_execute_api_diff_hash_mismatch_409(self):
         with self._settings_with_sandbox():
             request = self.factory.post(
                 "/api/v1/writebacks/execute/",
@@ -172,11 +183,52 @@ class WritebackExecuteTests(TestCase):
             force_authenticate(request, user=self.admin)
             response = WritebackExecuteView.as_view()(request)
             self.assertEqual(response.status_code, 409)
+            self.assertEqual(response.data.get("code"), "diff_hash_mismatch")
+            self.assertNotIn("expected", response.data)
+            self.assertNotIn("actual", response.data)
 
-    @patch("dataruns.writebacks.adapters.manago.remove_contact_tag")
+    def test_execute_diff_hash_mismatch_revokes_approved_token(self):
+        """C2 — stale APPROVED grant must not survive mismatch for status hydrate."""
+        from dataruns.models import WritebackApprovalToken
+
+        with self._settings_with_sandbox():
+            preview = writeback_run(
+                company=self.company,
+                check_id="CI-01",
+                mode="dry_run",
+                actor=self.admin,
+            )
+            token = issue_approved_writeback_token(
+                company=self.company,
+                job_id=preview.job_id,
+                requester=self.admin,
+                approver=self.admin,
+            )
+            request = self.factory.post(
+                "/api/v1/writebacks/execute/",
+                {
+                    "check_id": "CI-01",
+                    "diff_hash": "f" * 64,
+                    "approval_id": str(token.id),
+                },
+                format="json",
+            )
+            force_authenticate(request, user=self.admin)
+            response = WritebackExecuteView.as_view()(request)
+            self.assertEqual(response.status_code, 409)
+            self.assertEqual(response.data.get("code"), "diff_hash_mismatch")
+            token.refresh_from_db()
+            self.assertEqual(token.status, WritebackApprovalToken.Status.REVOKED)
+            self.assertEqual(
+                (token.metadata or {}).get("revoke_reason"),
+                "diff_hash_mismatch",
+            )
+
+    @patch("dataruns.writebacks.adapters.manago.upsert_contacts")
     @patch("dataruns.writebacks.adapters.manago.resolve_manago_write_context")
-    def test_rollback_detail_set_job(self, mock_ctx, mock_remove):
+    def test_rollback_detail_set_job(self, mock_ctx, mock_upsert):
         mock_ctx.return_value = object()
+        mock_upsert.return_value = {"success": True}
 
         with self._settings_with_sandbox():
             job = WritebackJob.objects.create(
@@ -207,21 +259,67 @@ class WritebackExecuteTests(TestCase):
                 summary={"executed": 1},
                 sandbox=True,
             )
-
-            with patch("dataruns.writebacks.adapters.manago.upsert_contacts") as mock_upsert:
-                mock_upsert.return_value = {"success": True}
-                request = self.factory.post(
-                    "/api/v1/writebacks/rollback/",
-                    {"job_id": str(job.id)},
-                    format="json",
-                )
-                force_authenticate(request, user=self.admin)
-                response = WritebackRollbackView.as_view()(request)
+            request = self.factory.post(
+                "/api/v1/writebacks/rollback/",
+                {"job_id": str(job.id)},
+                format="json",
+            )
+            force_authenticate(request, user=self.admin)
+            response = WritebackRollbackView.as_view()(request)
 
         self.assertEqual(response.status_code, 200)
         job.refresh_from_db()
         self.assertEqual(job.status, "rolled_back")
         self.assertTrue(mock_upsert.called)
+        sent = mock_upsert.call_args.args[1][0]
+        self.assertEqual(sent["properties"]["klints_consent_evidence"], "")
+
+    @patch("dataruns.writebacks.adapters.manago.upsert_contacts")
+    @patch("dataruns.writebacks.adapters.manago.resolve_manago_write_context")
+    def test_rollback_detail_set_restores_prior_value(self, mock_ctx, mock_upsert):
+        mock_ctx.return_value = object()
+        mock_upsert.return_value = {"success": True}
+
+        with self._settings_with_sandbox():
+            job = WritebackJob.objects.create(
+                company=self.company,
+                check_id="CC-03",
+                mode="sandbox_execute",
+                status="executed",
+                diff_hash="d" * 64,
+                intents=[
+                    {
+                        "check_id": "CC-03",
+                        "op_kind": "detail_set",
+                        "operation": "manago.detail_set.klints_consent_evidence",
+                        "target_system": "manago",
+                        "entity_type": "contact",
+                        "entity_key": "consent@example.com",
+                        "namespace": "klints_",
+                        "payload": {
+                            "email": "consent@example.com",
+                            "contactId": "mc-9",
+                            "properties": {"klints_consent_evidence": "shopify_verified"},
+                        },
+                        "rollback_snapshot": {"klints_consent_evidence": "old_value"},
+                        "rollback_strategy": "revert_detail",
+                        "status": "executed",
+                    }
+                ],
+                summary={"executed": 1},
+                sandbox=True,
+            )
+            request = self.factory.post(
+                "/api/v1/writebacks/rollback/",
+                {"job_id": str(job.id)},
+                format="json",
+            )
+            force_authenticate(request, user=self.admin)
+            response = WritebackRollbackView.as_view()(request)
+
+        self.assertEqual(response.status_code, 200)
+        sent = mock_upsert.call_args.args[1][0]
+        self.assertEqual(sent["properties"]["klints_consent_evidence"], "old_value")
 
     @patch("dataruns.writebacks.adapters.manago.remove_contact_tag")
     @patch("dataruns.writebacks.adapters.manago.resolve_manago_write_context")

@@ -19,7 +19,9 @@ from dataruns.reports.compose import (
     serialize_report_metadata,
 )
 from dataruns.reports.ip import extract_client_ip
+from dataruns.reports.constants import REPORT_PROFILE_OVERVIEW_BRIEF
 from dataruns.reports.render_pdf import render_assessment_pdf
+from dataruns.reports.render_overview_brief_pdf import render_overview_brief_pdf
 from tenants.auth.services import get_user_company
 from tenants.models import User
 
@@ -144,10 +146,12 @@ class AssessmentReportDetailView(APIView):
         report = _load_report(company=company, report_id=report_id)
         if report is None:
             return Response({"detail": "Not found."}, status=404)
+        narratives = report.ai_narratives if isinstance(report.ai_narratives, dict) else {}
         return Response(
             {
                 **serialize_report_metadata(report),
                 "payload": report.payload,
+                "ai": {"narratives": narratives or None},
             }
         )
 
@@ -177,7 +181,25 @@ class AssessmentReportPdfView(APIView):
             )
 
         try:
-            pdf_bytes = render_assessment_pdf(report.payload)
+            profile = None
+            if isinstance(content, dict):
+                ctx = content.get("render_context")
+                if isinstance(ctx, dict):
+                    profile = ctx.get("report_profile")
+            if profile == REPORT_PROFILE_OVERVIEW_BRIEF:
+                pdf_bytes = render_overview_brief_pdf(
+                    report.payload,
+                    ai_narratives=report.ai_narratives
+                    if isinstance(report.ai_narratives, dict)
+                    else None,
+                )
+            else:
+                pdf_bytes = render_assessment_pdf(
+                    report.payload,
+                    ai_narratives=report.ai_narratives
+                    if isinstance(report.ai_narratives, dict)
+                    else None,
+                )
         except Exception:
             logger.exception("Assessment PDF render failed report_id=%s", report.id)
             append_audit_event(

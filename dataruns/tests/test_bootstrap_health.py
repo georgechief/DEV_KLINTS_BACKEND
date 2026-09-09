@@ -6,8 +6,10 @@ from django.test import SimpleTestCase
 
 from dataruns.connectors.bootstrap_health import (
     build_preflight_section,
+    compute_summary_status,
     missing_shopify_scopes,
     parse_shopify_scopes,
+    postflight_health,
     shopify_admin_scope_satisfied,
 )
 
@@ -69,4 +71,43 @@ class ShopifyScopeCapabilityTests(SimpleTestCase):
         self.assertEqual(
             preflight["scopes_missing"],
             ["read_customers", "read_orders"],
+        )
+
+
+class PostflightEmptyWindowTests(SimpleTestCase):
+    def test_manago_contacts_without_orders_is_ok(self):
+        issues = postflight_health(
+            platform="manago_ai",
+            days=30,
+            result={"counts": {"contacts": 15, "orders": 0}},
+            snapshot_data={},
+        )
+        self.assertEqual(issues, [])
+        self.assertEqual(compute_summary_status(import_succeeded=True, issues=issues), "ok")
+
+    def test_manago_zero_contacts_still_warns(self):
+        issues = postflight_health(
+            platform="manago_ai",
+            days=30,
+            result={"counts": {"contacts": 0, "orders": 0}},
+            snapshot_data={},
+        )
+        codes = [i["code"] for i in issues]
+        self.assertIn("EMPTY_CONTACTS_WINDOW", codes)
+        self.assertNotIn("EMPTY_ORDERS_WINDOW", codes)
+        self.assertEqual(
+            compute_summary_status(import_succeeded=True, issues=issues), "degraded"
+        )
+
+    def test_shopify_zero_orders_still_warns(self):
+        issues = postflight_health(
+            platform="shopify",
+            days=30,
+            result={"counts": {"contacts": 28, "orders": 0}},
+            snapshot_data={},
+        )
+        codes = [i["code"] for i in issues]
+        self.assertIn("EMPTY_ORDERS_WINDOW", codes)
+        self.assertEqual(
+            compute_summary_status(import_succeeded=True, issues=issues), "degraded"
         )

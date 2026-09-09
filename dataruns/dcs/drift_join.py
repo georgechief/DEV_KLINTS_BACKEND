@@ -30,6 +30,9 @@ from typing import Any
 
 from dataruns.dcs.constants import DCS_SCORE_KIND
 from dataruns.dcs.lifecycle_join import (
+    PinnedSnapshotIds,
+    SourceRunIds,
+    _connector_raw_for_platform,
     _float_or_none,
     _latest_connector_raw,
     _PAID_FINANCIAL,
@@ -355,10 +358,27 @@ def _is_identified_visit(event: dict[str, Any]) -> bool:
     return False
 
 
-def build_drift_snapshot(*, company: Company) -> dict[str, Any]:
+def build_drift_snapshot(
+    *,
+    company: Company,
+    source_run_ids: SourceRunIds = None,
+    pinned_snapshot_ids: PinnedSnapshotIds = None,
+) -> dict[str, Any]:
     as_of = _utcnow()
-    manago_raw = _latest_connector_raw(company=company, platform="manago_ai")
-    shopify_raw = _latest_connector_raw(company=company, platform="shopify")
+    ids = source_run_ids or {}
+    snaps = pinned_snapshot_ids or {}
+    manago_raw = _connector_raw_for_platform(
+        company=company,
+        platform="manago_ai",
+        source_run_id=ids.get("manago_ai"),
+        snapshot_id=snaps.get("manago_ai"),
+    )
+    shopify_raw = _connector_raw_for_platform(
+        company=company,
+        platform="shopify",
+        source_run_id=ids.get("shopify"),
+        snapshot_id=snaps.get("shopify"),
+    )
     contacts = [c for c in (manago_raw.get("contacts") or []) if isinstance(c, dict)]
     transactions = [
         t for t in (manago_raw.get("transactions") or []) if isinstance(t, dict)

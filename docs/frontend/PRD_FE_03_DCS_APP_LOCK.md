@@ -398,7 +398,7 @@ Do **not** leak other tenants’ data. Never return decrypted connector secrets.
 | Account / workspace settings | `/settings` (all settings tabs) |
 | Activity (governance timeline) | `/activity` |
 
-> **AUDIT-01 amendment:** `/activity` stays available while DCS is locked so operators can see connect / bootstrap / score events before unlock. See `docs/audit/PRD_AUDIT_01_GOVERNANCE_ACTIVITY.md` §7.2.
+> **AUDIT-01 amendment:** `/activity` stays available while DCS is locked so operators can see connect / bootstrap / score events before unlock. See `PRD_AUDIT_01_GOVERNANCE_ACTIVITY.md` §7.2.
 
 Everything else in AppShell is **non-clickable** (disabled styling + `pointer-events-none` or intercept navigate):
 

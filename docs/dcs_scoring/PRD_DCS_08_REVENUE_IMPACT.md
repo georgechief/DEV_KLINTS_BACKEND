@@ -1,7 +1,7 @@
 # PRD-DCS-08 — Per-check revenue impact from DCS evidence
 
 **Status:** Ready for implementation  
-**Module:** see folder path  
+**Owner track:** Engineering   
 **Depends on:** DCS-03 snapshot + joins (`lifecycle_join`, `product_truth`); DCS-04 RULE executors (LE-02/04/05/09, PT-04 shipped); `persist_dcs_issues` / `RunIssueImpact`  
 **Does not change:** DCS 0–100 score assembly (Excel sheets **07 / 08**) — scores stay PASS/WARN/FAIL factors  
 **DataPack / Excel:** sheet **02** Business Impact is qualitative; this PRD defines the **numeric €/$ layer** where evidence already has money  

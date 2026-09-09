@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0.0",
   "check_id": "LE-04",
-  "template_id": "T5",
+  "template_id": "T6",
   "title": "Flag duplicate purchase clusters for review",
-  "enabled": true,
+  "enabled": false,
   "approval_tier": "batch",
   "requires_consent_namespace_clean": false,
   "irreversible": true,

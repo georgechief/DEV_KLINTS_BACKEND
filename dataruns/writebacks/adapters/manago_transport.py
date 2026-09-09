@@ -42,6 +42,36 @@ def resolve_manago_write_context(company: Company) -> ManagoWriteContext:
     )
 
 
+_CONTACT_IDENTITY_KEYS = frozenset(
+    {
+        "email",
+        "contactId",
+        "name",
+        "phone",
+        "fax",
+        "company",
+        "externalId",
+        "address",
+        "state",
+    }
+)
+_UPSERT_ROOT_KEYS = frozenset(
+    {
+        "properties",
+        "dictionaryProperties",
+        "tags",
+        "removeTags",
+        "forceOptIn",
+        "forceOptOut",
+        "forcePhoneOptIn",
+        "forcePhoneOptOut",
+        "newEmail",
+        "birthday",
+        "province",
+    }
+)
+
+
 def upsert_contacts(
     ctx: ManagoWriteContext,
     contacts: list[dict[str, Any]],
@@ -50,14 +80,39 @@ def upsert_contacts(
 ) -> dict[str, Any]:
     if not contacts:
         raise ManagoClientError("upsert_contacts requires at least one contact")
-    return _post_manago(
-        endpoint=ctx.endpoint,
-        path="api/contact/upsert",
-        client_id=ctx.client_id,
-        api_secret=ctx.api_secret,
-        payload={"owner": ctx.owner, "contacts": contacts},
-        timeout=timeout,
-    )
+    last: dict[str, Any] | None = None
+    for raw in contacts:
+        last = _post_manago(
+            endpoint=ctx.endpoint,
+            path="api/contact/upsert",
+            client_id=ctx.client_id,
+            api_secret=ctx.api_secret,
+            payload=_upsert_request_payload(owner=ctx.owner, contact=raw),
+            timeout=timeout,
+        )
+    assert last is not None
+    return last
+
+
+def _upsert_request_payload(*, owner: str, contact: dict[str, Any]) -> dict[str, Any]:
+    """Manago ``api/contact/upsert`` takes singular ``contact`` plus root properties.
+
+    Sending ``contacts: [...]`` makes Manago return ``No email specified``.
+    """
+    identity: dict[str, Any] = {}
+    extras: dict[str, Any] = {}
+    for key, value in contact.items():
+        if str(key).startswith("_") or value is None or value == "":
+            continue
+        if key in _CONTACT_IDENTITY_KEYS:
+            identity[key] = value
+        elif key in _UPSERT_ROOT_KEYS:
+            extras[key] = value
+    if not identity.get("email") and not identity.get("contactId"):
+        raise ManagoClientError("upsert requires email or contactId")
+    payload: dict[str, Any] = {"owner": owner, "contact": identity}
+    payload.update(extras)
+    return payload
 
 
 def add_contact_tag(

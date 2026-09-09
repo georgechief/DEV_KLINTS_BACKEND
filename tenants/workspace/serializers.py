@@ -7,6 +7,7 @@ class UpdateWorkspaceSerializer(serializers.Serializer):
     tenant_name = serializers.CharField(max_length=255, required=False)
     company_name = serializers.CharField(max_length=255, required=False)
     company_domain = serializers.CharField(max_length=255, required=False)
+    writeback_execute_enabled = serializers.BooleanField(required=False)
 
     def validate_tenant_name(self, value: str) -> str:
         normalized = value.strip()

@@ -1,7 +1,7 @@
 # PRD-FE-06 — Live guided DCS worklist (same real Overview UI)
 
 **Status:** Ready for implementation  
-**Module:** see folder path  
+**Owner track:** Engineering   
 **Depends on:** FE-03 app lock (routes); FE-04 run progress tiles; DCS-08 revenue impact persistence (`RunIssueImpact`, `metadata.business_impact`); CheckMaster / DimensionMaster  
 **Surfaces:**  
 - BE: enrich `GET /api/v1/dcs/status/`; add `GET /api/v1/dcs/worklist/` + `GET /api/v1/dcs/worklist/{check_id}/`  
@@ -407,8 +407,8 @@ Suggested fix: …
 
 ## 9. Related docs
 
-- [`docs/frontend/PRD_FE_03_DCS_APP_LOCK.md`](./PRD_FE_03_DCS_APP_LOCK.md) — route lock / status (issues inclusion+sort superseded; **Overview layout superseded by this PRD**)  
-- [`docs/frontend/PRD_FE_04_GATED_DCS_RUN_PROGRESS.md`](./PRD_FE_04_GATED_DCS_RUN_PROGRESS.md) — stage tiles (placement moves into real Overview dims slot until score ready)  
-- [`docs/frontend/PRD_FE_05_SPOTLIGHT_GLOBAL_SEARCH.md`](./PRD_FE_05_SPOTLIGHT_GLOBAL_SEARCH.md) — `?check=` deep links  
-- [`../dcs_scoring/PRD_DCS_08_REVENUE_IMPACT.md`](../dcs_scoring/PRD_DCS_08_REVENUE_IMPACT.md) — money formulas / rollup  
+- [`PRD_FE_03_DCS_APP_LOCK.md`](./PRD_FE_03_DCS_APP_LOCK.md) — route lock / status (issues inclusion+sort superseded; **Overview layout superseded by this PRD**)  
+- [`PRD_FE_04_GATED_DCS_RUN_PROGRESS.md`](./PRD_FE_04_GATED_DCS_RUN_PROGRESS.md) — stage tiles (placement moves into real Overview dims slot until score ready)  
+- [`PRD_FE_05_SPOTLIGHT_GLOBAL_SEARCH.md`](./PRD_FE_05_SPOTLIGHT_GLOBAL_SEARCH.md) — `?check=` deep links  
+- [`../engineering/PRD_DCS_08_REVENUE_IMPACT.md`](../engineering/PRD_DCS_08_REVENUE_IMPACT.md) — money formulas / rollup  
 - [`../dcs_scoring/PRD_DCS_06_API_RESPONSES.md`](../dcs_scoring/PRD_DCS_06_API_RESPONSES.md) — fuller runs/checks (later)

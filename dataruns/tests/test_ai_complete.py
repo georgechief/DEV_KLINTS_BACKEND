@@ -45,3 +45,43 @@ class CheckIdMismatchRetryTests(SimpleTestCase):
                 max_retries=3,
             )
         self.assertEqual(provider.attempts, 3)
+
+
+class PiiInOutputProvider(AiProvider):
+    name = "pii_out"
+
+    def __init__(self) -> None:
+        self.attempts = 0
+
+    def complete_json(self, **kwargs) -> ProviderResult:
+        self.attempts += 1
+        return ProviderResult(
+            text=(
+                '{"task_type":"fix_suggestion","check_id":"LE-04","headline":"x",'
+                '"whats_wrong":"Contact alice@brand.com is duplicated.",'
+                '"why_it_matters":"z","suggestions":'
+                '[{"step":1,"title":"A","detail":"a"},'
+                '{"step":2,"title":"B","detail":"b"}],'
+                '"cautions":[],"confidence":"low"}'
+            ),
+            model=kwargs["model"],
+            provider=self.name,
+        )
+
+
+class OutputPrivacyRetryTests(SimpleTestCase):
+    def test_pii_in_model_output_exhausts_retries(self):
+        provider = PiiInOutputProvider()
+        with self.assertRaises(AiJsonRetryExhaustedError) as ctx:
+            complete_json(
+                provider=provider,
+                task_type=TASK_FIX_SUGGESTION,
+                system_prompt="system",
+                user_prompt="user",
+                context={"check_id": "LE-04"},
+                model=DEFAULT_MODEL_ID,
+                max_retries=3,
+            )
+        self.assertEqual(provider.attempts, 3)
+        self.assertNotIn("alice@", str(ctx.exception))
+        self.assertEqual(ctx.exception.code, "json_retry_exhausted")
