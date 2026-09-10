@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.klints.io/mvp1/approval_token.schema.json",
+  "title": "Approval Token",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "approval_id",
+    "tenant_id",
+    "actor_id",
+    "actor_role",
+    "scope",
+    "object_id",
+    "object_version",
+    "diff_hash",
+    "issued_at",
+    "expires_at",
+    "status"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "approval_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "actor_id": {
+      "type": "string"
+    },
+    "actor_role": {
+      "type": "string"
+    },
+    "scope": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "object_id": {
+      "type": "string"
+    },
+    "object_version": {
+      "type": "string"
+    },
+    "diff_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "issued_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "enum": [
+        "PENDING",
+        "APPROVED",
+        "REJECTED",
+        "EXPIRED",
+        "REVOKED"
+      ]
+    }
+  },
+  "$defs": {
+    "provenance": {
+      "type": "object",
+      "required": [
+        "source_versions",
+        "created_at",
+        "created_by"
+      ],
+      "properties": {
+        "source_versions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "created_by": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "evidence": {
+      "type": "object",
+      "required": [
+        "source",
+        "locator",
+        "observed_at"
+      ],
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "locator": {
+          "type": "string"
+        },
+        "value": {},
+        "observed_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.0.0",
+  "model": "DCS-1.0.0",
+  "cases": [
+    {
+      "case_id": "lumera",
+      "input": "lumera_expected_results/check_results.json",
+      "expected": {
+        "blocking_gates_failed": 0,
+        "headline_score": 84.267,
+        "score_state": "CONDITIONALLY_READY",
+        "dimensions": {
+          "01 Customer Identity": {
+            "score": 81.8182,
+            "coverage": 1,
+            "confidence": 1,
+            "weight_percent": 18
+          },
+          "02 Lifecycle Event": {
+            "score": 81.25,
+            "coverage": 1,
+            "confidence": 1,
+            "weight_percent": 18
+          },
+          "03 Product & Transaction": {
+            "score": 100,
+            "coverage": 1,
+            "confidence": 1,
+            "weight_percent": 14
+          },
+          "04 Segment & Property": {
+            "score": 86.6667,
+            "coverage": 1,
+            "confidence": 1,
+            "weight_percent": 12
+          },
+          "05 Channel & Consent": {
+            "score": 76.4706,
+            "coverage": 1,
+            "confidence": 1,
+            "weight_percent": 18
+          },
+          "06 Measurement": {
+            "score": 87.5,
+            "coverage": 1,
+            "confidence": 0.925,
+            "weight_percent": 10
+          },
+          "07 Business Reality": {
+            "score": 80,
+            "coverage": 1,
+            "confidence": 1,
+            "weight_percent": 10
+          }
+        }
+      }
+    },
+    {
+      "case_id": "all_pass",
+      "expected": {
+        "headline_score": 100,
+        "score_state": "READY"
+      }
+    },
+    {
+      "case_id": "gate_fail",
+      "expected": {
+        "headline_score": null,
+        "score_state": "BLOCKED"
+      }
+    },
+    {
+      "case_id": "partial_sweep",
+      "expected": {
+        "score_state": "INCOMPLETE"
+      }
+    }
+  ]
+}

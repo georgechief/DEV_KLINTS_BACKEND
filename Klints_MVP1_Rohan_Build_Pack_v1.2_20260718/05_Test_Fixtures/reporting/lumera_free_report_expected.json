@@ -1,0 +1,88 @@
+{
+  "schema_version": "1.0.0",
+  "report_id": "RPT-LUMERA-001",
+  "tenant_id": "lumera-fixture",
+  "report_version": "1",
+  "variant": "FREE_DIAGNOSTIC",
+  "status": "READY",
+  "data_as_of": "2026-07-18T10:05:00Z",
+  "input_snapshot_ids": [
+    "DCS-RUN-001",
+    "AF-RUN-001"
+  ],
+  "template_version": "KLINTS-REPORT-1.0.0",
+  "content": {
+    "dcs": {
+      "state": "CONDITIONALLY_READY",
+      "headline_score": 82.4,
+      "coverage": 1,
+      "dimension_scores": {}
+    },
+    "issue_summary": {
+      "critical": 0,
+      "high": 2,
+      "medium": 4,
+      "low": 1
+    },
+    "architecture": {
+      "mode": "AUGMENT",
+      "weighted_score": 81
+    },
+    "business_impact": {
+      "currency": "EUR",
+      "estimate": null,
+      "confidence": "LOW",
+      "note": "Fixture contains no production economics."
+    },
+    "top_issues": [
+      {
+        "finding_id": "F-CI-03",
+        "severity": "High"
+      },
+      {
+        "finding_id": "F-CC-03",
+        "severity": "High"
+      }
+    ],
+    "remediation": null,
+    "execution_plan": null,
+    "locked_sections": [
+      "fix_blueprints",
+      "workflow_recommendations",
+      "prioritized_execution_plan",
+      "writeback",
+      "recurring_monitoring"
+    ]
+  },
+  "access_policy": {
+    "tenant_scoped": true,
+    "pii_policy": "AGGREGATE_NO_CONTACT_LEVEL_PII",
+    "retention_policy_id": "tenant-default"
+  },
+  "artifacts": [
+    {
+      "artifact_id": "ART-RPT-LUMERA-PDF",
+      "format": "PDF",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "storage_region": "configured-eu-region"
+    },
+    {
+      "artifact_id": "ART-RPT-LUMERA-JSON",
+      "format": "JSON",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "storage_region": "configured-eu-region"
+    }
+  ],
+  "payload_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "created_at": "2026-07-18T10:06:00Z",
+  "expires_at": null,
+  "provenance": {
+    "source_versions": {
+      "dcs": "1.4.1",
+      "architecture": "1.4.1",
+      "orchestration": "1.4.1"
+    },
+    "created_at": "2026-07-18T10:06:00Z",
+    "created_by": "Klints fixture generator"
+  }
+}

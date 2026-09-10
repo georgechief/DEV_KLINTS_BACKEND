@@ -1,0 +1,23 @@
+{
+  "description": "Two orchestration tasks depend on each other",
+  "tasks": [
+    {
+      "task_id": "A",
+      "depends_on": [
+        "B"
+      ]
+    },
+    {
+      "task_id": "B",
+      "depends_on": [
+        "A"
+      ]
+    }
+  ],
+  "expected_error": "BLOCKED_DEPENDENCY_CYCLE",
+  "expected_cycle": [
+    "A",
+    "B",
+    "A"
+  ]
+}

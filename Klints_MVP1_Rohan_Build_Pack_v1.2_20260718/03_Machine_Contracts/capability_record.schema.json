@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.klints.io/mvp1/capability_record.schema.json",
+  "title": "Capability Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "capability_id",
+    "channel",
+    "mode",
+    "status",
+    "input_contract",
+    "output_contract",
+    "fallback",
+    "evidence"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "capability_id": {
+      "type": "string"
+    },
+    "channel": {
+      "type": "string"
+    },
+    "mode": {
+      "enum": [
+        "READ",
+        "WRITE",
+        "WRITE_ARTIFACT",
+        "READ_ARTIFACT"
+      ]
+    },
+    "status": {
+      "enum": [
+        "CONFIRMED_LIVE",
+        "CONFIRMED_LIMITED",
+        "DISCOVERY_REQUIRED",
+        "REQUIRED_BUILD",
+        "NOT_SUPPORTED"
+      ]
+    },
+    "input_contract": {
+      "type": "string"
+    },
+    "output_contract": {
+      "type": "string"
+    },
+    "fallback": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evidence"
+      }
+    },
+    "verified_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "provenance": {
+      "type": "object",
+      "required": [
+        "source_versions",
+        "created_at",
+        "created_by"
+      ],
+      "properties": {
+        "source_versions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "created_by": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "evidence": {
+      "type": "object",
+      "required": [
+        "source",
+        "locator",
+        "observed_at"
+      ],
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "locator": {
+          "type": "string"
+        },
+        "value": {},
+        "observed_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

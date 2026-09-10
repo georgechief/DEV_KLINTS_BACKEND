@@ -1,0 +1,12 @@
+{
+  "description": "ERP formally out of scope",
+  "mutations": [
+    {
+      "dimension": "07 Business Reality",
+      "status": "NOT_CONNECTED",
+      "reason_code": "TENANT_SCOPE_EXCLUDES_ERP"
+    }
+  ],
+  "expected_state": "CONDITIONALLY_READY_MAX",
+  "confidence_cap": 0.85
+}

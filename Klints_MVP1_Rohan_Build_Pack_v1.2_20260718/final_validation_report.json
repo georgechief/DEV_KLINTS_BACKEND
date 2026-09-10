@@ -1,0 +1,223 @@
+{
+  "package": "Klints_MVP1_Rohan_Build_Pack_v1.2_20260718",
+  "validated_at_utc": "2026-07-18T09:58:12.438518+00:00",
+  "verdict": "PASS_WITH_RESIDUAL_EXTERNAL_RISKS",
+  "scope": {
+    "workbooks": 8,
+    "sheets": 49,
+    "pilot_blueprints": 16,
+    "headline_dcs_checks": 42,
+    "supplemental_pilot_gates": 12,
+    "json_schemas": 13,
+    "blueprint_pdf_pages": 27
+  },
+  "checks": [
+    {
+      "check_id": "PKG-001",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Removed 0 authoring-only inspection files"
+    },
+    {
+      "check_id": "JSON-001",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Parsed 49 JSON files; errors=[]"
+    },
+    {
+      "check_id": "SCH-001",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Found 13 JSON Schema contracts; expected 13"
+    },
+    {
+      "check_id": "SCH-002",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Offline Draft 2020-12 structural validation errors=[]"
+    },
+    {
+      "check_id": "API-001",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Assessment report API defines create/status/download operations"
+    },
+    {
+      "check_id": "PILOT-001",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Found 16 pilot blueprints; expected 16"
+    },
+    {
+      "check_id": "PILOT-002",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Workflow schema validation errors=[]"
+    },
+    {
+      "check_id": "REPORT-001",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Validated 2 expected report fixtures; errors=[]"
+    },
+    {
+      "check_id": "DCS-001",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Headline DCS contains 42 unique checks; expected 42"
+    },
+    {
+      "check_id": "DCS-002",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Supplemental pilot gates=['BR-03', 'BR-09', 'CC-06', 'CI-08', 'LE-07', 'LE-10', 'PT-05', 'PT-06', 'PT-11', 'PT-13', 'SP-04', 'SP-10']"
+    },
+    {
+      "check_id": "DCS-003",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Headline and supplemental check scopes do not overlap"
+    },
+    {
+      "check_id": "REF-001",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Unknown/out-of-scope pilot gates=[]"
+    },
+    {
+      "check_id": "REF-002",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Unknown capability dependencies=[]"
+    },
+    {
+      "check_id": "REF-003",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Check IDs incorrectly used as data fields=[]"
+    },
+    {
+      "check_id": "REF-004",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "UC-06B is explicitly mapped to parent UC-06"
+    },
+    {
+      "check_id": "PILOT-003",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Pilot manifest IDs match blueprint files (16)"
+    },
+    {
+      "check_id": "ORCH-001",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Task types include REPORT/EXPORT (['ASSESS', 'BUILD', 'CONNECT', 'DISCOVER', 'EXPORT', 'FIX', 'HANDOFF', 'PLAN', 'QA', 'REPORT', 'SCORE'])"
+    },
+    {
+      "check_id": "ORCH-002",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Priority inputs are consistently bounded 0–3"
+    },
+    {
+      "check_id": "ORCH-003",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Assessment report contract sheet exists"
+    },
+    {
+      "check_id": "ORCH-004",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Lumera task rows 6–21 populated in columns A:F; blank rows=[]"
+    },
+    {
+      "check_id": "ORCH-005",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Lumera flow contains REPORT and EXPORT tasks (['ASSESS', 'BUILD', 'CONNECT', 'DISCOVER', 'EXPORT', 'FIX', 'HANDOFF', 'PLAN', 'QA', 'REPORT', 'SCORE'])"
+    },
+    {
+      "check_id": "ORCH-006",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Canonical 0–3 priority formula is present"
+    },
+    {
+      "check_id": "ORCH-007",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Conflicting normalized 0–100 priority formula is absent"
+    },
+    {
+      "check_id": "STAT-001",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Backend statuses=['BLOCKED_EXTERNAL', 'N/A', 'NOT_RUN']"
+    },
+    {
+      "check_id": "RTM-001",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Untraceable requirements=[]"
+    },
+    {
+      "check_id": "RTM-002",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Open remediation defects=[]"
+    },
+    {
+      "check_id": "XLSX-001",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Workbook inventory=8 files/49 sheets; expected 8/49"
+    },
+    {
+      "check_id": "XLSX-002",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Formula/error token findings=[]"
+    },
+    {
+      "check_id": "PKG-002",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Stale superseded artifact names=[]"
+    },
+    {
+      "check_id": "DOC-001",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Missing blueprint phrases=[]"
+    },
+    {
+      "check_id": "DOC-002",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Stale blueprint version/schema wording=[]"
+    },
+    {
+      "check_id": "PDF-001",
+      "status": "PASS",
+      "severity": "P0",
+      "detail": "Rendered branded blueprint has 27 populated pages; expected 27"
+    }
+  ],
+  "failures": [],
+  "residual_external_risks": [
+    {
+      "risk_id": "EXT-001",
+      "status": "BLOCKED_EXTERNAL",
+      "description": "Live Manago MCP discovery and tenant-specific capability verification require Rohan's target environment.",
+      "build_gate": "Run pre-build discovery and flag all mismatches before implementation commitment."
+    },
+    {
+      "risk_id": "EXT-002",
+      "status": "NOT_RUN",
+      "description": "Backend API, database, queue, rendering service, and end-to-end acceptance tests have not been executed against Rohan's implementation.",
+      "build_gate": "Execute acceptance_test_matrix_v1.2.xlsx and store evidence before release approval."
+    }
+  ]
+}

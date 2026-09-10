@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.klints.io/mvp1/dcs_run.schema.json",
+  "title": "DCS Run",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "tenant_id",
+    "run_id",
+    "run_state",
+    "scope_model_version",
+    "headline_score",
+    "dimension_scores",
+    "coverage",
+    "confidence",
+    "check_result_refs",
+    "started_at",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "run_id": {
+      "type": "string"
+    },
+    "run_state": {
+      "enum": [
+        "READY",
+        "CONDITIONALLY_READY",
+        "REMEDIATE",
+        "BLOCKED",
+        "INCOMPLETE"
+      ]
+    },
+    "scope_model_version": {
+      "type": "string"
+    },
+    "headline_score": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 100
+    },
+    "dimension_scores": {
+      "type": "object",
+      "additionalProperties": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "minimum": 0,
+        "maximum": 100
+      }
+    },
+    "coverage": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "check_result_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "missing_required_inputs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "provenance": {
+      "$ref": "#/$defs/provenance"
+    }
+  },
+  "$defs": {
+    "provenance": {
+      "type": "object",
+      "required": [
+        "source_versions",
+        "created_at",
+        "created_by"
+      ],
+      "properties": {
+        "source_versions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "created_by": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "evidence": {
+      "type": "object",
+      "required": [
+        "source",
+        "locator",
+        "observed_at"
+      ],
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "locator": {
+          "type": "string"
+        },
+        "value": {},
+        "observed_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.klints.io/mvp1/handoff_package.schema.json",
+  "title": "Handoff Package",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "handoff_id",
+    "tenant_id",
+    "package_version",
+    "artifact_refs",
+    "qa_ref",
+    "approval_ref",
+    "manifest_hash",
+    "status",
+    "created_at",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "handoff_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "package_version": {
+      "type": "string"
+    },
+    "artifact_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "qa_ref": {
+      "type": "string"
+    },
+    "approval_ref": {
+      "type": "string"
+    },
+    "manifest_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "status": {
+      "enum": [
+        "STAGED",
+        "APPROVED_FOR_ACTIVATION",
+        "REJECTED",
+        "ACTIVATED"
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "provenance": {
+      "$ref": "#/$defs/provenance"
+    }
+  },
+  "$defs": {
+    "provenance": {
+      "type": "object",
+      "required": [
+        "source_versions",
+        "created_at",
+        "created_by"
+      ],
+      "properties": {
+        "source_versions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "created_by": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "evidence": {
+      "type": "object",
+      "required": [
+        "source",
+        "locator",
+        "observed_at"
+      ],
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "locator": {
+          "type": "string"
+        },
+        "value": {},
+        "observed_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

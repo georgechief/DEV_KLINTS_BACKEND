@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.klints.io/mvp1/architecture_asset.schema.json",
+  "title": "Architecture Asset",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "asset_id",
+    "tenant_id",
+    "asset_type",
+    "name",
+    "status",
+    "dependencies",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "asset_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "asset_type": {
+      "enum": [
+        "WORKFLOW",
+        "SEGMENT",
+        "TAG",
+        "PROPERTY",
+        "SURFACE",
+        "RECOMMENDATION",
+        "CHANNEL",
+        "METRIC"
+      ]
+    },
+    "name": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "definition": {
+      "type": "object"
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "target_asset_id",
+          "edge_type"
+        ],
+        "properties": {
+          "target_asset_id": {
+            "type": "string"
+          },
+          "edge_type": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "capability_path": {
+      "type": "string"
+    },
+    "provenance": {
+      "$ref": "#/$defs/provenance"
+    }
+  },
+  "$defs": {
+    "evidence": {
+      "type": "object",
+      "required": [
+        "source",
+        "observed_at"
+      ],
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "locator": {
+          "type": "string"
+        },
+        "value": {},
+        "observed_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "source_versions",
+        "created_at"
+      ],
+      "properties": {
+        "source_versions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "created_by": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
