@@ -9,7 +9,8 @@
 - Backend: [`georgechief/DEV_KLINTS_BACKEND`](https://github.com/georgechief/DEV_KLINTS_BACKEND)  
 - Frontend: [`georgechief/DEV_KLINTS_FRONTEND`](https://github.com/georgechief/DEV_KLINTS_FRONTEND)  
 
-**Staging backend (live):** `https://apis.klints.io` — deployed from release tag **[`v1.0.1`](https://github.com/georgechief/DEV_KLINTS_BACKEND/releases/tag/v1.0.1)** (tag-based CD; see [`RELEASES.md`](https://github.com/georgechief/DEV_KLINTS_BACKEND/blob/main/RELEASES.md) on the backend repo). Health: `GET /health/` → `{"status":"ok"}`.
+**Staging backend (live):** `https://apis.klints.io` — deployed from release tag **[`v1.0.1`](https://github.com/georgechief/DEV_KLINTS_BACKEND/releases/tag/v1.0.1)** (tag-based CD; see [`RELEASES.md`](https://github.com/georgechief/DEV_KLINTS_BACKEND/blob/main/RELEASES.md) on the backend repo). Health: `GET /health/` → `{"status":"ok"}`.  
+**M2 demo walkthrough (Loom):** [Activation & Blueprint product walkthrough](https://www.loom.com/share/f7b6ae96d15d4c6da1555487de595e3f) — recorded acceptance path for the surfaces in §4.
 
 > This file is identical in both repositories so reviewers have one authoritative writeup regardless of which repo they open first.  
 > Prior M1 deposit writeup (historical): see git history for `MILESTONE_SUBMISSION.md` (14 August 2026). This document is the **M2** claim SoT.
@@ -113,6 +114,9 @@ Do **not** treat the following as M2 acceptance:
 ---
 
 ## 4. M2 functional walkthrough (recommended acceptance path)
+
+**Recorded demo:** [Loom — M2 Activation & Blueprint walkthrough](https://www.loom.com/share/f7b6ae96d15d4c6da1555487de595e3f)  
+Watch first for the operator path; use the steps below for live re-verification on staging.
 
 1. **Auth + connect** — Manago + Shopify (M1 baseline still required).  
 2. **Import + DCS score** — Data Consistency; optional fresh-import gate (DCS-10).  
@@ -236,6 +240,7 @@ Per Agreement clauses **4.2–4.3** and Schedule 1 Part B:
 ### Suggested Client acceptance checklist
 
 - [x] Staging API reachable (`https://apis.klints.io/health/` → ok) on release **`v1.0.1`**  
+- [ ] Review [M2 Loom walkthrough](https://www.loom.com/share/f7b6ae96d15d4c6da1555487de595e3f)  
 - [ ] Frontend configured against that API  
 - [ ] Fix: approve writeback on ≥1 allowlisted check (CI-01 / CC-03 / WB-SHOP-01)  
 - [ ] Lifecycle page loads rule-based assessment  
