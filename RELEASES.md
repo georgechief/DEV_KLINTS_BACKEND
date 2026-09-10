@@ -1,6 +1,14 @@
 # Releases & deploy (DEV_KLINTS_BACKEND)
 
-Staging deploy is **tag-driven**. Pushing to `main` does **not** deploy.
+Staging deploy is **tag-driven**. Pushing or merging to `main` does **not** deploy.
+
+| Rule | Detail |
+|------|--------|
+| Trigger | Push of a semver tag `vMAJOR.MINOR.PATCH`, publish of a GitHub Release from that tag, or manual **workflow_dispatch** with a tag |
+| Not a trigger | Commits / PRs on `main` alone |
+| Workflow | `.github/workflows/deploy-development.yml` — name: **Deploy release (tag)** |
+| Target | Client DigitalOcean droplet → stack under `/opt/klints_backend` |
+| Public API | `https://apis.klints.io` (TLS via Let’s Encrypt / nginx) |
 
 ## Version format
 
@@ -25,7 +33,7 @@ git tag -a v1.2.3 -m "v1.2.3"
 git push origin v1.2.3
 ```
 
-Optional: GitHub → **Releases** → create release from `v1.2.3` and publish (also triggers deploy).
+Optional: GitHub → **Releases** → create release from the tag and publish (also triggers deploy).
 
 Manual: Actions → **Deploy release (tag)** → Run workflow → enter `v1.2.3`.
 
@@ -34,9 +42,18 @@ Manual: Actions → **Deploy release (tag)** → Run workflow → enter `v1.2.3`
 After a successful deploy, the droplet has:
 
 ```text
-/opt/klints_backend/DEPLOY_VERSION   # e.g. v1.2.3
+/opt/klints_backend/DEPLOY_VERSION   # e.g. v1.0.1
 ```
 
-## Workflow file
+Smoke: `GET https://apis.klints.io/health/` → `{"status":"ok"}`.
 
-`.github/workflows/deploy-development.yml` — name: **Deploy release (tag)**
+## Release history (this deposit)
+
+| Tag | Published | Result | Notes |
+|-----|-----------|--------|-------|
+| [`v1.0.0`](https://github.com/georgechief/DEV_KLINTS_BACKEND/releases/tag/v1.0.0) | 10 Sep 2026 | **Failed health** | First tag-based deploy of the M2 deposit. `web` crash-looped: MVP1 Build Pack was missing from the deposit, so `load_use_case_pilots` failed before gunicorn → nginx **502**. |
+| [`v1.0.1`](https://github.com/georgechief/DEV_KLINTS_BACKEND/releases/tag/v1.0.1) | 10 Sep 2026 | **Live** | Includes Build Pack ([PR #1](https://github.com/georgechief/DEV_KLINTS_BACKEND/pull/1)). Deploy succeeded; `/health/` returns **200**. **Current staging release.** |
+
+GitHub Releases: https://github.com/georgechief/DEV_KLINTS_BACKEND/releases  
+
+Next ship: bump patch/minor on `main`, tag `v1.0.2` (or later), push tag — do **not** retag `v1.0.1` for new code.

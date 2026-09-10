@@ -148,7 +148,7 @@ Restart Celery workers after re-seeding so cached master lookups refresh.
 python manage.py load_use_case_pilots
 ```
 
-**Deploy / Docker:** the `web` image `CMD` runs `migrate` then `load_use_case_pilots` before gunicorn (idempotent upsert — safe on every restart). Staging deploy is **tag-based** (`vMAJOR.MINOR.PATCH`) — see [`RELEASES.md`](./RELEASES.md). Post-deploy verify:
+**Deploy / Docker:** the `web` image `CMD` runs `migrate` then `load_use_case_pilots` before gunicorn (idempotent upsert — safe on every restart). Requires the MVP1 Build Pack tree in the image. Staging deploy is **tag-based only** (`vMAJOR.MINOR.PATCH`; `main` pushes do not deploy) — see [`RELEASES.md`](./RELEASES.md). Current live staging release: **`v1.0.1`**. Post-deploy verify:
 
 ```bash
 python scripts/verify_use_case_pilots.py

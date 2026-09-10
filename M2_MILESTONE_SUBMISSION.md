@@ -4,10 +4,12 @@
 **Milestone:** **M2 — Activation & Blueprint** (Schedule 1, Part A)  
 **Payment gate:** **Tranche T2 — USD 3,000** (Schedule 1, Part B — released on Client acceptance of M2)  
 **Contract reference:** *Klints × Astrapse Labs · MVP 1 Services Agreement v1.2 (8 July 2026)*  
-**Submission date:** 9 September 2026  
+**Submission date:** 9 September 2026 (deposit) · **Amended:** 10 September 2026 (release system live + Build Pack on staging)  
 **Repositories:**  
 - Backend: [`georgechief/DEV_KLINTS_BACKEND`](https://github.com/georgechief/DEV_KLINTS_BACKEND)  
 - Frontend: [`georgechief/DEV_KLINTS_FRONTEND`](https://github.com/georgechief/DEV_KLINTS_FRONTEND)  
+
+**Staging backend (live):** `https://apis.klints.io` — deployed from release tag **[`v1.0.1`](https://github.com/georgechief/DEV_KLINTS_BACKEND/releases/tag/v1.0.1)** (tag-based CD; see [`RELEASES.md`](https://github.com/georgechief/DEV_KLINTS_BACKEND/blob/main/RELEASES.md) on the backend repo). Health: `GET /health/` → `{"status":"ok"}`.
 
 > This file is identical in both repositories so reviewers have one authoritative writeup regardless of which repo they open first.  
 > Prior M1 deposit writeup (historical): see git history for `MILESTONE_SUBMISSION.md` (14 August 2026). This document is the **M2** claim SoT.
@@ -18,7 +20,7 @@
 
 Milestone 2 required Activation & Blueprint: an **approval state machine (8 states)** plus Track B MCP/A2A prototype; **writeback + lifecycle** live; **Workflow Blueprint Studio** with SM-agent-ready JSON; **QA + Handoff** (0–100 / 80-point gate); and Acceptance Criteria for Track B E2E, Send-to-Manago with approval, and MCP Capability Matrix.
 
-**This deposit delivers the M2 product surfaces on staging-capable code**, with an honest reading of each Schedule 1 row:
+**This deposit delivers the M2 product surfaces on Client-controlled repos, with staging backend already released and healthy under the tag-based deploy system (`v1.0.1`)**, with an honest reading of each Schedule 1 row:
 
 | Contract M2 item | Delivery status | Notes |
 |------------------|-----------------|-------|
@@ -122,7 +124,27 @@ Do **not** treat the following as M2 acceptance:
 8. **Capability Matrix** — confirm MCP vs human route labels remain honest (no false live MCP).  
 9. **Orchestration SM** — create/list/transition an OrchestrationTask through the 8-status graph (admin/analyst roles as implemented).
 
-Staging API host (Provider deploy path): `apis.klints.io` via `.github/workflows/deploy-development.yml` (Client-owned DigitalOcean). Frontend: Client Vercel / configured staging origin against that API.
+### Staging release system (backend)
+
+Staging is **not** deployed on every `main` push. Client reviews and ships via **semver tags**:
+
+| Item | Detail |
+|------|--------|
+| Docs | Backend [`RELEASES.md`](https://github.com/georgechief/DEV_KLINTS_BACKEND/blob/main/RELEASES.md) (authoritative for CD) |
+| Workflow | `.github/workflows/deploy-development.yml` — **Deploy release (tag)** |
+| Tag shape | `vMAJOR.MINOR.PATCH` (e.g. `v1.0.1`) |
+| Triggers | Tag push, published GitHub Release, or manual workflow_dispatch with tag |
+| Server stamp | `/opt/klints_backend/DEPLOY_VERSION` |
+| Public API | `https://apis.klints.io` (Client DigitalOcean + Let’s Encrypt) |
+
+**Releases already cut for this M2 deposit:**
+
+| Tag | Status | Notes |
+|-----|--------|-------|
+| [`v1.0.0`](https://github.com/georgechief/DEV_KLINTS_BACKEND/releases/tag/v1.0.0) | Failed boot | Initial tag; Build Pack omitted from first rsync → `load_use_case_pilots` blocked gunicorn (nginx 502) |
+| [`v1.0.1`](https://github.com/georgechief/DEV_KLINTS_BACKEND/releases/tag/v1.0.1) | **Live** | Build Pack restored ([PR #1](https://github.com/georgechief/DEV_KLINTS_BACKEND/pull/1)); health **200**; **current staging** |
+
+Frontend: Client Vercel / configured staging origin against that API (no tag-deploy requirement for this claim).
 
 ---
 
@@ -138,6 +160,8 @@ Staging API host (Provider deploy path): `apis.klints.io` via `.github/workflows
 | **Capability Matrix** | MCP vs human route honesty | `docs/workflow/PRD_CAP_01_*` |
 | **Pilot gates / fresh import** | UC readiness + DCS-10 | `docs/dcs_scoring/PRD_DCS_09_*`, `PRD_DCS_10_*` |
 | **M2 honesty / demo seed helpers** | Copy honesty, optional `seed_demo_tenant` | `docs/ops/GAP_01F_DEMO_PATH.md`, `dataruns/management/commands/seed_demo_tenant.py` |
+| **Tag-based staging CD** | Semver tags only; Releases published | `RELEASES.md`, `.github/workflows/deploy-development.yml` |
+| **MVP1 Build Pack in image** | Pilots seed on every `web` boot | `Klints_MVP1_Rohan_Build_Pack_v1.2_20260718/` (required for `load_use_case_pilots`) |
 
 ---
 
@@ -150,8 +174,11 @@ core/                 Django settings, Celery, health
 tenants/              Auth, connectors, team, workspace
 dataruns/             DCS, writebacks, architecture, use cases, QA, handoff,
                       orchestration SM, capabilities, reports, AI, audit
+Klints_MVP1_…/        MVP1 Build Pack (pilot_manifest + blueprints — required at deploy)
 docs/                 PRDs by module (see docs/README.md) — no contributor folders
-.github/workflows/    deploy-development.yml (DO CI/CD)
+RELEASES.md           Tag-based staging deploy SoT + release history
+M2_MILESTONE_SUBMISSION.md   This claim
+.github/workflows/    deploy-development.yml — Deploy release (tag) only
 .env.example          Required secrets documented (values excluded)
 docker-compose.yml    Stack definition
 scripts/              Verification gates (verify_*.py)
@@ -208,7 +235,8 @@ Per Agreement clauses **4.2–4.3** and Schedule 1 Part B:
 
 ### Suggested Client acceptance checklist
 
-- [ ] Staging API reachable; frontend configured against it  
+- [x] Staging API reachable (`https://apis.klints.io/health/` → ok) on release **`v1.0.1`**  
+- [ ] Frontend configured against that API  
 - [ ] Fix: approve writeback on ≥1 allowlisted check (CI-01 / CC-03 / WB-SHOP-01)  
 - [ ] Lifecycle page loads rule-based assessment  
 - [ ] Studio: generate package + download JSON for a ready pilot  
@@ -217,13 +245,16 @@ Per Agreement clauses **4.2–4.3** and Schedule 1 Part B:
 - [ ] Capability Matrix visible; no false “MCP live” claim  
 - [ ] OrchestrationTask 8-status transitions demonstrable  
 - [ ] Written position on AC-A (waiver **or** MCP access timeline)  
-- [ ] Source present in Client GitHub repos listed above  
+- [x] Source present in Client GitHub repos listed above  
+- [x] Backend release process documented (`RELEASES.md`); GitHub Releases **`v1.0.0`** / **`v1.0.1`** published  
 
 ---
 
 ## 9. Closing statement
 
 **Milestone M2 (Activation & Blueprint) is submitted for Client acceptance** with full delivery of Send-with-approval (**AC-B**), Capability Matrix (**AC-C**), writeback + lifecycle, Workflow Blueprint Studio, QA + Handoff, and the pack **8-state orchestration approval SM**.  
+
+Staging backend for this claim is **already released** under the Client tag-based CD system at **`v1.0.1`** (after correcting the Build Pack omission that blocked `v1.0.0`). Further staging updates should be cut as new tags — see backend [`RELEASES.md`](https://github.com/georgechief/DEV_KLINTS_BACKEND/blob/main/RELEASES.md).
 
 **Literal Track B MCP/A2A E2E (AC-A)** remains **Client-dependent** under §6.1; Provider requests written waiver/deferral or MCP access rather than inventing live MCP evidence.  
 
