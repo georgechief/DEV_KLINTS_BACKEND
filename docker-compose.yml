@@ -3,6 +3,8 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
     command: ["redis-server", "--appendonly", "yes"]
+    labels:
+      klints.obs.service: redis
     volumes:
       - redis_data:/data
     logging: &default_logging
@@ -19,6 +21,8 @@ services:
   web:
     build: .
     restart: unless-stopped
+    labels:
+      klints.obs.service: web
     env_file: .env
     environment:
       CELERY_BROKER_URL: redis://redis:6379/0
@@ -36,6 +40,8 @@ services:
   celery_worker:
     build: .
     restart: unless-stopped
+    labels:
+      klints.obs.service: celery_worker
     command: >
       sh -c "python manage.py migrate --noinput &&
              exec celery -A core worker -l info --concurrency=2"
@@ -63,6 +69,8 @@ services:
   celery_beat:
     build: .
     restart: unless-stopped
+    labels:
+      klints.obs.service: celery_beat
     command: >
       sh -c "python manage.py migrate --noinput &&
              exec celery -A core beat -l info
@@ -94,6 +102,8 @@ services:
   nginx:
     image: nginx:1.27-alpine
     restart: unless-stopped
+    labels:
+      klints.obs.service: nginx
     ports:
       - "80:80"
       - "443:443"
@@ -104,8 +114,114 @@ services:
     depends_on:
       web:
         condition: service_started
+      grafana:
+        condition: service_started
+    logging: *default_logging
+  # Not published on host ports — reach Grafana via nginx /grafana/ (Phase 3).
+  loki:
+    # 3.5.0 spam-logs "negative structured metadata bytes" on empty SM pushes
+    # (grafana/loki#17371). Fixed in 3.5.1+.
+    image: grafana/loki:3.5.1
+    restart: unless-stopped
+    labels:
+      klints.obs.service: loki
+    command: ["-config.file=/etc/loki/loki-config.yml"]
+    volumes:
+      - ./deploy/loki/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - loki_data:/loki
+    # Loki image runs as 10001; root avoids empty-volume permission failures on first boot.
+    user: "0"
+    expose:
+      - "3100"
+    # No in-container healthcheck: Loki images are slim/distroless-ish; wget/shell
+    # healthchecks are unreliable. Depends_on uses service_started; Phase 5 smokes HTTP.
+    logging: *default_logging
+
+  alloy:
+    image: grafana/alloy:v1.9.2
+    restart: unless-stopped
+    labels:
+      klints.obs.service: alloy
+    command:
+      [
+        "run",
+        "--server.http.listen-addr=0.0.0.0:12345",
+        "--storage.path=/var/lib/alloy/data",
+        "/etc/alloy/config.alloy",
+      ]
+    volumes:
+      - ./deploy/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - alloy_data:/var/lib/alloy/data
+    # docker.sock access — documented risk in M3_OBS_01_PHASE_0 / runbook; socket is :ro.
+    user: root
+    depends_on:
+      loki:
+        condition: service_started
+    expose:
+      - "12345"
+    logging: *default_logging
+
+  grafana:
+    image: grafana/grafana:11.6.1
+    restart: unless-stopped
+    labels:
+      klints.obs.service: grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER:-noreplyklints@gmail.com}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:-changeme-set-in-DEV_ENV_FILE}
+      GF_SERVER_DOMAIN: ${GF_SERVER_DOMAIN:-apis.klints.io}
+      GF_SERVER_ROOT_URL: ${GF_SERVER_ROOT_URL:-https://apis.klints.io/grafana/}
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_LOG_MODE: console
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      loki:
+        condition: service_started
+      obs_alert_mailer:
+        condition: service_started
+    expose:
+      - "3000"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://127.0.0.1:3000/api/health >/dev/null 2>&1 || curl -sf http://127.0.0.1:3000/api/health >/dev/null || exit 1",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    logging: *default_logging
+
+  # Grafana webhook → Klints Mailer API → noreplyklints@gmail.com (Phase 4).
+  # Internal only; not published on host. Uses existing MAILER_API_* (no second mailer).
+  # env_file loads MAILER_* literally (avoids compose ${} mangling tokens with &/*).
+  obs_alert_mailer:
+    image: python:3.12-alpine
+    restart: unless-stopped
+    labels:
+      klints.obs.service: obs_alert_mailer
+    command: ["python", "/app/server.py"]
+    env_file: .env
+    environment:
+      ALERT_EMAIL_TO: ${ALERT_EMAIL_TO:-noreplyklints@gmail.com}
+    volumes:
+      - ./deploy/grafana/alert-mailer-bridge/server.py:/app/server.py:ro
+    expose:
+      - "8080"
     logging: *default_logging
 
 volumes:
   redis_data:
   media_data:
+  loki_data:
+  alloy_data:
+  grafana_data:

@@ -1,0 +1,14 @@
+# M3-OBS-01 Phase 4 — contact point → internal bridge → Klints Mailer API
+# → noreplyklints@gmail.com (same MAILER_API_* as Django).
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: m3-obs-noreplyklints
+    receivers:
+      - uid: m3_obs_mailer_webhook
+        type: webhook
+        disableResolveMessage: false
+        settings:
+          url: http://obs_alert_mailer:8080/alert
+          httpMethod: POST

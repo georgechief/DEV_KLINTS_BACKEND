@@ -1,0 +1,13 @@
+# M3-OBS-01 — dashboards as code (Staging Docker Logs + Staging Errors).
+apiVersion: 1
+
+providers:
+  - name: m3-obs-01
+    orgId: 1
+    folder: M3 OBS-01
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: false
+    options:
+      path: /etc/grafana/provisioning/dashboards/json

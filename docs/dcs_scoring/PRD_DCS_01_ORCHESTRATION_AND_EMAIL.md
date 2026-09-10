@@ -32,7 +32,7 @@ Request body:
 }
 ```
 
-If `source_run_ids` omitted: use latest succeeded bootstrap `Run` per platform for the company **at enqueue time only** — the worker **always** runs mandatory fresh import before scoring per [PRD-DCS-10 fresh import](../engineering/PRD_DCS_10_FRESH_IMPORT_BEFORE_SCORE.md) (`refresh_connected_platforms_for_dcs` → `metadata.fresh_imports` on succeeded runs).
+If `source_run_ids` omitted: use latest succeeded bootstrap `Run` per platform for the company **at enqueue time only** — the worker **always** runs mandatory fresh import before scoring per [PRD-DCS-10 fresh import](../sahil/PRD_DCS_10_FRESH_IMPORT_BEFORE_SCORE.md) (`refresh_connected_platforms_for_dcs` → `metadata.fresh_imports` on succeeded runs).
 
 ## 3. Process
 

@@ -1,0 +1,69 @@
+{
+  "annotations": { "list": [] },
+  "editable": false,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 16, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "editorMode": "code",
+          "expr": "{service=~\"$service\"}",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Logs by service",
+      "type": "logs"
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["m3-obs-01", "staging", "docker"],
+  "templating": {
+    "list": [
+      {
+        "allValue": "web|celery_worker|celery_beat|nginx|redis|loki|alloy|grafana",
+        "current": { "selected": true, "text": "web", "value": "web" },
+        "datasource": { "type": "loki", "uid": "loki" },
+        "definition": "label_values(service)",
+        "includeAll": true,
+        "label": "service",
+        "multi": false,
+        "name": "service",
+        "options": [],
+        "query": {
+          "label": "service",
+          "refId": "LokiVariableQueryEditor-VariableQuery",
+          "stream": "",
+          "type": 1
+        },
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Staging Docker Logs",
+  "uid": "m3-obs-staging-docker-logs",
+  "version": 1
+}

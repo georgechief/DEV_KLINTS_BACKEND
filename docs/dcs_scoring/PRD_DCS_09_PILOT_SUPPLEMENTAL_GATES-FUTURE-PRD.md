@@ -1,10 +1,10 @@
 # PRD-DCS-09 — Pilot supplemental preflight gates (archive / long appendix)
 
 > **Implementation SoT (M2):**  
-> **[`docs/engineering/PRD_DCS_09_PILOT_SUPPLEMENTAL_GATES.md`](../engineering/PRD_DCS_09_PILOT_SUPPLEMENTAL_GATES.md)**  
-> Owner: **Engineering**. Use that file for Cursor briefs, acceptance, and PRs.
+> **[`docs/sahil/PRD_DCS_09_PILOT_SUPPLEMENTAL_GATES.md`](../sahil/PRD_DCS_09_PILOT_SUPPLEMENTAL_GATES.md)**  
+> Owner: **Sahil**. Use that file for Cursor briefs, acceptance, and PRs.
 
-This file is retained as a **long-form appendix** (per-check detection notes, historical API sketches). Prefer the Engineering PRD for scope locks against **current** code (`recommend.py` provisional policy, 42-only CheckMaster, CAP-01/HO-01 already shipped).
+This file is retained as a **long-form appendix** (per-check detection notes, historical API sketches). Prefer the Sahil PRD for scope locks against **current** code (`recommend.py` provisional policy, 42-only CheckMaster, CAP-01/HO-01 already shipped).
 
 ---
 
@@ -63,4 +63,4 @@ Full narrative tables from the prior draft are omitted here to keep a single SoT
 
 ## Explicitly not this appendix
 
-Implementation sequencing, Cursor brief, recommend merge rules, APIs, FE, and acceptance → **Engineering PRD-DCS-09**.
+Implementation sequencing, Cursor brief, recommend merge rules, APIs, FE, and acceptance → **Sahil PRD-DCS-09**.
