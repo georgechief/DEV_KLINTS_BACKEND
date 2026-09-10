@@ -1,4 +1,18 @@
-# Deploy Klints backend (Docker) to the DigitalOcean development droplet on every push to main.
+# Deploy Klints backend (Docker) to the DigitalOcean droplet from a
+# semver release tag — NOT on every push to main.
+#
+# Versioning (this repo only):
+#   1. Merge work to main as usual (no auto-deploy).
+#   2. Create an annotated tag:  git tag -a v1.2.3 -m "v1.2.3"
+#   3. Push the tag:             git push origin v1.2.3
+#   4. Optional: GitHub → Releases → Draft a release from that tag
+#      (publishing a release also triggers this workflow).
+#
+# Tag shape (required): vMAJOR.MINOR.PATCH
+#   Examples: v1.0.0 · v2.3.1
+#   Not matched: v1.0 · 1.0.0 · v1.0.0-rc1 (pre-releases intentionally excluded)
+#
+# Manual: Actions → Deploy release (tag) → Run workflow → enter tag (e.g. v1.2.3)
 #
 # DNS: apis.klints.io → A/AAAA to the droplet (required for Let's Encrypt).
 # TLS: deploy/scripts/ensure-ssl.sh issues/renews certs; nginx terminates HTTPS.
@@ -16,16 +30,23 @@
 #   DEV_ENV_FILE          Full .env contents for the server (see .env.example)
 #                         Must include ALLOWED_HOSTS=apis.klints.io,... and SSL flags
 
-name: Deploy to Development
+name: Deploy release (tag)
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - "v*.*.*"
+  release:
+    types: [published]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Semver tag to deploy (e.g. v1.2.3)"
+        required: true
+        type: string
 
 concurrency:
-  group: deploy-development
+  group: deploy-release
   cancel-in-progress: true
 
 env:
@@ -38,8 +59,37 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - name: Checkout
+      - name: Resolve deploy version
+        id: version
+        env:
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -eu
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            VERSION="${INPUT_TAG}"
+          elif [ "$EVENT_NAME" = "release" ]; then
+            VERSION="${RELEASE_TAG}"
+          else
+            # push tags → ref_name is v1.2.3
+            VERSION="${REF_NAME}"
+          fi
+
+          if ! echo "$VERSION" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Invalid version '${VERSION}'. Use vMAJOR.MINOR.PATCH (e.g. v1.2.3)."
+            exit 1
+          fi
+
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Deploy version: ${VERSION}"
+
+      - name: Checkout release tag
         uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.version.outputs.version }}
+          fetch-depth: 0
 
       - name: Validate required secrets and variables
         env:
@@ -67,7 +117,6 @@ jobs:
           SSH_PORT="${DEV_SSH_PORT:-22}"
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          # Support ed25519 or RSA keys from the secret
           KEY_FILE=~/.ssh/deploy_key
           printf '%s\n' "$DEV_SSH_PRIVATE_KEY" > "$KEY_FILE"
           chmod 600 "$KEY_FILE"
@@ -104,11 +153,14 @@ jobs:
             --exclude '.pytest_cache/' \
             ./ klints-dev:"${APP_DIR}/"
 
-      - name: Write environment file
+      - name: Write environment file + deploy version stamp
         env:
           DEV_ENV_FILE: ${{ secrets.DEV_ENV_FILE }}
+          DEPLOY_VERSION: ${{ steps.version.outputs.version }}
         run: |
           printf '%s\n' "$DEV_ENV_FILE" | ssh klints-dev "cat > '${APP_DIR}/.env' && chmod 600 '${APP_DIR}/.env'"
+          printf '%s\n' "$DEPLOY_VERSION" | ssh klints-dev "cat > '${APP_DIR}/DEPLOY_VERSION' && chmod 644 '${APP_DIR}/DEPLOY_VERSION'"
+          echo "Stamped ${APP_DIR}/DEPLOY_VERSION = ${DEPLOY_VERSION}"
 
       - name: Bootstrap host (Docker + 1GB rotating logs)
         run: |
@@ -126,12 +178,14 @@ jobs:
       - name: Smoke check via HTTPS domain
         env:
           API_DOMAIN: ${{ vars.API_DOMAIN }}
+          DEPLOY_VERSION: ${{ steps.version.outputs.version }}
         run: |
           DOMAIN="${API_DOMAIN:-apis.klints.io}"
           for i in $(seq 1 12); do
             code=$(curl -sS -o /tmp/health.out -w '%{http_code}' --max-time 15 "https://${DOMAIN}/health/" || echo 000)
             if [ "$code" = "200" ]; then
               echo "Development is up: https://${DOMAIN}/health/ → $(cat /tmp/health.out)"
+              echo "Deployed release: ${DEPLOY_VERSION}"
               exit 0
             fi
             echo "Attempt $i: HTTP $code — $(head -c 200 /tmp/health.out 2>/dev/null || true)"
