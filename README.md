@@ -148,7 +148,7 @@ Restart Celery workers after re-seeding so cached master lookups refresh.
 python manage.py load_use_case_pilots
 ```
 
-**Deploy / Docker:** the `web` image `CMD` runs `migrate` then `load_use_case_pilots` before gunicorn (idempotent upsert — safe on every restart). Post-deploy verify:
+**Deploy / Docker:** the `web` image `CMD` runs `migrate` then `load_use_case_pilots` before gunicorn (idempotent upsert — safe on every restart). Staging deploy is **tag-based** (`vMAJOR.MINOR.PATCH`) — see [`RELEASES.md`](./RELEASES.md). Post-deploy verify:
 
 ```bash
 python scripts/verify_use_case_pilots.py
