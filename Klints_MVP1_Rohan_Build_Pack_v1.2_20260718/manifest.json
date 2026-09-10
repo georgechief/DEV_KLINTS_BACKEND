@@ -1,0 +1,328 @@
+{
+  "package_name": "Klints_MVP1_Rohan_Build_Pack_v1.2_20260718",
+  "package_version": "1.2.0",
+  "specification_version": "1.4.1",
+  "capability_matrix_version": "1.1",
+  "implementation_blueprint_version": "1.2",
+  "created_date": "2026-07-18",
+  "validation_verdict": "PASS_WITH_RESIDUAL_EXTERNAL_RISKS",
+  "backend_execution_status": "NOT_RUN",
+  "live_manago_mcp_status": "BLOCKED_EXTERNAL",
+  "manifest_hash_policy": "manifest.json is excluded from its own file inventory; every other shipped file is SHA-256 hashed",
+  "scope": {
+    "workbooks": 8,
+    "sheets": 49,
+    "pilot_blueprints": 16,
+    "headline_dcs_checks": 42,
+    "supplemental_pilot_gates": 12,
+    "json_schemas": 13,
+    "blueprint_pdf_pages": 27
+  },
+  "files": [
+    {
+      "path": "01_Specifications/Klints_Spec_ArchitectureAssessmentFramework_v1.4.1_20260718.xlsx",
+      "bytes": 34033,
+      "sha256": "1b501a37db8df6185f7b132f835a1c3773210fbbda825552946c1b28fcf7ac0a"
+    },
+    {
+      "path": "01_Specifications/Klints_Spec_DefaultUseCaseLibrary_v1.4.1_20260718.xlsx",
+      "bytes": 60271,
+      "sha256": "50e5c5ff69136d1e1d1aab32f50723d1a7c70707aa4756436f0ef6d1d49970bd"
+    },
+    {
+      "path": "01_Specifications/Klints_Spec_InitialDataConsistencyCheck_v1.4.1_20260718.xlsx",
+      "bytes": 84297,
+      "sha256": "2d33671e6b77d4982a12a911f4964d674c4178301e90fa0d72b6ec5a62ffd373"
+    },
+    {
+      "path": "01_Specifications/Klints_Spec_OnboardingOrchestrationBlueprint_v1.4.1_20260718.xlsx",
+      "bytes": 38060,
+      "sha256": "ded35a712a243af36a4d818d7a306ed1584596d94c1f3f8a84fce770640b84df"
+    },
+    {
+      "path": "02_Execution_Capabilities/Klints_Manago_ExecutionCapabilityMatrix_v1.1_20260718.xlsx",
+      "bytes": 16648,
+      "sha256": "7e504174507dfd76ab6021996662465487e9935beb643d33d7dc5b6dbe6bf8da"
+    },
+    {
+      "path": "02_Execution_Capabilities/manago_mcp_discovery_results.json",
+      "bytes": 3101,
+      "sha256": "a9f0e0b6dd2a8c0c72820ee2b4ec0dcefa7a6934e26eae8a8518b08a8cffa2e9"
+    },
+    {
+      "path": "03_Machine_Contracts/approval_token.schema.json",
+      "bytes": 2319,
+      "sha256": "c4c2d0bba7e693203c9522c69926c8bb156640c297e5cb7368b6077a389dde92"
+    },
+    {
+      "path": "03_Machine_Contracts/architecture_asset.schema.json",
+      "bytes": 2371,
+      "sha256": "2c758071bee22eae71e6511388b1f673b1b5d0388d88dc4df47fd21ce5876a30"
+    },
+    {
+      "path": "03_Machine_Contracts/architecture_verdict.schema.json",
+      "bytes": 2729,
+      "sha256": "4ccbd860d6aa6eef4ced30a49b7582b2791515e760daa3a39475a1b586badf11"
+    },
+    {
+      "path": "03_Machine_Contracts/assessment_report.schema.json",
+      "bytes": 5475,
+      "sha256": "55bb898bc03ea0e45f631cec917414fe68db072293ce80ac2f8b53034cc433a5"
+    },
+    {
+      "path": "03_Machine_Contracts/assessment_report_api.openapi.json",
+      "bytes": 4330,
+      "sha256": "3a2801e6668a63e598ab066d6ba2b15ca01734392e26036e0f25b858e88bf7c5"
+    },
+    {
+      "path": "03_Machine_Contracts/capability_record.schema.json",
+      "bytes": 2298,
+      "sha256": "8e7ac5ce7d45fc73084774b63cdc8aaa1b39ac1c31d50b11a03734d55d239c95"
+    },
+    {
+      "path": "03_Machine_Contracts/check_definition.schema.json",
+      "bytes": 2215,
+      "sha256": "b062857199541723913c920fa91c5c76d40103a7b265cc4d99ced579304b0677"
+    },
+    {
+      "path": "03_Machine_Contracts/check_result.schema.json",
+      "bytes": 2632,
+      "sha256": "6bf420313d889be534b2055120e686ee98247140e7193f32fa967b9d62037c2d"
+    },
+    {
+      "path": "03_Machine_Contracts/dcs_run.schema.json",
+      "bytes": 2864,
+      "sha256": "2494f13e7df5ef875148795d4e72078a1bbf5ea5e6b0661c0cf0c58c61f9abcf"
+    },
+    {
+      "path": "03_Machine_Contracts/finding.schema.json",
+      "bytes": 2403,
+      "sha256": "19de72676c34eb8f31abee48dfa396905abd659e949f69e13296e65deedc1571"
+    },
+    {
+      "path": "03_Machine_Contracts/handoff_package.schema.json",
+      "bytes": 2288,
+      "sha256": "1e9d9f0cc3585ae4ce40b304b04345b6bce666a5eee52d3a93a223354b9edad1"
+    },
+    {
+      "path": "03_Machine_Contracts/orchestration_task.schema.json",
+      "bytes": 3932,
+      "sha256": "32e26da4d940412aee21d8187db8ec482bf88e02d16a537f9950ec465697ade2"
+    },
+    {
+      "path": "03_Machine_Contracts/qa_result.schema.json",
+      "bytes": 2512,
+      "sha256": "bb4aa726acb2383a0ed7bae5cdd3e3c633e31ef056524aaf6d3fcefe2c4f7c94"
+    },
+    {
+      "path": "03_Machine_Contracts/workflow_blueprint.schema.json",
+      "bytes": 5048,
+      "sha256": "e76a27ab1a5bef6351e32667cf4f95a2f1616b8de981046ef402b7bec7092af8"
+    },
+    {
+      "path": "04_MVP1_Pilot_Blueprints/UC-02_blueprint.json",
+      "bytes": 6485,
+      "sha256": "b8419c0eb4e05ac7a52ca97254c8de03994807221090c6f07f28952bc1a6b579"
+    },
+    {
+      "path": "04_MVP1_Pilot_Blueprints/UC-04_blueprint.json",
+      "bytes": 6885,
+      "sha256": "d529fb97f7efaf74ffd935d8e3d91286334d22422a3d6c735e4ff022315b12de"
+    },
+    {
+      "path": "04_MVP1_Pilot_Blueprints/UC-05_blueprint.json",
+      "bytes": 6057,
+      "sha256": "eca11693a38e6a355726be2bdc5e07ff0c298786188a31dc0ea009541c21fb55"
+    },
+    {
+      "path": "04_MVP1_Pilot_Blueprints/UC-06B_blueprint.json",
+      "bytes": 7903,
+      "sha256": "cb22f1443ff722b9de929c2439a4301ff02466aa31b11fb47b4e1177cb913ba3"
+    },
+    {
+      "path": "04_MVP1_Pilot_Blueprints/UC-08_blueprint.json",
+      "bytes": 6383,
+      "sha256": "c36e7175f58f91396e64aa222441078f72c5fc7106f56b023d5946bc14d304eb"
+    },
+    {
+      "path": "04_MVP1_Pilot_Blueprints/UC-09_blueprint.json",
+      "bytes": 5858,
+      "sha256": "1f1567416e734e20da69355a0c19863d62cdca0cf1300926592491d031651779"
+    },
+    {
+      "path": "04_MVP1_Pilot_Blueprints/UC-10_blueprint.json",
+      "bytes": 5635,
+      "sha256": "2d947d0c5d5252a51f05f41e6422d14d6c6942ff7f69a4c2bef02977940746ed"
+    },
+    {
+      "path": "04_MVP1_Pilot_Blueprints/UC-11_blueprint.json",
+      "bytes": 5974,
+      "sha256": "7a2aa0cf18e068e60355165e90e2f21862c701124d617f6d5901b14e2d82d75b"
+    },
+    {
+      "path": "04_MVP1_Pilot_Blueprints/UC-12_blueprint.json",
+      "bytes": 6666,
+      "sha256": "e152a52afcbd3e7b398f6edf5613f5fe7cccfe714fad154fd149038d2073cb29"
+    },
+    {
+      "path": "04_MVP1_Pilot_Blueprints/UC-13_blueprint.json",
+      "bytes": 5835,
+      "sha256": "6603dcffc7a17bd7398d39a6a0f24033e9d722e9655c891cdd5653dccdc6dae2"
+    },
+    {
+      "path": "04_MVP1_Pilot_Blueprints/UC-16_blueprint.json",
+      "bytes": 6591,
+      "sha256": "25125d3cd6de1310ca1ca7439c5036a27ca260d516b1d77ca8a901f4519f2e50"
+    },
+    {
+      "path": "04_MVP1_Pilot_Blueprints/UC-17_blueprint.json",
+      "bytes": 6613,
+      "sha256": "0d3b8f8c33eccdbdfe8534a6293e8750797ec6333978c0cb284e10228b620a62"
+    },
+    {
+      "path": "04_MVP1_Pilot_Blueprints/UC-21_blueprint.json",
+      "bytes": 6818,
+      "sha256": "36be949d7e5b34466ee795a53a5db09a35fb68449fd8843cf13e9a83c91a3048"
+    },
+    {
+      "path": "04_MVP1_Pilot_Blueprints/UC-23_blueprint.json",
+      "bytes": 6450,
+      "sha256": "91cb1412a69b55ada980c7eba716a849b1a70666a66184d8962f0b159f28d1c7"
+    },
+    {
+      "path": "04_MVP1_Pilot_Blueprints/UC-28_blueprint.json",
+      "bytes": 6195,
+      "sha256": "82fbd4fc67fbe4a338654848c7dea9cb14557f3ad02d5f9583ed4c2f7749fb9c"
+    },
+    {
+      "path": "04_MVP1_Pilot_Blueprints/UC-36_blueprint.json",
+      "bytes": 6256,
+      "sha256": "164fcf9f75619fae14bedc31d22b36577523fa5392d1b7c68cfdf69ac02e3b6e"
+    },
+    {
+      "path": "04_MVP1_Pilot_Blueprints/pilot_manifest.json",
+      "bytes": 4522,
+      "sha256": "21b26180163f13a824a3053bcfcbaf99fab68eda3034893febb7234e2968ea3c"
+    },
+    {
+      "path": "05_Test_Fixtures/edge_cases/all_pass.json",
+      "bytes": 201,
+      "sha256": "48d28dfdb22fe860c4e84112abce66895b9b17faf1f85832ba0f1a6a9e63aa14"
+    },
+    {
+      "path": "05_Test_Fixtures/edge_cases/consent_fail.json",
+      "bytes": 272,
+      "sha256": "25dc5d60b4cc12d06a1bbcd7c7beac64aa711119c5869a698adc76b7d2dd8994"
+    },
+    {
+      "path": "05_Test_Fixtures/edge_cases/dependency_cycle.json",
+      "bytes": 340,
+      "sha256": "ea0ab8fdfbf2ab3a21d7c76949f9e1c0f373ebb95968b02c6b14ac3619b3d414"
+    },
+    {
+      "path": "05_Test_Fixtures/edge_cases/erp_not_connected.json",
+      "bytes": 280,
+      "sha256": "5350edf3d8feeab29760bfcebed4926968d78f7c83577a76b800bb532008fadb"
+    },
+    {
+      "path": "05_Test_Fixtures/edge_cases/gate_fail.json",
+      "bytes": 182,
+      "sha256": "038bffe15b2b453b51d7eeb5e406e1fdfe69a981d78d1114e33b983742dd5166"
+    },
+    {
+      "path": "05_Test_Fixtures/edge_cases/partial_sweep.json",
+      "bytes": 213,
+      "sha256": "bb4e28e40f076ac02fea93b0841c4dd4c9db9f3ad5c56be76bb8c5cad32e2e0a"
+    },
+    {
+      "path": "05_Test_Fixtures/lumera_expected_results/check_results.json",
+      "bytes": 30843,
+      "sha256": "c288522ec68dd0ec1da77d589a97719799d53878aeb07942c53e23d036cb96ea"
+    },
+    {
+      "path": "05_Test_Fixtures/lumera_expected_results/dcs_score.json",
+      "bytes": 1162,
+      "sha256": "3917dbafbc0401f775ffa47cc8937ccce9b4ae4feb8ee3ffe1d5ff9ac97f5b10"
+    },
+    {
+      "path": "05_Test_Fixtures/lumera_expected_results/workflow_readiness.json",
+      "bytes": 2673,
+      "sha256": "d5204b11cbcb0f15438fa3086d5c68de78f7d792b2be8154a1025efb86daca10"
+    },
+    {
+      "path": "05_Test_Fixtures/lumera_input/connector_snapshot.json",
+      "bytes": 570,
+      "sha256": "381fedcf4b5c3163d2790bb85327e79e7fd9c964530a76ba40858fed4a66f4d6"
+    },
+    {
+      "path": "05_Test_Fixtures/reporting/incomplete_report_expected.json",
+      "bytes": 1862,
+      "sha256": "f5fce777c4b9ec7b40316911ce8e28cd14d51b9d388493d42676a0be29f1d043"
+    },
+    {
+      "path": "05_Test_Fixtures/reporting/lumera_free_report_expected.json",
+      "bytes": 2207,
+      "sha256": "f33f71c8806d91cbad5e5296fadef6fe45268be74357521050b6871255766790"
+    },
+    {
+      "path": "05_Test_Fixtures/reporting/lumera_report_request.json",
+      "bytes": 268,
+      "sha256": "f7e5f23237000fa74eef5c1b12fd3a010c9272a775e4cf0f6d1b3fce0ece1954"
+    },
+    {
+      "path": "05_Test_Fixtures/scoring_golden_dataset.json",
+      "bytes": 1892,
+      "sha256": "41bb593b22c96702bade5ddb796ee389405e934203a9990ac0d544432affe2be"
+    },
+    {
+      "path": "06_Implementation/BUILD_README.md",
+      "bytes": 2990,
+      "sha256": "9e3456e66c2f09a0845f83d522688864fe68742b7b449ba88e924e982b06055d"
+    },
+    {
+      "path": "06_Implementation/CHANGELOG_v1.2.md",
+      "bytes": 993,
+      "sha256": "8b2e2f7a559d7925a9cb7dac27fbeec2def94551d6da0da90a99ba8ec5732089"
+    },
+    {
+      "path": "06_Implementation/FINAL_QA_REPORT.md",
+      "bytes": 1292,
+      "sha256": "9d4a2eef71583db50dc57f44e0747e8547dc0cbeccafb9f8eb45bbdf6c41486d"
+    },
+    {
+      "path": "06_Implementation/Klints_MVP1_Requirements_Traceability_Matrix_v1.0_20260718.xlsx",
+      "bytes": 10417,
+      "sha256": "45509e8efc856f9be5c87616043f7442603f67ec05bc656b54d66c64250a629e"
+    },
+    {
+      "path": "06_Implementation/Klints_MVP1_Rohan_Implementation_Blueprint_v1.2_20260718.docx",
+      "bytes": 106711,
+      "sha256": "89529d0616b7cc6ddccde4f9d27501d5a62c367d54da09df90916c7c3060653e"
+    },
+    {
+      "path": "06_Implementation/Klints_MVP1_Rohan_Implementation_Blueprint_v1.2_20260718.pdf",
+      "bytes": 767276,
+      "sha256": "f9660e6ee2d52bc5ea2fcc0b238e80e4a1f637ad832ca5e0da44cd9755da8017"
+    },
+    {
+      "path": "06_Implementation/acceptance_test_matrix_v1.2.xlsx",
+      "bytes": 8785,
+      "sha256": "ba927be9a1e582cdb6a4bca95e362d277ca33d0134cc4c152a663ea26fa373c2"
+    },
+    {
+      "path": "06_Implementation/implementation_backlog_v1.2.xlsx",
+      "bytes": 8039,
+      "sha256": "f47815d3d166fee3d21b4dc67f97384958b07c3dda0bca9ce8166d840497a824"
+    },
+    {
+      "path": "final_validation_report.json",
+      "bytes": 6282,
+      "sha256": "0888c7607d56d77592b9e65767b7041098670c5c8b6b1d866a7e1ef2b031c30f"
+    },
+    {
+      "path": "qa_report.json",
+      "bytes": 7590,
+      "sha256": "a911de20413c223472a619da2469b26a163bbdb9ba0bcd49f65acd1d0efb1bb4"
+    }
+  ]
+}

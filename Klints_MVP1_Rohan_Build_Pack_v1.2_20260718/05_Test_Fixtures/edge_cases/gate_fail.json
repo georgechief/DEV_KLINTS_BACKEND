@@ -1,0 +1,11 @@
+{
+  "description": "Manago auth fails",
+  "mutations": [
+    {
+      "check_id": "FD-01",
+      "status": "FAIL"
+    }
+  ],
+  "expected_state": "BLOCKED",
+  "expected_score": null
+}

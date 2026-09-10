@@ -1,0 +1,186 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Klints Assessment Report API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/v1/tenants/{tenantId}/assessment-reports": {
+      "post": {
+        "operationId": "createAssessmentReport",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "variant",
+                  "input_snapshot_ids"
+                ],
+                "properties": {
+                  "variant": {
+                    "enum": [
+                      "FREE_DIAGNOSTIC",
+                      "PAID_FULL",
+                      "LIVING"
+                    ]
+                  },
+                  "input_snapshot_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Composition accepted"
+          },
+          "409": {
+            "description": "Idempotency conflict"
+          },
+          "422": {
+            "description": "Invalid or incomplete input"
+          }
+        },
+        "security": [
+          {
+            "tenantOAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/tenants/{tenantId}/assessment-reports/{reportId}": {
+      "get": {
+        "operationId": "getAssessmentReport",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reportId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Report metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./assessment_report.schema.json"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or cross-tenant object"
+          }
+        },
+        "security": [
+          {
+            "tenantOAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/tenants/{tenantId}/assessment-reports/{reportId}/download": {
+      "get": {
+        "operationId": "downloadAssessmentReport",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reportId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "enum": [
+                "pdf",
+                "json"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Artifact bytes"
+          },
+          "404": {
+            "description": "Missing or cross-tenant object"
+          },
+          "409": {
+            "description": "Report not ready"
+          },
+          "410": {
+            "description": "Artifact expired"
+          }
+        },
+        "security": [
+          {
+            "tenantOAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "tenantOAuth": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "/oauth/token",
+            "scopes": {}
+          }
+        }
+      }
+    }
+  }
+}

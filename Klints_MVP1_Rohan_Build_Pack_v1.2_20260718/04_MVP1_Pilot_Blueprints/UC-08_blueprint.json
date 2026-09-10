@@ -1,0 +1,259 @@
+{
+  "schema_version": "1.0.1",
+  "blueprint_id": "WFBP-UC-08-MVP1",
+  "use_case_id": "UC-08",
+  "variant_id": "default",
+  "title": "Post-purchase education / product usage",
+  "release": "MVP1",
+  "pilot_rank": 5,
+  "target_platform": [
+    "MANAGO"
+  ],
+  "solution_type": "Workflow",
+  "business_objective": "Improve product outcomes and repeat propensity with usage education.",
+  "configured_by": [
+    "KLINTS",
+    "MANAGO_AGENT",
+    "HUMAN_OPERATOR"
+  ],
+  "executed_by": [
+    "MANAGO",
+    "KLINTS"
+  ],
+  "gates": {
+    "min_dcs": 70,
+    "gating_check_ids": [
+      "PT-01",
+      "BR-09"
+    ],
+    "architecture_modes": [
+      "AUGMENT",
+      "SELECTIVE_REBUILD",
+      "REBUILD"
+    ]
+  },
+  "data_contract": {
+    "required_entities": [
+      "Contact",
+      "ExternalEvent",
+      "Product"
+    ],
+    "required_fields": [
+      "contact_id",
+      "order_id",
+      "product_id",
+      "delivery_at"
+    ],
+    "identity_key_priority": [
+      "external_customer_id",
+      "normalized_email",
+      "smclient"
+    ],
+    "event_dedupe_key": "externalId",
+    "freshness_sla": "Per gating check",
+    "namespace": {
+      "details": "klints_",
+      "tags": "klints:"
+    }
+  },
+  "audience": {
+    "definition": "First-time buyers of education-eligible products",
+    "exclusions": [
+      "order_cancelled",
+      "returned",
+      "global_suppression"
+    ],
+    "consent": "Explicit per-channel consent at send time"
+  },
+  "trigger": {
+    "description": "First PURCHASE",
+    "timezone": "tenant_timezone",
+    "dedupe_window": "one trigger instance per contact/cycle"
+  },
+  "workflow": {
+    "nodes": [
+      {
+        "node_id": "n01",
+        "node_type": "TRIGGER",
+        "platform_primitive": "First PURCHASE",
+        "config": {
+          "description": "First PURCHASE"
+        },
+        "configured_by": "KLINTS",
+        "executed_by": "MANAGO",
+        "next": [
+          "n02"
+        ]
+      },
+      {
+        "node_id": "n02",
+        "node_type": "CONDITION",
+        "platform_primitive": "Product is education-eligible",
+        "config": {
+          "description": "Product is education-eligible"
+        },
+        "configured_by": "KLINTS",
+        "executed_by": "MANAGO",
+        "next": [
+          "n03"
+        ]
+      },
+      {
+        "node_id": "n03",
+        "node_type": "WAIT",
+        "platform_primitive": "Expected delivery + 1 day",
+        "config": {
+          "description": "Expected delivery + 1 day"
+        },
+        "configured_by": "KLINTS",
+        "executed_by": "MANAGO",
+        "next": [
+          "n04"
+        ]
+      },
+      {
+        "node_id": "n04",
+        "node_type": "ACTION",
+        "platform_primitive": "Send getting-started education",
+        "config": {
+          "description": "Send getting-started education"
+        },
+        "configured_by": "KLINTS_OR_AGENT",
+        "executed_by": "MANAGO_OR_KLINTS",
+        "next": [
+          "n05"
+        ]
+      },
+      {
+        "node_id": "n05",
+        "node_type": "WAIT",
+        "platform_primitive": "Usage-cycle checkpoint",
+        "config": {
+          "description": "Usage-cycle checkpoint"
+        },
+        "configured_by": "KLINTS",
+        "executed_by": "MANAGO",
+        "next": [
+          "n06"
+        ]
+      },
+      {
+        "node_id": "n06",
+        "node_type": "ACTION",
+        "platform_primitive": "Send tips / troubleshooting",
+        "config": {
+          "description": "Send tips / troubleshooting"
+        },
+        "configured_by": "KLINTS_OR_AGENT",
+        "executed_by": "MANAGO_OR_KLINTS",
+        "next": [
+          "n07"
+        ]
+      },
+      {
+        "node_id": "n07",
+        "node_type": "FINISH",
+        "platform_primitive": "Terminal",
+        "config": {
+          "description": "Terminal"
+        },
+        "configured_by": "KLINTS",
+        "executed_by": "MANAGO",
+        "next": []
+      }
+    ]
+  },
+  "suppressions": [
+    "order_cancelled",
+    "returned",
+    "global_suppression"
+  ],
+  "frequency_policy": {
+    "tenant_policy_required": true,
+    "default_max_marketing_messages_per_7d": 3,
+    "transactional_exemption": false
+  },
+  "collision_policy": {
+    "one_message_per_moment": true,
+    "precedence": "cart/service-critical > consent/DOI > replenishment > expansion > winback",
+    "global_purchase_exit": true
+  },
+  "content": {
+    "brand_dna_required": true,
+    "localisation_required": "per tenant market",
+    "agent_output_state": "DRAFT",
+    "human_signoff": true
+  },
+  "measurement": {
+    "primary_metric": "repeat_purchase_rate",
+    "secondary_metrics": [
+      "content_engagement",
+      "support_contact_rate"
+    ],
+    "attribution_window_days": 30,
+    "holdout": {
+      "required": false,
+      "default_percent": 0,
+      "persistent": true
+    },
+    "economics": "Report incremental net impact where cost/margin is available"
+  },
+  "qa": {
+    "minimum_score": 80,
+    "hard_tests": [
+      "data_gates_pass",
+      "consent_branching",
+      "terminal_reachable",
+      "no_orphan_nodes",
+      "collision_policy",
+      "measurement_wired",
+      "rollback_defined"
+    ]
+  },
+  "approval": {
+    "required_before_write": true,
+    "required_before_activation": true,
+    "roles": [
+      "CRM_OWNER",
+      "DATA_OWNER"
+    ],
+    "token_binds": [
+      "tenant_id",
+      "blueprint_id",
+      "version",
+      "diff_hash"
+    ]
+  },
+  "rollback": {
+    "strategy": "Deactivate created workflow version; revert klints_ details/tags using audit snapshot",
+    "max_partial_write_minutes": 15
+  },
+  "capability_dependencies": [
+    {
+      "capability_id": "AGENT.EMAIL.DRAFT",
+      "required_status": "CONFIRMED_LIVE",
+      "fallback": null
+    },
+    {
+      "capability_id": "MCP.WORKFLOW.UPSERT",
+      "required_status": "CONFIRMED_LIVE_OR_APPROVED_FALLBACK",
+      "fallback": "HUMAN.WORKFLOW.BUILD"
+    }
+  ],
+  "handoff": {
+    "format": "MCP_ACTION_OBJECT_AND_A2A_TASK_SPEC",
+    "idempotency_key_template": "{tenant_id}:UC-08:{blueprint_version}",
+    "activation_state": "STAGED_NOT_LIVE"
+  },
+  "provenance": {
+    "source_versions": {
+      "use_case_library": "1.4.1",
+      "dcs": "1.4.1",
+      "architecture_framework": "1.4.1",
+      "capability_matrix": "1.0"
+    },
+    "created_at": "2026-07-18T12:00:00+02:00",
+    "created_by": "Klints specification build"
+  },
+  "parent_use_case_id": null
+}

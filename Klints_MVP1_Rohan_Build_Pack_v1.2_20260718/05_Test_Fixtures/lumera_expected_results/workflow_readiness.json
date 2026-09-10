@@ -1,0 +1,112 @@
+{
+  "tenant_id": "lumera-fixture",
+  "dcs_run_id": "DCS-RUN-001",
+  "workflows": [
+    {
+      "use_case_id": "UC-02",
+      "ready": false,
+      "blocked_by": [
+        "CC-03"
+      ],
+      "capability_state": "FALLBACK_REQUIRED_UNTIL_MCP_CONFIRMED"
+    },
+    {
+      "use_case_id": "UC-04",
+      "ready": false,
+      "blocked_by": [
+        "CC-03"
+      ],
+      "capability_state": "FALLBACK_REQUIRED_UNTIL_MCP_CONFIRMED"
+    },
+    {
+      "use_case_id": "UC-05",
+      "ready": false,
+      "blocked_by": [
+        "CC-03"
+      ],
+      "capability_state": "FALLBACK_REQUIRED_UNTIL_MCP_CONFIRMED"
+    },
+    {
+      "use_case_id": "UC-06B",
+      "ready": true,
+      "blocked_by": [],
+      "capability_state": "FALLBACK_REQUIRED_UNTIL_MCP_CONFIRMED"
+    },
+    {
+      "use_case_id": "UC-08",
+      "ready": true,
+      "blocked_by": [],
+      "capability_state": "FALLBACK_REQUIRED_UNTIL_MCP_CONFIRMED"
+    },
+    {
+      "use_case_id": "UC-09",
+      "ready": true,
+      "blocked_by": [],
+      "capability_state": "FALLBACK_REQUIRED_UNTIL_MCP_CONFIRMED"
+    },
+    {
+      "use_case_id": "UC-10",
+      "ready": true,
+      "blocked_by": [],
+      "capability_state": "FALLBACK_REQUIRED_UNTIL_MCP_CONFIRMED"
+    },
+    {
+      "use_case_id": "UC-11",
+      "ready": true,
+      "blocked_by": [],
+      "capability_state": "FALLBACK_REQUIRED_UNTIL_MCP_CONFIRMED"
+    },
+    {
+      "use_case_id": "UC-12",
+      "ready": true,
+      "blocked_by": [],
+      "capability_state": "FALLBACK_REQUIRED_UNTIL_MCP_CONFIRMED"
+    },
+    {
+      "use_case_id": "UC-13",
+      "ready": true,
+      "blocked_by": [],
+      "capability_state": "FALLBACK_REQUIRED_UNTIL_MCP_CONFIRMED"
+    },
+    {
+      "use_case_id": "UC-16",
+      "ready": true,
+      "blocked_by": [],
+      "capability_state": "FALLBACK_REQUIRED_UNTIL_MCP_CONFIRMED"
+    },
+    {
+      "use_case_id": "UC-17",
+      "ready": true,
+      "blocked_by": [],
+      "capability_state": "FALLBACK_REQUIRED_UNTIL_MCP_CONFIRMED"
+    },
+    {
+      "use_case_id": "UC-21",
+      "ready": true,
+      "blocked_by": [],
+      "capability_state": "FALLBACK_REQUIRED_UNTIL_MCP_CONFIRMED"
+    },
+    {
+      "use_case_id": "UC-23",
+      "ready": false,
+      "blocked_by": [
+        "LE-04"
+      ],
+      "capability_state": "FALLBACK_REQUIRED_UNTIL_MCP_CONFIRMED"
+    },
+    {
+      "use_case_id": "UC-28",
+      "ready": true,
+      "blocked_by": [],
+      "capability_state": "FALLBACK_REQUIRED_UNTIL_MCP_CONFIRMED"
+    },
+    {
+      "use_case_id": "UC-36",
+      "ready": false,
+      "blocked_by": [
+        "BR-01"
+      ],
+      "capability_state": "FALLBACK_REQUIRED_UNTIL_MCP_CONFIRMED"
+    }
+  ]
+}

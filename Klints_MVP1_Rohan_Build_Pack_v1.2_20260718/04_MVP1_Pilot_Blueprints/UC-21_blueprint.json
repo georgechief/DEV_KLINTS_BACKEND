@@ -1,0 +1,277 @@
+{
+  "schema_version": "1.0.1",
+  "blueprint_id": "WFBP-UC-21-MVP1",
+  "use_case_id": "UC-21",
+  "variant_id": "default",
+  "title": "Cart abandonment recovery",
+  "release": "MVP1",
+  "pilot_rank": 13,
+  "target_platform": [
+    "MANAGO"
+  ],
+  "solution_type": "Workflow",
+  "business_objective": "Recover identified carts without promoting unavailable products.",
+  "configured_by": [
+    "KLINTS",
+    "MANAGO_AGENT",
+    "HUMAN_OPERATOR"
+  ],
+  "executed_by": [
+    "MANAGO",
+    "KLINTS"
+  ],
+  "gates": {
+    "min_dcs": 70,
+    "gating_check_ids": [
+      "LE-07",
+      "CC-01",
+      "PT-06"
+    ],
+    "architecture_modes": [
+      "AUGMENT",
+      "SELECTIVE_REBUILD",
+      "REBUILD"
+    ]
+  },
+  "data_contract": {
+    "required_entities": [
+      "Contact",
+      "ExternalEvent",
+      "Product"
+    ],
+    "required_fields": [
+      "contact_id",
+      "cart_id",
+      "cart_updated_at",
+      "purchase_status",
+      "inventory_status",
+      "email_consent"
+    ],
+    "identity_key_priority": [
+      "external_customer_id",
+      "normalized_email",
+      "smclient"
+    ],
+    "event_dedupe_key": "externalId",
+    "freshness_sla": "Per gating check",
+    "namespace": {
+      "details": "klints_",
+      "tags": "klints:"
+    }
+  },
+  "audience": {
+    "definition": "Identified, consented cart abandoners",
+    "exclusions": [
+      "purchase_completed",
+      "cart_empty",
+      "out_of_stock",
+      "global_suppression"
+    ],
+    "consent": "Explicit per-channel consent at send time"
+  },
+  "trigger": {
+    "description": "CART abandoned",
+    "timezone": "tenant_timezone",
+    "dedupe_window": "one trigger instance per contact/cycle"
+  },
+  "workflow": {
+    "nodes": [
+      {
+        "node_id": "n01",
+        "node_type": "TRIGGER",
+        "platform_primitive": "CART created/updated",
+        "config": {
+          "description": "CART created/updated"
+        },
+        "configured_by": "KLINTS",
+        "executed_by": "MANAGO",
+        "next": [
+          "n02"
+        ]
+      },
+      {
+        "node_id": "n02",
+        "node_type": "WAIT",
+        "platform_primitive": "1 hour or purchase",
+        "config": {
+          "description": "1 hour or purchase"
+        },
+        "configured_by": "KLINTS",
+        "executed_by": "MANAGO",
+        "next": [
+          "n03"
+        ]
+      },
+      {
+        "node_id": "n03",
+        "node_type": "CONDITION",
+        "platform_primitive": "No purchase and cart still valid",
+        "config": {
+          "description": "No purchase and cart still valid"
+        },
+        "configured_by": "KLINTS",
+        "executed_by": "MANAGO",
+        "next": [
+          "n04"
+        ]
+      },
+      {
+        "node_id": "n04",
+        "node_type": "CONDITION",
+        "platform_primitive": "Items available",
+        "config": {
+          "description": "Items available"
+        },
+        "configured_by": "KLINTS",
+        "executed_by": "MANAGO",
+        "next": [
+          "n05"
+        ]
+      },
+      {
+        "node_id": "n05",
+        "node_type": "ACTION",
+        "platform_primitive": "Send cart reminder",
+        "config": {
+          "description": "Send cart reminder"
+        },
+        "configured_by": "KLINTS_OR_AGENT",
+        "executed_by": "MANAGO_OR_KLINTS",
+        "next": [
+          "n06"
+        ]
+      },
+      {
+        "node_id": "n06",
+        "node_type": "WAIT",
+        "platform_primitive": "24 hours or purchase",
+        "config": {
+          "description": "24 hours or purchase"
+        },
+        "configured_by": "KLINTS",
+        "executed_by": "MANAGO",
+        "next": [
+          "n07"
+        ]
+      },
+      {
+        "node_id": "n07",
+        "node_type": "ACTION",
+        "platform_primitive": "Optional second reminder under frequency cap",
+        "config": {
+          "description": "Optional second reminder under frequency cap"
+        },
+        "configured_by": "KLINTS_OR_AGENT",
+        "executed_by": "MANAGO_OR_KLINTS",
+        "next": [
+          "n08"
+        ]
+      },
+      {
+        "node_id": "n08",
+        "node_type": "FINISH",
+        "platform_primitive": "Purchase or expiry",
+        "config": {
+          "description": "Purchase or expiry"
+        },
+        "configured_by": "KLINTS",
+        "executed_by": "MANAGO",
+        "next": []
+      }
+    ]
+  },
+  "suppressions": [
+    "purchase_completed",
+    "cart_empty",
+    "out_of_stock",
+    "global_suppression"
+  ],
+  "frequency_policy": {
+    "tenant_policy_required": true,
+    "default_max_marketing_messages_per_7d": 3,
+    "transactional_exemption": false
+  },
+  "collision_policy": {
+    "one_message_per_moment": true,
+    "precedence": "cart/service-critical > consent/DOI > replenishment > expansion > winback",
+    "global_purchase_exit": true
+  },
+  "content": {
+    "brand_dna_required": true,
+    "localisation_required": "per tenant market",
+    "agent_output_state": "DRAFT",
+    "human_signoff": true
+  },
+  "measurement": {
+    "primary_metric": "cart_recovery_rate",
+    "secondary_metrics": [
+      "recovered_net_revenue",
+      "message_pressure"
+    ],
+    "attribution_window_days": 30,
+    "holdout": {
+      "required": false,
+      "default_percent": 0,
+      "persistent": true
+    },
+    "economics": "Report incremental net impact where cost/margin is available"
+  },
+  "qa": {
+    "minimum_score": 80,
+    "hard_tests": [
+      "data_gates_pass",
+      "consent_branching",
+      "terminal_reachable",
+      "no_orphan_nodes",
+      "collision_policy",
+      "measurement_wired",
+      "rollback_defined"
+    ]
+  },
+  "approval": {
+    "required_before_write": true,
+    "required_before_activation": true,
+    "roles": [
+      "CRM_OWNER",
+      "DATA_OWNER"
+    ],
+    "token_binds": [
+      "tenant_id",
+      "blueprint_id",
+      "version",
+      "diff_hash"
+    ]
+  },
+  "rollback": {
+    "strategy": "Deactivate created workflow version; revert klints_ details/tags using audit snapshot",
+    "max_partial_write_minutes": 15
+  },
+  "capability_dependencies": [
+    {
+      "capability_id": "AGENT.EMAIL.DRAFT",
+      "required_status": "CONFIRMED_LIVE",
+      "fallback": null
+    },
+    {
+      "capability_id": "MCP.WORKFLOW.UPSERT",
+      "required_status": "CONFIRMED_LIVE_OR_APPROVED_FALLBACK",
+      "fallback": "HUMAN.WORKFLOW.BUILD"
+    }
+  ],
+  "handoff": {
+    "format": "MCP_ACTION_OBJECT_AND_A2A_TASK_SPEC",
+    "idempotency_key_template": "{tenant_id}:UC-21:{blueprint_version}",
+    "activation_state": "STAGED_NOT_LIVE"
+  },
+  "provenance": {
+    "source_versions": {
+      "use_case_library": "1.4.1",
+      "dcs": "1.4.1",
+      "architecture_framework": "1.4.1",
+      "capability_matrix": "1.0"
+    },
+    "created_at": "2026-07-18T12:00:00+02:00",
+    "created_by": "Klints specification build"
+  },
+  "parent_use_case_id": null
+}

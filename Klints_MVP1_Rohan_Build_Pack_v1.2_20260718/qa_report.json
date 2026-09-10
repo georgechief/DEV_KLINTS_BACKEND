@@ -1,0 +1,259 @@
+{
+  "verdict": "PASS_WITH_RESIDUAL_EXTERNAL_RISKS",
+  "backend_status": "NOT_RUN",
+  "mcp_status": "BLOCKED_EXTERNAL",
+  "workbooks": [
+    {
+      "label": "dcs",
+      "file": "/Users/jirisefler/Documents/Klints.io/outputs/019f73dd-cc14-7013-8bba-b0fd4b48ea94/Klints_MVP1_Rohan_Build_Pack_v1.2_20260718/01_Specifications/Klints_Spec_InitialDataConsistencyCheck_v1.4.1_20260718.xlsx",
+      "sheets": [
+        {
+          "name": "01 Overview",
+          "render": "PASS"
+        },
+        {
+          "name": "02 Check Catalogue",
+          "render": "PASS"
+        },
+        {
+          "name": "03 Root Cause Taxonomy",
+          "render": "PASS"
+        },
+        {
+          "name": "04 Coverage Matrix",
+          "render": "PASS"
+        },
+        {
+          "name": "05 Initial Connect Runbook",
+          "render": "PASS"
+        },
+        {
+          "name": "06 Field Mapping Reference",
+          "render": "PASS"
+        },
+        {
+          "name": "07 Scoring Model",
+          "render": "PASS"
+        },
+        {
+          "name": "08 Score Assembly",
+          "render": "PASS"
+        },
+        {
+          "name": "09 MVP1 Check Scope",
+          "render": "PASS"
+        },
+        {
+          "name": "10 Lumera Scoring Example",
+          "render": "PASS"
+        },
+        {
+          "name": "11 Pilot Supplemental Gates",
+          "render": "PASS"
+        }
+      ],
+      "formula_error_scan": "{\"kind\":\"notice\",\"message\":\"Cell search matched 0 entries.\"}"
+    },
+    {
+      "label": "architecture",
+      "file": "/Users/jirisefler/Documents/Klints.io/outputs/019f73dd-cc14-7013-8bba-b0fd4b48ea94/Klints_MVP1_Rohan_Build_Pack_v1.2_20260718/01_Specifications/Klints_Spec_ArchitectureAssessmentFramework_v1.4.1_20260718.xlsx",
+      "sheets": [
+        {
+          "name": "01 Overview",
+          "render": "PASS"
+        },
+        {
+          "name": "02 Assessment Probes",
+          "render": "PASS"
+        },
+        {
+          "name": "03 Verdict Model",
+          "render": "PASS"
+        },
+        {
+          "name": "04 MCP-A2A Query Map",
+          "render": "PASS"
+        },
+        {
+          "name": "05 Dependency Rules",
+          "render": "PASS"
+        },
+        {
+          "name": "06 Architecture Verdict",
+          "render": "PASS"
+        },
+        {
+          "name": "07 Lifecycle Model",
+          "render": "PASS"
+        },
+        {
+          "name": "08 Capability Requirements",
+          "render": "PASS"
+        }
+      ],
+      "formula_error_scan": "{\"kind\":\"notice\",\"message\":\"Cell search matched 0 entries.\"}"
+    },
+    {
+      "label": "use_cases",
+      "file": "/Users/jirisefler/Documents/Klints.io/outputs/019f73dd-cc14-7013-8bba-b0fd4b48ea94/Klints_MVP1_Rohan_Build_Pack_v1.2_20260718/01_Specifications/Klints_Spec_DefaultUseCaseLibrary_v1.4.1_20260718.xlsx",
+      "sheets": [
+        {
+          "name": "01 Overview",
+          "render": "PASS"
+        },
+        {
+          "name": "02 UC Catalogue",
+          "render": "PASS"
+        },
+        {
+          "name": "03 Solution Blueprints",
+          "render": "PASS"
+        },
+        {
+          "name": "04 Platform Capability Map",
+          "render": "PASS"
+        },
+        {
+          "name": "05 Learning Loop",
+          "render": "PASS"
+        },
+        {
+          "name": "06 Vertical Playbook Overlay",
+          "render": "PASS"
+        },
+        {
+          "name": "07 MVP1 Pilot Scope",
+          "render": "PASS"
+        },
+        {
+          "name": "08 Build Guide Contract",
+          "render": "PASS"
+        }
+      ],
+      "formula_error_scan": "{\"kind\":\"notice\",\"message\":\"Cell search matched 0 entries.\"}"
+    },
+    {
+      "label": "orchestration",
+      "file": "/Users/jirisefler/Documents/Klints.io/outputs/019f73dd-cc14-7013-8bba-b0fd4b48ea94/Klints_MVP1_Rohan_Build_Pack_v1.2_20260718/01_Specifications/Klints_Spec_OnboardingOrchestrationBlueprint_v1.4.1_20260718.xlsx",
+      "sheets": [
+        {
+          "name": "01 Overview",
+          "render": "PASS"
+        },
+        {
+          "name": "02 Prioritisation Model",
+          "render": "PASS"
+        },
+        {
+          "name": "03 Dependency Resolution",
+          "render": "PASS"
+        },
+        {
+          "name": "04 Execution Waves",
+          "render": "PASS"
+        },
+        {
+          "name": "05 Approval Model",
+          "render": "PASS"
+        },
+        {
+          "name": "06 Monetization & Rollout",
+          "render": "PASS"
+        },
+        {
+          "name": "07 Lumera Worked Example",
+          "render": "PASS"
+        },
+        {
+          "name": "08 Task Contract",
+          "render": "PASS"
+        },
+        {
+          "name": "09 Orchestration Algorithm",
+          "render": "PASS"
+        },
+        {
+          "name": "10 Assessment Report Contract",
+          "render": "PASS"
+        }
+      ],
+      "formula_error_scan": "{\"kind\":\"notice\",\"message\":\"Cell search matched 0 entries.\"}"
+    },
+    {
+      "label": "capabilities",
+      "file": "/Users/jirisefler/Documents/Klints.io/outputs/019f73dd-cc14-7013-8bba-b0fd4b48ea94/Klints_MVP1_Rohan_Build_Pack_v1.2_20260718/02_Execution_Capabilities/Klints_Manago_ExecutionCapabilityMatrix_v1.1_20260718.xlsx",
+      "sheets": [
+        {
+          "name": "01 Overview",
+          "render": "PASS"
+        },
+        {
+          "name": "02 Capability Matrix",
+          "render": "PASS"
+        },
+        {
+          "name": "03 MCP Discovery Plan",
+          "render": "PASS"
+        },
+        {
+          "name": "04 Evidence Log",
+          "render": "PASS"
+        },
+        {
+          "name": "05 Fallback Rules",
+          "render": "PASS"
+        }
+      ],
+      "formula_error_scan": "{\"kind\":\"notice\",\"message\":\"Cell search matched 0 entries.\"}"
+    },
+    {
+      "label": "implementation_backlog",
+      "file": "/Users/jirisefler/Documents/Klints.io/outputs/019f73dd-cc14-7013-8bba-b0fd4b48ea94/Klints_MVP1_Rohan_Build_Pack_v1.2_20260718/06_Implementation/implementation_backlog_v1.2.xlsx",
+      "sheets": [
+        {
+          "name": "01 Backlog",
+          "render": "PASS"
+        },
+        {
+          "name": "02 Milestones",
+          "render": "PASS"
+        }
+      ],
+      "formula_error_scan": "{\"kind\":\"notice\",\"message\":\"Cell search matched 0 entries.\"}"
+    },
+    {
+      "label": "acceptance_tests",
+      "file": "/Users/jirisefler/Documents/Klints.io/outputs/019f73dd-cc14-7013-8bba-b0fd4b48ea94/Klints_MVP1_Rohan_Build_Pack_v1.2_20260718/06_Implementation/acceptance_test_matrix_v1.2.xlsx",
+      "sheets": [
+        {
+          "name": "01 Acceptance Tests",
+          "render": "PASS"
+        },
+        {
+          "name": "02 Release Gates",
+          "render": "PASS"
+        }
+      ],
+      "formula_error_scan": "{\"kind\":\"notice\",\"message\":\"Cell search matched 0 entries.\"}"
+    },
+    {
+      "label": "traceability",
+      "file": "/Users/jirisefler/Documents/Klints.io/outputs/019f73dd-cc14-7013-8bba-b0fd4b48ea94/Klints_MVP1_Rohan_Build_Pack_v1.2_20260718/06_Implementation/Klints_MVP1_Requirements_Traceability_Matrix_v1.0_20260718.xlsx",
+      "sheets": [
+        {
+          "name": "01 Overview",
+          "render": "PASS"
+        },
+        {
+          "name": "02 Traceability",
+          "render": "PASS"
+        },
+        {
+          "name": "03 Defect Log",
+          "render": "PASS"
+        }
+      ],
+      "formula_error_scan": "{\"kind\":\"notice\",\"message\":\"Cell search matched 0 entries.\"}"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0.0",
+  "tenant_id": "lumera-fixture",
+  "variant": "FREE_DIAGNOSTIC",
+  "input_snapshot_ids": [
+    "DCS-RUN-001",
+    "AF-RUN-001"
+  ],
+  "idempotency_key": "lumera-fixture:FREE_DIAGNOSTIC:fixture-input-hash",
+  "expected_status": "READY"
+}

@@ -1,0 +1,175 @@
+{
+  "schema_version": "1.0.1",
+  "release": "MVP1",
+  "pilot_count": 16,
+  "pilots": [
+    {
+      "rank": 1,
+      "use_case_id": "UC-02",
+      "title": "Welcome series continuity",
+      "file": "UC-02_blueprint.json",
+      "status": "READY_FOR_BUILD",
+      "mcp_dependency": true,
+      "fallback": "HUMAN.WORKFLOW.BUILD"
+    },
+    {
+      "rank": 2,
+      "use_case_id": "UC-04",
+      "title": "First-purchase incentive delivery",
+      "file": "UC-04_blueprint.json",
+      "status": "READY_FOR_BUILD",
+      "mcp_dependency": true,
+      "fallback": "HUMAN.WORKFLOW.BUILD"
+    },
+    {
+      "rank": 3,
+      "use_case_id": "UC-05",
+      "title": "Double opt-in completion nudge",
+      "file": "UC-05_blueprint.json",
+      "status": "READY_FOR_BUILD",
+      "mcp_dependency": true,
+      "fallback": "HUMAN.WORKFLOW.BUILD"
+    },
+    {
+      "rank": 4,
+      "use_case_id": "UC-06B",
+      "title": "Second Purchase Accelerator — omnichannel flagship",
+      "file": "UC-06B_blueprint.json",
+      "status": "READY_FOR_BUILD",
+      "mcp_dependency": true,
+      "fallback": "HUMAN.WORKFLOW.BUILD"
+    },
+    {
+      "rank": 5,
+      "use_case_id": "UC-08",
+      "title": "Post-purchase education / product usage",
+      "file": "UC-08_blueprint.json",
+      "status": "READY_FOR_BUILD",
+      "mcp_dependency": true,
+      "fallback": "HUMAN.WORKFLOW.BUILD"
+    },
+    {
+      "rank": 6,
+      "use_case_id": "UC-09",
+      "title": "Review & UGC request",
+      "file": "UC-09_blueprint.json",
+      "status": "READY_FOR_BUILD",
+      "mcp_dependency": true,
+      "fallback": "HUMAN.WORKFLOW.BUILD"
+    },
+    {
+      "rank": 7,
+      "use_case_id": "UC-10",
+      "title": "Account creation nudge",
+      "file": "UC-10_blueprint.json",
+      "status": "READY_FOR_BUILD",
+      "mcp_dependency": true,
+      "fallback": "HUMAN.WORKFLOW.BUILD"
+    },
+    {
+      "rank": 8,
+      "use_case_id": "UC-11",
+      "title": "Replenishment reminder",
+      "file": "UC-11_blueprint.json",
+      "status": "READY_FOR_BUILD",
+      "mcp_dependency": true,
+      "fallback": "HUMAN.WORKFLOW.BUILD"
+    },
+    {
+      "rank": 9,
+      "use_case_id": "UC-12",
+      "title": "Back-in-stock notification",
+      "file": "UC-12_blueprint.json",
+      "status": "READY_FOR_BUILD",
+      "mcp_dependency": true,
+      "fallback": "HUMAN.WORKFLOW.BUILD"
+    },
+    {
+      "rank": 10,
+      "use_case_id": "UC-13",
+      "title": "Price-drop alert",
+      "file": "UC-13_blueprint.json",
+      "status": "READY_FOR_BUILD",
+      "mcp_dependency": true,
+      "fallback": "HUMAN.WORKFLOW.BUILD"
+    },
+    {
+      "rank": 11,
+      "use_case_id": "UC-16",
+      "title": "Churn-risk save",
+      "file": "UC-16_blueprint.json",
+      "status": "READY_FOR_BUILD",
+      "mcp_dependency": true,
+      "fallback": "HUMAN.WORKFLOW.BUILD"
+    },
+    {
+      "rank": 12,
+      "use_case_id": "UC-17",
+      "title": "Winback lapsed customers",
+      "file": "UC-17_blueprint.json",
+      "status": "READY_FOR_BUILD",
+      "mcp_dependency": true,
+      "fallback": "HUMAN.WORKFLOW.BUILD"
+    },
+    {
+      "rank": 13,
+      "use_case_id": "UC-21",
+      "title": "Cart abandonment recovery",
+      "file": "UC-21_blueprint.json",
+      "status": "READY_FOR_BUILD",
+      "mcp_dependency": true,
+      "fallback": "HUMAN.WORKFLOW.BUILD"
+    },
+    {
+      "rank": 14,
+      "use_case_id": "UC-23",
+      "title": "VIP candidate progression",
+      "file": "UC-23_blueprint.json",
+      "status": "READY_FOR_BUILD",
+      "mcp_dependency": true,
+      "fallback": "HUMAN.WORKFLOW.BUILD"
+    },
+    {
+      "rank": 15,
+      "use_case_id": "UC-28",
+      "title": "Complementary product cross-sell",
+      "file": "UC-28_blueprint.json",
+      "status": "READY_FOR_BUILD",
+      "mcp_dependency": true,
+      "fallback": "HUMAN.WORKFLOW.BUILD"
+    },
+    {
+      "rank": 16,
+      "use_case_id": "UC-36",
+      "title": "Post-purchase upsell to premium tier",
+      "file": "UC-36_blueprint.json",
+      "status": "READY_FOR_BUILD",
+      "mcp_dependency": true,
+      "fallback": "HUMAN.WORKFLOW.BUILD"
+    }
+  ],
+  "excluded": [
+    {
+      "use_case_id": "UC-06A",
+      "reason": "Non-pilot simple fallback variant"
+    },
+    {
+      "use_case_id": "UC-41",
+      "reason": "MCP surface write requires discovery"
+    }
+  ],
+  "supplemental_preflight_checks": [
+    "BR-03",
+    "BR-09",
+    "CC-06",
+    "CI-08",
+    "LE-07",
+    "LE-10",
+    "PT-05",
+    "PT-06",
+    "PT-11",
+    "PT-13",
+    "SP-04",
+    "SP-10"
+  ]
+}

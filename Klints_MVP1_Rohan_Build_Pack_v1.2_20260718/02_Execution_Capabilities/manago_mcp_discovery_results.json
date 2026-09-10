@@ -1,0 +1,128 @@
+{
+  "schema_version": "1.0.0",
+  "status": "PENDING_EXECUTION",
+  "reason": "New Manago MCP was not covered by the supplied Manago skill/documentation set. No capability is marked live without executed evidence.",
+  "generated_at": "2026-07-18T12:00:00+02:00",
+  "tests": [
+    {
+      "test_id": "MCP-D-01",
+      "capability_id": "MCP.AUTH.DISCOVER",
+      "mode": "READ",
+      "status": "PENDING",
+      "evidence": null,
+      "verified_at": null
+    },
+    {
+      "test_id": "MCP-D-02",
+      "capability_id": "MCP.WORKFLOW.LIST",
+      "mode": "READ",
+      "status": "PENDING",
+      "evidence": null,
+      "verified_at": null
+    },
+    {
+      "test_id": "MCP-D-03",
+      "capability_id": "MCP.WORKFLOW.DEFINITION",
+      "mode": "READ",
+      "status": "PENDING",
+      "evidence": null,
+      "verified_at": null
+    },
+    {
+      "test_id": "MCP-D-04",
+      "capability_id": "MCP.WORKFLOW.STATS",
+      "mode": "READ",
+      "status": "PENDING",
+      "evidence": null,
+      "verified_at": null
+    },
+    {
+      "test_id": "MCP-D-05",
+      "capability_id": "MCP.SEGMENT.LIST",
+      "mode": "READ",
+      "status": "PENDING",
+      "evidence": null,
+      "verified_at": null
+    },
+    {
+      "test_id": "MCP-D-06",
+      "capability_id": "MCP.SEGMENT.WHEREUSED",
+      "mode": "READ",
+      "status": "PENDING",
+      "evidence": null,
+      "verified_at": null
+    },
+    {
+      "test_id": "MCP-D-07",
+      "capability_id": "MCP.TAG.PROPERTY.LIST",
+      "mode": "READ",
+      "status": "PENDING",
+      "evidence": null,
+      "verified_at": null
+    },
+    {
+      "test_id": "MCP-D-08",
+      "capability_id": "MCP.SURFACE.LIST",
+      "mode": "READ",
+      "status": "PENDING",
+      "evidence": null,
+      "verified_at": null
+    },
+    {
+      "test_id": "MCP-D-09",
+      "capability_id": "MCP.ANALYTICS.READ",
+      "mode": "READ",
+      "status": "PENDING",
+      "evidence": null,
+      "verified_at": null
+    },
+    {
+      "test_id": "MCP-D-10",
+      "capability_id": "MCP.BULK.PAGING",
+      "mode": "READ",
+      "status": "PENDING",
+      "evidence": null,
+      "verified_at": null
+    },
+    {
+      "test_id": "MCP-D-11",
+      "capability_id": "MCP.ERRORS.LIMITS",
+      "mode": "READ",
+      "status": "PENDING",
+      "evidence": null,
+      "verified_at": null
+    },
+    {
+      "test_id": "MCP-D-12",
+      "capability_id": "MCP.WORKFLOW.UPSERT",
+      "mode": "WRITE",
+      "status": "PENDING_APPROVAL",
+      "evidence": null,
+      "verified_at": null
+    },
+    {
+      "test_id": "MCP-D-13",
+      "capability_id": "MCP.WORKFLOW.UPSERT",
+      "mode": "WRITE",
+      "status": "PENDING_APPROVAL",
+      "evidence": null,
+      "verified_at": null
+    },
+    {
+      "test_id": "MCP-D-14",
+      "capability_id": "MCP.SURFACE.UPSERT",
+      "mode": "WRITE",
+      "status": "PENDING_APPROVAL",
+      "evidence": null,
+      "verified_at": null
+    },
+    {
+      "test_id": "MCP-D-15",
+      "capability_id": "MCP.AUTH.DISCOVER",
+      "mode": "READ",
+      "status": "PENDING",
+      "evidence": null,
+      "verified_at": null
+    }
+  ]
+}
