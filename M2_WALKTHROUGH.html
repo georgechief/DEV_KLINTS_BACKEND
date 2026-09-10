@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Klints MVP1 — M2 Activation &amp; Blueprint walkthrough</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f4f1;
+      --ink: #1a1a1a;
+      --muted: #5c5c5c;
+      --frame: #fff;
+      --line: #e2ddd6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      background:
+        radial-gradient(1200px 600px at 10% -10%, #efe8df 0%, transparent 55%),
+        radial-gradient(900px 500px at 100% 0%, #e7efe9 0%, transparent 50%),
+        var(--bg);
+      color: var(--ink);
+    }
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2.5rem 1.25rem 3rem;
+    }
+    h1 {
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.35rem;
+    }
+    p {
+      margin: 0 0 1.25rem;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.45;
+    }
+    .player {
+      background: var(--frame);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      overflow: hidden;
+      box-shadow: 0 18px 40px rgba(26, 26, 26, 0.08);
+    }
+    .player-frame {
+      position: relative;
+      padding-bottom: 56.25%;
+      height: 0;
+      background: #111;
+    }
+    .player-frame iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+    .links {
+      margin-top: 1rem;
+      font-size: 0.95rem;
+    }
+    .links a { color: var(--ink); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>M2 — Activation &amp; Blueprint</h1>
+    <p>Product walkthrough for Client milestone review (Tranche T2). Play below, or open the claim writeup for the acceptance path.</p>
+    <div class="player">
+      <div class="player-frame">
+        <iframe
+          src="https://www.loom.com/embed/f7b6ae96d15d4c6da1555487de595e3f?hide_owner=true&hide_share=true&hide_title=true"
+          title="Klints M2 Activation and Blueprint walkthrough"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen
+          webkitallowfullscreen
+          mozallowfullscreen
+        ></iframe>
+      </div>
+    </div>
+    <p class="links">
+      Claim writeup:
+      <a href="./M2_MILESTONE_SUBMISSION.md">M2_MILESTONE_SUBMISSION.md</a>
+      ·
+      <a href="https://www.loom.com/share/f7b6ae96d15d4c6da1555487de595e3f">Open on Loom</a>
+    </p>
+  </main>
+</body>
+</html>
