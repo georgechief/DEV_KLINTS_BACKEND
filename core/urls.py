@@ -1,11 +1,16 @@
 from django.contrib import admin
 from django.urls import include, path
 
-from core.views import HealthCheckView
+from core.views import HealthCheckView, M3ObsInduceErrorView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("health/", HealthCheckView.as_view(), name="health"),
+    path(
+        "ops/m3-obs-01/induce-error/",
+        M3ObsInduceErrorView.as_view(),
+        name="m3_obs_induce_error",
+    ),
     path("api/v1/tenants/", include("tenants.urls")),
     path("api/v1/dataruns/", include("dataruns.urls")),
     path("api/v1/dcs/", include("dataruns.dcs_urls")),

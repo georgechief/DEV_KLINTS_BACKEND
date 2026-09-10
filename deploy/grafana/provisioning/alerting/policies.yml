@@ -1,0 +1,14 @@
+# M3-OBS-01 Phase 4 — group notifications by service (PRD §7.2).
+# Rules also set notification_settings.receiver so they stay wired even if
+# the policy tree is edited in the UI later.
+apiVersion: 1
+
+policies:
+  - orgId: 1
+    receiver: m3-obs-noreplyklints
+    group_by:
+      - service
+      - alertname
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 4h

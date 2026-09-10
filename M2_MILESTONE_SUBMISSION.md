@@ -4,12 +4,22 @@
 **Milestone:** **M2 — Activation & Blueprint** (Schedule 1, Part A)  
 **Payment gate:** **Tranche T2 — USD 3,000** (Schedule 1, Part B — released on Client acceptance of M2)  
 **Contract reference:** *Klints × Astrapse Labs · MVP 1 Services Agreement v1.2 (8 July 2026)*  
-**Submission date:** 9 September 2026 (deposit) · **Amended:** 10 September 2026 (release system live + Build Pack on staging)  
+**Submission date:** 9 September 2026 (deposit) · **Amended:** 10 September 2026 (release system, Build Pack, Loom, latest code deposit incl. M3 OBS-in-progress)  
 **Repositories:**  
 - Backend: [`georgechief/DEV_KLINTS_BACKEND`](https://github.com/georgechief/DEV_KLINTS_BACKEND)  
 - Frontend: [`georgechief/DEV_KLINTS_FRONTEND`](https://github.com/georgechief/DEV_KLINTS_FRONTEND)  
 
-**Staging backend (live):** `https://apis.klints.io` — deployed from release tag **[`v1.0.1`](https://github.com/georgechief/DEV_KLINTS_BACKEND/releases/tag/v1.0.1)** (tag-based CD; see [`RELEASES.md`](https://github.com/georgechief/DEV_KLINTS_BACKEND/blob/main/RELEASES.md) on the backend repo). Health: `GET /health/` → `{"status":"ok"}`.
+**Staging backend (live):** `https://apis.klints.io` — tag-based CD (see [`RELEASES.md`](https://github.com/georgechief/DEV_KLINTS_BACKEND/blob/main/RELEASES.md)). Health: `GET /health/` → `{"status":"ok"}`.  
+**Current / next release:** `v1.0.1` was the M2 health-green release; **`v1.0.2`** ships this amended deposit (includes M3 Grafana/Loki/Alloy stack on staging — **not** part of T2 acceptance).
+
+### Staging access (Client review)
+
+| Surface | URL | Credentials |
+|---------|-----|-------------|
+| API health | https://apis.klints.io/health/ | — |
+| **Grafana** (M3 OBS — in progress, ops only) | https://apis.klints.io/grafana/ | **User:** `noreplyklints@gmail.com` · **Password:** `settle-secure-r37xkfk-d93u7s6dv83p39c+d21tn*szf86&` |
+
+These Grafana admin values match staging env (`GF_SECURITY_ADMIN_USER` / `GF_SECURITY_ADMIN_PASSWORD`). Client `DEV_ENV_FILE` GitHub secret must include the same keys for tag deploys that start the OBS stack. Rotate after acceptance if desired.
 
 **M2 demo walkthrough** — click the image to open the Loom recording:
 
@@ -24,7 +34,7 @@
 
 Milestone 2 required Activation & Blueprint: an **approval state machine (8 states)** plus Track B MCP/A2A prototype; **writeback + lifecycle** live; **Workflow Blueprint Studio** with SM-agent-ready JSON; **QA + Handoff** (0–100 / 80-point gate); and Acceptance Criteria for Track B E2E, Send-to-Manago with approval, and MCP Capability Matrix.
 
-**This deposit delivers the M2 product surfaces on Client-controlled repos, with staging backend already released and healthy under the tag-based deploy system (`v1.0.1`)**, with an honest reading of each Schedule 1 row:
+**This deposit delivers the M2 product surfaces on Client-controlled repos, with staging backend already released and healthy under the tag-based deploy system**, with an honest reading of each Schedule 1 row:
 
 | Contract M2 item | Delivery status | Notes |
 |------------------|-----------------|-------|
@@ -105,14 +115,16 @@ Timeline sheets sometimes describe a CDUC change-set 8-state. **This deposit imp
 
 ### 3.5 Items that belong to M3 (not claimed under T2)
 
-Do **not** treat the following as M2 acceptance:
+Do **not** treat the following as M2 / T2 acceptance. They are listed for transparency; some are already **in progress** on staging after this deposit refresh.
 
-| Item | Milestone |
-|------|-----------|
-| Demo env ~5,000 contacts / DCS ~62 (seed helpers may exist) | **M3** demo bundle |
-| Security review + tenant isolation verification AC | **M3** |
-| Grafana / observability hardened | **M3** (PRD in `docs/ops/PRD_M3_OBS_01_*` — implementation may land after this deposit) |
-| Design Partner 1 live on production | **M3** |
+| Item | Milestone | Status in this deposit |
+|------|-----------|------------------------|
+| Demo env ~5,000 contacts / DCS ~62 (seed helpers may exist) | **M3** demo bundle | Helpers may exist — **not** claimed |
+| Security review + tenant isolation verification AC | **M3** | **Not started** for T2 claim |
+| **Grafana / observability** (Loki + Alloy + alert mailer) | **M3-OBS-01** | **In progress on staging** — stack + login live after `v1.0.2`; Phase 6 sign-off / alert email proof still open. Specs: `docs/ops/PRD_M3_OBS_01_*`, runbook + phase notes. Access: § header **Staging access** |
+| Design Partner 1 live on production | **M3** | **Not claimed** |
+
+Grafana is an **ops** surface (`/grafana/`), not an M2 product AC. Including it here so Client can inspect early without confusing it for T2 scope.
 
 ---
 
@@ -152,7 +164,8 @@ Staging is **not** deployed on every `main` push. Client reviews and ships via *
 | Tag | Status | Notes |
 |-----|--------|-------|
 | [`v1.0.0`](https://github.com/georgechief/DEV_KLINTS_BACKEND/releases/tag/v1.0.0) | Failed boot | Initial tag; Build Pack omitted from first rsync → `load_use_case_pilots` blocked gunicorn (nginx 502) |
-| [`v1.0.1`](https://github.com/georgechief/DEV_KLINTS_BACKEND/releases/tag/v1.0.1) | **Live** | Build Pack restored ([PR #1](https://github.com/georgechief/DEV_KLINTS_BACKEND/pull/1)); health **200**; **current staging** |
+| [`v1.0.1`](https://github.com/georgechief/DEV_KLINTS_BACKEND/releases/tag/v1.0.1) | Health green | Build Pack restored ([PR #1](https://github.com/georgechief/DEV_KLINTS_BACKEND/pull/1)); `/health/` **200** |
+| [`v1.0.2`](https://github.com/georgechief/DEV_KLINTS_BACKEND/releases/tag/v1.0.2) | **This amend** | Latest code deposit + M3 OBS stack (Grafana/Loki/Alloy) for early Client inspection — **not** T2 scope |
 
 Frontend: Client Vercel / configured staging origin against that API (no tag-deploy requirement for this claim).
 
@@ -245,7 +258,8 @@ Per Agreement clauses **4.2–4.3** and Schedule 1 Part B:
 
 ### Suggested Client acceptance checklist
 
-- [x] Staging API reachable (`https://apis.klints.io/health/` → ok) on release **`v1.0.1`**  
+- [x] Staging API reachable (`https://apis.klints.io/health/` → ok)  
+- [ ] Optional: Grafana login (M3-in-progress) via § Staging access — **not** required for T2  
 - [ ] Review [M2 Loom walkthrough](https://www.loom.com/share/f7b6ae96d15d4c6da1555487de595e3f) (click preview image above)  
 - [ ] Frontend configured against that API  
 - [ ] Fix: approve writeback on ≥1 allowlisted check (CI-01 / CC-03 / WB-SHOP-01)  
@@ -257,7 +271,7 @@ Per Agreement clauses **4.2–4.3** and Schedule 1 Part B:
 - [ ] OrchestrationTask 8-status transitions demonstrable  
 - [ ] Written position on AC-A (waiver **or** MCP access timeline)  
 - [x] Source present in Client GitHub repos listed above  
-- [x] Backend release process documented (`RELEASES.md`); GitHub Releases **`v1.0.0`** / **`v1.0.1`** published  
+- [x] Backend release process documented (`RELEASES.md`); GitHub Releases **`v1.0.0`** / **`v1.0.1`** / **`v1.0.2`**  
 
 ---
 
@@ -265,11 +279,11 @@ Per Agreement clauses **4.2–4.3** and Schedule 1 Part B:
 
 **Milestone M2 (Activation & Blueprint) is submitted for Client acceptance** with full delivery of Send-with-approval (**AC-B**), Capability Matrix (**AC-C**), writeback + lifecycle, Workflow Blueprint Studio, QA + Handoff, and the pack **8-state orchestration approval SM**.  
 
-Staging backend for this claim is **already released** under the Client tag-based CD system at **`v1.0.1`** (after correcting the Build Pack omission that blocked `v1.0.0`). Further staging updates should be cut as new tags — see backend [`RELEASES.md`](https://github.com/georgechief/DEV_KLINTS_BACKEND/blob/main/RELEASES.md).
+Staging backend for this claim remains on the Client tag-based CD system (see [`RELEASES.md`](https://github.com/georgechief/DEV_KLINTS_BACKEND/blob/main/RELEASES.md)). **`v1.0.2`** refreshes the deposit with latest code and optional early M3 Grafana access — without expanding T2 scope.
 
 **Literal Track B MCP/A2A E2E (AC-A)** remains **Client-dependent** under §6.1; Provider requests written waiver/deferral or MCP access rather than inventing live MCP evidence.  
 
-Disclosed caveats (§3.2–§3.4) are intentional honesty, not silent omissions. M3 items (Grafana, security review AC, DP1 live) are **out of scope** for T2.
+Disclosed caveats (§3.2–§3.4) are intentional honesty, not silent omissions. M3 items (security review AC, DP1 live) remain **out of scope** for T2. **Grafana / OBS** is disclosed as **M3-in-progress** (§3.5) with staging login above — early visibility only, not a T2 deliverable.
 
 ---
 

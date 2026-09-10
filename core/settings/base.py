@@ -316,6 +316,11 @@ LANGCHAIN_PROJECT = LANGSMITH_PROJECT
 LANGCHAIN_ENDPOINT = LANGSMITH_ENDPOINT
 AI_LANGSMITH_IN_TESTS = env.bool("AI_LANGSMITH_IN_TESTS", default=False)
 
+# M3-OBS-01 Phase 6 — gated induce endpoint (staging acceptance only).
+# Leave disabled; enable briefly in DEV_ENV_FILE, induce, then disable again.
+M3_OBS_INDUCE_ENABLED = env.bool("M3_OBS_INDUCE_ENABLED", default=False)
+M3_OBS_INDUCE_TOKEN = env("M3_OBS_INDUCE_TOKEN", default="")
+
 # Django test runner must never call live Mistral. override_settings still wins.
 if "test" in sys.argv:
     AI_PROVIDER = "mock"

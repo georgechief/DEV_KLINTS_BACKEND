@@ -1,0 +1,70 @@
+// M3-OBS-01 — Alloy: Docker container logs → Loki
+// Labels: service, container, compose_project (PRD §3.2)
+// Prefer explicit klints.obs.service (Phase 2), then compose service name.
+// Use discovery.docker targets + discovery.relabel.rules on loki.source.docker
+// so service labels attach to log lines for Explore (not only discovery targets).
+
+discovery.docker "containers" {
+	host             = "unix:///var/run/docker.sock"
+	refresh_interval = "10s"
+}
+
+discovery.relabel "containers" {
+	targets = discovery.docker.containers.targets
+
+	// Keep only containers from this compose project (staging / local stack).
+	rule {
+		source_labels = ["__meta_docker_container_label_com_docker_compose_project"]
+		regex         = ".+"
+		action        = "keep"
+	}
+
+	// Strip leading slash from container name → `container` label
+	rule {
+		source_labels = ["__meta_docker_container_name"]
+		regex         = "/?(.*)"
+		target_label  = "container"
+	}
+
+	// Phase 2 — preferred stable service label (compose: klints.obs.service).
+	// Docker SD sanitizes dots → underscores in meta label names.
+	rule {
+		source_labels = ["__meta_docker_container_label_klints_obs_service"]
+		regex         = "(.+)"
+		target_label  = "service"
+	}
+
+	// Fallback: Compose service name (only if service still empty)
+	rule {
+		source_labels = ["service", "__meta_docker_container_label_com_docker_compose_service"]
+		regex         = "^;(.+)$"
+		target_label  = "service"
+	}
+
+	// Last resort: container name
+	rule {
+		source_labels = ["service", "__meta_docker_container_name"]
+		regex         = "^;/?(.+)$"
+		target_label  = "service"
+	}
+
+	rule {
+		source_labels = ["__meta_docker_container_label_com_docker_compose_project"]
+		regex         = "(.+)"
+		target_label  = "compose_project"
+	}
+}
+
+loki.source.docker "containers" {
+	host          = "unix:///var/run/docker.sock"
+	targets       = discovery.docker.containers.targets
+	relabel_rules = discovery.relabel.containers.rules
+	labels        = { "job" = "docker" }
+	forward_to    = [loki.write.loki.receiver]
+}
+
+loki.write "loki" {
+	endpoint {
+		url = "http://loki:3100/loki/api/v1/push"
+	}
+}

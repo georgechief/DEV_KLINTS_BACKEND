@@ -52,8 +52,9 @@ Smoke: `GET https://apis.klints.io/health/` → `{"status":"ok"}`.
 | Tag | Published | Result | Notes |
 |-----|-----------|--------|-------|
 | [`v1.0.0`](https://github.com/georgechief/DEV_KLINTS_BACKEND/releases/tag/v1.0.0) | 10 Sep 2026 | **Failed health** | First tag-based deploy of the M2 deposit. `web` crash-looped: MVP1 Build Pack was missing from the deposit, so `load_use_case_pilots` failed before gunicorn → nginx **502**. |
-| [`v1.0.1`](https://github.com/georgechief/DEV_KLINTS_BACKEND/releases/tag/v1.0.1) | 10 Sep 2026 | **Live** | Includes Build Pack ([PR #1](https://github.com/georgechief/DEV_KLINTS_BACKEND/pull/1)). Deploy succeeded; `/health/` returns **200**. **Current staging release.** |
+| [`v1.0.1`](https://github.com/georgechief/DEV_KLINTS_BACKEND/releases/tag/v1.0.1) | 10 Sep 2026 | **Live** (superseded by next tag) | Build Pack restored ([PR #1](https://github.com/georgechief/DEV_KLINTS_BACKEND/pull/1)); `/health/` **200**. |
+| [`v1.0.2`](https://github.com/georgechief/DEV_KLINTS_BACKEND/releases/tag/v1.0.2) | 10 Sep 2026 | **Cutting** | Latest M2 claim amend + M3 OBS (Grafana/Loki/Alloy) deposit; enables `/grafana/` when `DEV_ENV_FILE` includes `GF_*`. |
 
 GitHub Releases: https://github.com/georgechief/DEV_KLINTS_BACKEND/releases  
 
-Next ship: bump patch/minor on `main`, tag `v1.0.2` (or later), push tag — do **not** retag `v1.0.1` for new code.
+Do **not** retag an existing version for new code — always bump.

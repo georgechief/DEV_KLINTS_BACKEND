@@ -194,3 +194,80 @@ jobs:
           echo "::error::HTTPS health check failed for https://${DOMAIN}/health/"
           ssh klints-dev "cd '${APP_DIR}' && grep -E '^(ALLOWED_HOSTS|CSRF_TRUSTED_ORIGINS|API_DOMAIN|SECURE_SSL_REDIRECT)=' .env; docker compose logs --tail=100 nginx web"
           exit 1
+
+      # M3-OBS-01 Phase 5 — fail deploy if Grafana/Loki are down (PRD A9).
+      - name: M3-OBS-01 smoke (Grafana via nginx + Loki ready)
+        env:
+          API_DOMAIN: ${{ vars.API_DOMAIN }}
+        run: |
+          set -eu
+          DOMAIN="${API_DOMAIN:-apis.klints.io}"
+
+          echo "=== Grafana /api/health through nginx subpath ==="
+          gf_ok=0
+          for i in $(seq 1 12); do
+            code=$(curl -sS -o /tmp/gf-health.out -w '%{http_code}' --max-time 15 \
+              "https://${DOMAIN}/grafana/api/health" || echo 000)
+            body=$(cat /tmp/gf-health.out 2>/dev/null || true)
+            if [ "$code" = "200" ] && echo "$body" | grep -Eqi 'database|"ok"'; then
+              echo "Grafana health OK: $body"
+              gf_ok=1
+              break
+            fi
+            echo "Attempt $i: Grafana HTTP $code — $(echo "$body" | head -c 200)"
+            sleep 5
+          done
+          if [ "$gf_ok" != "1" ]; then
+            echo "::error::Grafana smoke failed for https://${DOMAIN}/grafana/api/health"
+            ssh klints-dev "cd '${APP_DIR}' && docker compose ps grafana loki alloy obs_alert_mailer nginx; docker compose logs --tail=100 grafana nginx"
+            exit 1
+          fi
+
+          echo "=== Grafana login required (not anonymous Explore) ==="
+          login_code=$(curl -sS -o /tmp/gf-login.out -w '%{http_code}' --max-time 15 \
+            "https://${DOMAIN}/grafana/login" || echo 000)
+          if [ "$login_code" != "200" ]; then
+            echo "::error::Expected Grafana login HTTP 200, got ${login_code}"
+            head -c 300 /tmp/gf-login.out 2>/dev/null || true
+            exit 1
+          fi
+          if ! grep -Eqi 'login|sign in|password' /tmp/gf-login.out; then
+            echo "::error::Grafana /login body missing login markers (possible anonymous UI)"
+            head -c 400 /tmp/gf-login.out 2>/dev/null || true
+            exit 1
+          fi
+          # Explore without session should not serve an open Explore shell.
+          explore_code=$(curl -sS -o /tmp/gf-explore.out -w '%{http_code}' --max-time 15 \
+            "https://${DOMAIN}/grafana/explore" || echo 000)
+          if echo "$explore_code" | grep -Eq '^(301|302|303|307|308)$'; then
+            echo "Explore redirects ($explore_code) — auth gate OK"
+          elif [ "$explore_code" = "200" ] && grep -Eqi 'login|sign in|password' /tmp/gf-explore.out; then
+            echo "Explore returns login shell — auth gate OK"
+          elif [ "$explore_code" = "401" ] || [ "$explore_code" = "403" ]; then
+            echo "Explore HTTP $explore_code — auth gate OK"
+          else
+            echo "::error::Explore without auth looked open (HTTP $explore_code)"
+            head -c 400 /tmp/gf-explore.out 2>/dev/null || true
+            exit 1
+          fi
+          echo "Grafana login page OK (https://${DOMAIN}/grafana/login)"
+
+          echo "=== Loki /ready from compose network (via web Python) ==="
+          # Loki returns 503 until the ingester is ACTIVE in the ring (often 30-60s
+          # after cold start). Retry like Grafana - do not fail on first 503.
+          loki_ok=0
+          for i in $(seq 1 24); do
+            if ssh klints-dev "APP_DIR='${APP_DIR}' bash '${APP_DIR}/deploy/scripts/m3-obs-loki-ready.sh'"; then
+              echo "Loki ready OK (attempt ${i})"
+              loki_ok=1
+              break
+            fi
+            echo "Attempt ${i} - Loki not ready yet, retrying in 5s"
+            sleep 5
+          done
+          if [ "$loki_ok" != "1" ]; then
+            echo "::error::Loki /ready failed from compose network after retries"
+            ssh klints-dev "cd '${APP_DIR}' && docker compose ps loki alloy grafana; docker compose logs --tail=100 loki alloy"
+            exit 1
+          fi
+          echo "M3-OBS-01 smoke OK: Grafana HTTPS + Loki ready"

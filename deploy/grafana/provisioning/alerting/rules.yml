@@ -1,0 +1,290 @@
+# M3-OBS-01 Phase 4 — five SEPARATE per-service ERROR log alerts (PRD §7.1).
+# Not one combined "any error" rule. Pending ~2m; LogQL window 5m.
+# reduce uses replaceNN so empty windows evaluate as 0 (noDataState still OK).
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: staging-docker-log-errors
+    folder: M3 OBS-01
+    interval: 1m
+    rules:
+      - uid: staging-logs-error-web
+        title: staging-logs-error-web
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: loki
+            model:
+              datasource: { type: loki, uid: loki }
+              editorMode: code
+              expr: sum(count_over_time({service="web"} |~ "(?i)error|exception|traceback|critical|fatal" [5m]))
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              queryType: instant
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              datasource: { type: __expr__, uid: __expr__ }
+              type: reduce
+              expression: A
+              reducer: last
+              settings: { mode: replaceNN, replaceWithValue: 0 }
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              datasource: { type: __expr__, uid: __expr__ }
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { params: [], type: last }
+                  type: query
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 2m
+        isPaused: false
+        labels:
+          service: web
+          severity: warning
+          m3_obs: "01"
+        annotations:
+          summary: Staging ERROR-like logs on service=web
+          description: One or more ERROR-like lines in the last 5m for Docker service web.
+        notification_settings:
+          receiver: m3-obs-noreplyklints
+
+      - uid: staging-logs-error-celery_worker
+        title: staging-logs-error-celery_worker
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: loki
+            model:
+              datasource: { type: loki, uid: loki }
+              editorMode: code
+              expr: sum(count_over_time({service="celery_worker"} |~ "(?i)error|exception|traceback|critical|fatal" [5m]))
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              queryType: instant
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              datasource: { type: __expr__, uid: __expr__ }
+              type: reduce
+              expression: A
+              reducer: last
+              settings: { mode: replaceNN, replaceWithValue: 0 }
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              datasource: { type: __expr__, uid: __expr__ }
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { params: [], type: last }
+                  type: query
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 2m
+        isPaused: false
+        labels:
+          service: celery_worker
+          severity: warning
+          m3_obs: "01"
+        annotations:
+          summary: Staging ERROR-like logs on service=celery_worker
+          description: One or more ERROR-like lines in the last 5m for Docker service celery_worker.
+        notification_settings:
+          receiver: m3-obs-noreplyklints
+
+      - uid: staging-logs-error-celery_beat
+        title: staging-logs-error-celery_beat
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: loki
+            model:
+              datasource: { type: loki, uid: loki }
+              editorMode: code
+              expr: sum(count_over_time({service="celery_beat"} |~ "(?i)error|exception|traceback|critical|fatal" [5m]))
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              queryType: instant
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              datasource: { type: __expr__, uid: __expr__ }
+              type: reduce
+              expression: A
+              reducer: last
+              settings: { mode: replaceNN, replaceWithValue: 0 }
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              datasource: { type: __expr__, uid: __expr__ }
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { params: [], type: last }
+                  type: query
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 2m
+        isPaused: false
+        labels:
+          service: celery_beat
+          severity: warning
+          m3_obs: "01"
+        annotations:
+          summary: Staging ERROR-like logs on service=celery_beat
+          description: One or more ERROR-like lines in the last 5m for Docker service celery_beat.
+        notification_settings:
+          receiver: m3-obs-noreplyklints
+
+      - uid: staging-logs-error-nginx
+        title: staging-logs-error-nginx
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: loki
+            model:
+              datasource: { type: loki, uid: loki }
+              editorMode: code
+              expr: sum(count_over_time({service="nginx"} |~ "(?i)error|exception|traceback|critical|fatal|emerg" [5m]))
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              queryType: instant
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              datasource: { type: __expr__, uid: __expr__ }
+              type: reduce
+              expression: A
+              reducer: last
+              settings: { mode: replaceNN, replaceWithValue: 0 }
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              datasource: { type: __expr__, uid: __expr__ }
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { params: [], type: last }
+                  type: query
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 2m
+        isPaused: false
+        labels:
+          service: nginx
+          severity: warning
+          m3_obs: "01"
+        annotations:
+          summary: Staging ERROR-like logs on service=nginx
+          description: One or more ERROR-like lines in the last 5m for Docker service nginx.
+        notification_settings:
+          receiver: m3-obs-noreplyklints
+
+      - uid: staging-logs-error-redis
+        title: staging-logs-error-redis
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: loki
+            model:
+              datasource: { type: loki, uid: loki }
+              editorMode: code
+              expr: sum(count_over_time({service="redis"} |~ "(?i)error|exception|traceback|critical|fatal" [5m]))
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              queryType: instant
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              datasource: { type: __expr__, uid: __expr__ }
+              type: reduce
+              expression: A
+              reducer: last
+              settings: { mode: replaceNN, replaceWithValue: 0 }
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              datasource: { type: __expr__, uid: __expr__ }
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [C] }
+                  reducer: { params: [], type: last }
+                  type: query
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 2m
+        isPaused: false
+        labels:
+          service: redis
+          severity: warning
+          m3_obs: "01"
+        annotations:
+          summary: Staging ERROR-like logs on service=redis
+          description: One or more ERROR-like lines in the last 5m for Docker service redis.
+        notification_settings:
+          receiver: m3-obs-noreplyklints
