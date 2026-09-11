@@ -4,11 +4,36 @@
 **Prepared for:** Astrapse Labs (Rohan) — answer / disposition tracking  
 **Date:** 11 September 2026  
 **Classification:** Klints Confidential  
-Disposition filled 11 Sep 2026 from Rohan answers + code evidence. Companion: SECURITY_ANSWERS_KNOWN_VS_NEEDED.md
+**Filled:** 11 Sep 2026 from Rohan answers + code evidence. Companion: `SECURITY_ANSWERS_KNOWN_VS_NEEDED.md`
 
-**Authoritative baseline:** If this pack differs from the full blueprint **v1.3** (`Klints_MVP1_Security_Privacy_AI_Compliance_Blueprint_v1.3_20260807`), **v1.3 prevails**. Raise conflicts before implementation.
+**Authoritative baseline:** If this pack differs from blueprint **v1.3**, **v1.3 prevails**.
 
-**How to fill Status:** `Accepted` · `Alternative proposed` · `Comenius decision required` · `Legal/provider evidence required` · `Not applicable` (+ reason) · `Evidence pending` · `Blocked` · `Complete`
+**How to read Status**
+| Status | Plain meaning |
+|--------|----------------|
+| Accepted | We do this as the blueprint asks |
+| Alternative proposed | We do something different — explained honestly |
+| Comenius decision required | Product/client must choose |
+| Legal/provider evidence required | Lawyer / Mistral / DO / GitHub paperwork — not engineering alone |
+| Evidence pending | Built or partly built; proof packet not finished |
+| Blocked | Cannot claim done yet |
+| Complete | This row’s ask is answered |
+
+### Plain English — where we stand (read this first)
+
+| Topic | Simple answer |
+|-------|----------------|
+| Can we use **real customer data** yet? | **No.** Gate B is still open. Fake/staging data only (Gate A). |
+| Can we **write back** into Shopify for live partners? | **No** (Gate C). Shopify has a write permission for **testing**; the app still blocks real execute unless a company opts in + approval. |
+| Where does staging run? | DigitalOcean **Frankfurt**: one droplet + Managed Postgres (~2 GB). URL: `apis.klints.io`. Deploy from **`georgechief/DEV_KLINTS_BACKEND` tags**. |
+| How are tenants separated today? | Same app for everyone; each user’s data is filtered by their **company** in code. Not database RLS. Later idea: one Docker stack per tenant (~7–10 days after phase 1). |
+| How are connector secrets kept? | Encrypted with one server key (Fernet) from **GitHub Actions** secrets — rotatable, not in git. |
+| Which AI? | **Mistral** in the **EU**, model id **`mistral-small-latest`**. Privacy filter before send. LangSmith tracing on (`noreplyklints@gmail.com`). |
+| Reports | PDF is **generated on download** (not stored as a file). Only authorized people. |
+| Backups | **Off** in development (fake data). Turn on for a live partner; restore aim **5–10 minutes**. Never restore-tested yet. |
+| Who can operate? | **Rohan Girdhani** + **Sahil Kumar**. 24h critical. Sahil can deploy under guidance. |
+| Gate B effort | **7–10 days outside phase 1** (reviewer ~3–4 days + fixes ~6 days). Independent pen test not booked yet. |
+| Legal / DPAs | **Ask Comenius counsel** — we do not invent signed contracts from code. |
 
 ---
 
@@ -16,29 +41,29 @@ Disposition filled 11 Sep 2026 from Rohan answers + code evidence. Companion: SE
 
 ### CURRENT DECISION (from blueprint)
 
-**CONDITIONAL GO.** Synthetic development may proceed now. Live tenant data remains blocked until Gate B is complete and evidenced. Write-capable connectors and MCP execution remain blocked until Gate C.
+**CONDITIONAL GO.** Build with fake/staging data now. **Real** tenant data waits for Gate B. **Writes** into customer systems wait for Gate C.
 
-**Astrapse note (11 Sep 2026):** Gate A OPEN. Gate B / Gate C BLOCKED — do not claim live-data ready or Gate B complete. Estimate to close Gate B engineering+review: **7–10 days outside phase 1**.
+**Astrapse (11 Sep 2026):** Gate A **OPEN**. Gate B and Gate C **BLOCKED**. Do not say “security review passed” or “live-data ready.” Closing Gate B engineering + review ≈ **7–10 days outside phase 1**.
 
 ### 1.1 What Rohan should do first
 
 | # | Blueprint ask | Our answer / notes | Status |
 |---|---------------|--------------------|--------|
-| 1.1.1 | Confirm the baseline — marked response: accepted requirements, technical conflicts, proposed alternatives, decisions needed from Comenius | This pack + `SECURITY_ANSWERS_KNOWN_VS_NEEDED.md`. Conflicts: no RLS; single shared Fernet key; `mistral-small-latest` (not 2603); Shopify includes `write_customers` (execute gated); no EU hard-pin in code; no LiteLLM; no 50-subject cohort; backups off in dev. | In progress |
-| 1.1.2 | Confirm the implementation route — DigitalOcean product, GitHub plan & repository visibility, secrets/key-management approach, intended deployment flow | DO Frankfurt: droplet + Managed Postgres (~2 GB); no LB/autoscaling yet. Live SoT: `georgechief/DEV_KLINTS_BACKEND` tags → `apis.klints.io` (RELEASES.md; v1.0.2). Secrets: env Fernet via GitHub Actions (`CONNECTOR_FERNET_KEY`), rotatable, single shared key. GitHub plan/visibility → Comenius. | Alternative proposed |
-| 1.1.3 | Return a bottom-up estimate by work package — dependencies, critical path, external blockers, evidence work | Gate B window **7–10 days outside phase 1**: reviewer ~3–4d + remediations ~6d. Later: LB/autoscaling ~3d; per-tenant Docker package ~7–10d post phase 1. Legal/DPA/pen-test booking = external blockers. | Complete |
-| 1.1.4 | Build with synthetic data — do not wait for Gate B legal/provider evidence where synthetic/stubs are safe | Proceeding under Gate A with synthetic/fabricated data. Backups intentionally off in dev. | Accepted |
-| 1.1.5 | Produce evidence while building — control incomplete without evidence + acceptance result retained with requirement ID | Evidence lives in backend repo. Gate B packet / named transcripts / independent review **not assembled**. | Evidence pending |
+| 1.1.1 | Confirm the baseline — marked response: accepted requirements, technical conflicts, proposed alternatives, decisions needed from Comenius | **This pack is the baseline response.** Honest differences vs blueprint: (1) company filtering in the app, not Postgres RLS; (2) one shared encryption key for connector secrets; (3) AI model `mistral-small-latest`, not pinned `2603`; (4) EU Mistral by ops practice, not hard-fail in code; (5) Shopify write permission for test, app execute still gated; (6) backups off in dev. Legal items → Comenius. Companion: `SECURITY_ANSWERS_KNOWN_VS_NEEDED.md`. | In progress |
+| 1.1.2 | Confirm the implementation route — DigitalOcean product, GitHub plan & repository visibility, secrets/key-management approach, intended deployment flow | **Hosting:** Frankfurt droplet + Managed Postgres (~2 GB). No load balancer yet. **Deploy:** tags on `georgechief/DEV_KLINTS_BACKEND` → `apis.klints.io` (see RELEASES.md; live tag v1.0.2). **Secrets:** Fernet key in GitHub Actions, rotatable. **GitHub plan / who can approve prod:** Comenius to confirm. | Alternative proposed |
+| 1.1.3 | Return a bottom-up estimate by work package — dependencies, critical path, external blockers, evidence work | **Gate B:** 7–10 days outside phase 1 (reviewer 3–4 days + our fixes ~6 days). Later extras: load balancer ~3 days; per-tenant Docker package ~7–10 days after phase 1. Waiting on: legal/DPA, pen-test booking. | Complete |
+| 1.1.4 | Build with synthetic data — do not wait for Gate B legal/provider evidence where synthetic/stubs are safe | Yes — we keep building on **fake/staging data** under Gate A. Dev backups stay off on purpose. | Accepted |
+| 1.1.5 | Produce evidence while building — control incomplete without evidence + acceptance result retained with requirement ID | Evidence will live in this **backend repo**. Full Gate B evidence pack + independent review **not done yet**. | Evidence pending |
 
 ### 1.2 Status at a glance
 
 | Gate | Purpose | Blueprint status | What this means now | Our confirmation |
 |------|---------|------------------|---------------------|------------------|
-| **A** | Synthetic development | OPEN | Engineering may proceed using synthetic data and non-production credentials only | **Accepted / OPEN** — continue synthetic build |
-| **B** | First live read-only tenant | **BLOCKED** | No live tenant data until all Gate B items are complete and evidenced | **Blocked** — not complete; 7–10d estimate outside phase 1 |
-| **C** | Write connector or MCP | **BLOCKED** | No tenant-system write path in the current live phase | **Blocked** — Shopify write scope for sandbox/test only; Klints execute defaults OFF (disposition A) |
-| **D** | First paying or public launch | FUTURE GATE | Commercial launch requirements remain cumulative with Gate B | **Not applicable** — FUTURE |
-| **E** | Cross-tenant benchmarks | POST-MVP | Only tenant-local outcome instrumentation is built in MVP1 | **Not applicable** — FUTURE / POST-MVP |
+| **A** | Synthetic development | OPEN | Build with fake data and non-prod credentials | **OPEN** — we continue here |
+| **B** | First live read-only tenant | **BLOCKED** | No real customer data until Gate B is proven | **Blocked** — not ready; ~7–10 days work outside phase 1 |
+| **C** | Write connector or MCP | **BLOCKED** | No live writes into customer systems | **Blocked** — test write permission on Shopify exists; app execute stays off unless opted in + approved |
+| **D** | First paying or public launch | FUTURE GATE | After Gate B (and more) | **Not now** |
+| **E** | Cross-tenant benchmarks | POST-MVP | No shared benchmarks across tenants in MVP1 | **Not now** |
 
 ### 1.3 Working rule
 
@@ -58,20 +83,20 @@ The following decisions are treated as fixed for estimation and implementation u
 
 | # | Locked decision | Confirm Accept / Alternative | Status |
 |---|-----------------|------------------------------|--------|
-| 2.1 | **Deployment model** — Shared multi-tenant service with strong logical isolation is the MVP1 default. Dedicated single-tenant is not the baseline | **Accepted** for MVP1 shared multi-tenant. Isolation today = app-level (`get_user_company`); no Postgres RLS. Future Alternative: per-tenant Docker package (+7–10d after phase 1). | Alternative proposed |
-| 2.2 | **Hosting intent** — DigitalOcean Frankfurt is the intended primary region. Exact DigitalOcean product and service map remain open and must be decided | **Accepted:** Frankfurt droplet + Managed Postgres (~2 GB). No LB/Spaces/autoscaling yet. Evidence: deploy workflow, RELEASES.md, apis.klints.io. | Accepted |
-| 2.3 | **AI route** — One direct Mistral EU route using pinned model identifier `mistral-small-2603`. No OpenRouter, no automatic Scaleway fallback, no floating model alias | **Alternative:** direct Mistral, model **`mistral-small-latest`**; EU ops practice (not hard-pin in code); no OpenRouter; no LiteLLM in compose. | Alternative proposed |
-| 2.4 | **AI fallback** — Complete deterministic Klints report template is the only MVP1 fallback when the provider is unavailable or an AI response is rejected | **Accepted** — reports work without AI; AI narrative optional / fail-open on attach. | Accepted |
-| 2.5 | **Model egress** — AI Data Contract is allow-list based, fails closed on unknown fields, applies cohort and suppression rules. Provisional platform minimum: **50 distinct data subjects** | PrivacyGate + allowlist exist (fail closed on PII/secrets). **50-subject cohort / suppression not implemented** — Alternative / gap. | Alternative proposed |
-| 2.6 | **Tenant access** — First live phase is read-only. Write scopes and executable MCP tools are not activated before Gate C | **Alternative / disposition A:** Shopify scopes include `write_customers` for sandbox/test. Klints execute gated (`WRITEBACKS_ENABLED` false; `writeback_execute_enabled` false; allowlist+approval). Gate C not claimed. | Alternative proposed |
-| 2.7 | **Reports** — Canonical structured payload is authoritative. PDF is generated for delivery, hashed at issue, and is not permanently stored by default | **Partial Accept / Alternative:** payload + `payload_hash` stored; PDF streamed (zero PDF file retention); authorized account personnel only; **no separate PDF byte hash** stored. | Alternative proposed |
-| 2.8 | **Outcome data** — MVP1 records tenant-local issue, fix and outcome events. No cross-tenant contribution, aggregation or benchmark publication plane | Tenant-local intent Accepted; Gate E / cross-tenant benchmarks Not applicable (POST-MVP). Full BEN evidence pending. | Accepted |
+| 2.1 | **Deployment model** — Shared multi-tenant service with strong logical isolation is the MVP1 default. Dedicated single-tenant is not the baseline | **Yes, one shared product** for MVP1. Each company only sees its own data via app checks (`get_user_company`). Not Postgres RLS. Later idea: separate Docker per tenant (~7–10 days after phase 1). | Alternative proposed |
+| 2.2 | **Hosting intent** — DigitalOcean Frankfurt is the intended primary region. Exact DigitalOcean product and service map remain open and must be decided | **Yes — Frankfurt.** Droplet + Managed Postgres (~2 GB). No load balancer / Spaces yet. Evidence: deploy workflow, RELEASES.md, `apis.klints.io`. | Accepted |
+| 2.3 | **AI route** — One direct Mistral EU route using pinned model identifier `mistral-small-2603`. No OpenRouter, no automatic Scaleway fallback, no floating model alias | **Almost:** we call Mistral directly (no OpenRouter). Model we use: **`mistral-small-latest`** (not `2603`). EU region by ops today; app does not hard-fail if misconfigured. | Alternative proposed |
+| 2.4 | **AI fallback** — Complete deterministic Klints report template is the only MVP1 fallback when the provider is unavailable or an AI response is rejected | **Yes** — assessment report still works without AI. AI text is optional. | Accepted |
+| 2.5 | **Model egress** — AI Data Contract is allow-list based, fails closed on unknown fields, applies cohort and suppression rules. Provisional platform minimum: **50 distinct data subjects** | We strip/block unsafe fields before AI (PrivacyGate + allowlist). **50-person cohort rule is not built yet.** | Alternative proposed |
+| 2.6 | **Tenant access** — First live phase is read-only. Write scopes and executable MCP tools are not activated before Gate C | **Honest Alternative:** Shopify app has `write_customers` so we can **test** updates. Klints still blocks execute by default (global flag off, company flag off, needs allowlist + human approval). We do **not** claim Gate C. | Alternative proposed |
+| 2.7 | **Reports** — Canonical structured payload is authoritative. PDF is generated for delivery, hashed at issue, and is not permanently stored by default | JSON report is stored and hashed (`payload_hash`). PDF is **made on download**, not kept as a file. Authorized people only. We do **not** also store a separate hash of the PDF file bytes. | Alternative proposed |
+| 2.8 | **Outcome data** — MVP1 records tenant-local issue, fix and outcome events. No cross-tenant contribution, aggregation or benchmark publication plane | **Yes** — keep outcomes inside each tenant. No cross-tenant benchmarks in MVP1. | Accepted |
 
 ### 2.1 Explicitly deferred
 
 | # | Deferred item | Confirm: no dormant production path / unused write credentials / hidden cross-tenant flows? | Status |
 |---|---------------|---------------------------------------------------------------------------------------------|--------|
-| 2.1.1 | Write-capable connectors and executable MCP workflows | Writeback **code exists** under `/api/v1/writebacks/` but execute defaults OFF + allowlist+approval. Shopify `write_customers` granted for sandbox/test. Disclose as gated dormant path — disposition A. | Alternative proposed |
+| 2.1.1 | Write-capable connectors and executable MCP workflows | Writeback **code is in the product** (needed for tests). Execute is **off by default** and needs company opt-in + allowlist + approval. Shopify write permission is for **sandbox/test**, not “live writes open.” | Alternative proposed |
 | 2.1.2 | A second external AI provider | Confirmed deferred — Mistral only; no OpenRouter / Scaleway fallback in code. | Accepted |
 | 2.1.3 | Cross-tenant benchmark computation and publication | Confirmed deferred (Gate E POST-MVP). | Accepted |
 | 2.1.4 | Dedicated single-tenant or customer-hosted deployment as the default product | Confirmed not MVP1 default. Future: per-tenant Docker package post phase 1 (Alternative proposal only). | Accepted |
@@ -209,7 +234,7 @@ Full normative wording and tests remain in **v1.3**.
 | # | Rohan / Astrapse action (as question) | Answer / evidence | Status |
 |---|---------------------------------------|-------------------|--------|
 | WP2-1 | Implement tenant identifiers on all tenant-controlled records and enumerate read-only global tables? | Tenant/Company model + `get_user_company` scoping. Evidence: `tenants/models.py`, `tenants/auth/services.py`. | In progress |
-| WP2-2 | Enforce PostgreSQL RLS with FORCE ROW LEVEL SECURITY; application roles must not own tenant tables or hold BYPASSRLS? | **Not implementing RLS now.** App-level isolation. Future: per-tenant Docker package (+7–10d after phase 1). | Alternative proposed |
+| WP2-2 | Enforce PostgreSQL RLS with FORCE ROW LEVEL SECURITY; application roles must not own tenant tables or hold BYPASSRLS? | **Not building database RLS now.** Today: app filters by company. **Proposed later:** one Docker stack per tenant (~7–10 days after phase 1). | Alternative proposed |
 | WP2-3 | Use transaction-scoped tenant context and test connection-pool leakage and missing-context failure? | Not as blueprint RLS context — app filters only. | Alternative proposed |
 | WP2-4 | Validate tenant membership server-side for every request and job; JWT claims are not the trust boundary? | Server-side company resolution via `get_user_company`; roles admin/analyst/viewer. Residual: multi-company-per-tenant not productized (M3-SEC-01). | In progress |
 | WP2-5 | Define least-privilege roles, privileged MFA, session revocation, support role and break-glass access? | Roles exist; MFA/break-glass formalization incomplete. Ops: Rohan + Sahil; 24h critical. | Evidence pending |
@@ -245,11 +270,11 @@ Full normative wording and tests remain in **v1.3**.
 
 | # | Rohan / Astrapse action (as question) | Answer / evidence | Status |
 |---|---------------------------------------|-------------------|--------|
-| WP3-1 | Recommend the key/secrets product once WP1 fixes the deployment product? | **Stay on env Fernet** (`CONNECTOR_FERNET_KEY`) via GitHub Actions; rotatable; never committed. Single shared key — Alternative vs per-tenant DEK/KMS. Evidence: `tenants/crypto.py`, `core/settings/base.py`. | Alternative proposed |
+| WP3-1 | Recommend the key/secrets product once WP1 fixes the deployment product? | **Use env Fernet key** from GitHub Actions (`CONNECTOR_FERNET_KEY`). Never put in git; can rotate anytime. One key for all tenants (honest Alternative vs per-tenant keys). Evidence: `tenants/crypto.py`. | Alternative proposed |
 | WP3-2 | Keep the key-encryption key outside the application database and use per-tenant or finer data-encryption keys? | KEK outside DB (env) **yes**; per-tenant DEKs **no** — Alternative. | Alternative proposed |
 | WP3-3 | Implement rotation, emergency rotation, revocation and auditable credential reads? | Rotatable via Actions; formal emergency/revocation procedure evidence incomplete. Secrets masked in API. | In progress |
 | WP3-4 | Prove one tenant key cannot decrypt another tenant's credential and restored development backups cannot decrypt credentials? | N/A under shared key model — disclose. Backups off in dev. | Alternative proposed |
-| WP3-5 | Define a read-only scope matrix and field allow-list for every connector; do not request write scopes? | Staging scopes: `read_customers`, **`write_customers`**, `read_inventory`, `read_orders`, `read_products`, `read_store_credit_account_transactions`. Write for sandbox/test; execute gated — disposition A. | Alternative proposed |
+| WP3-5 | Define a read-only scope matrix and field allow-list for every connector; do not request write scopes? | **Scopes in use:** read customers/orders/products/inventory/store-credit tx **+ `write_customers`**. Why write? So sandbox/test can prove a customer update. **When does Klints actually write?** Only if company/global execute is ON **and** check is allowlisted **and** someone approved. Defaults = OFF. | Alternative proposed |
 | WP3-6 | Treat all ingested tenant content as untrusted data, never as instructions? | Intent Accepted; formal CON evidence pending. | In progress |
 
 | Acceptance IDs | Pass? | Evidence | Status |
@@ -275,7 +300,7 @@ Full normative wording and tests remain in **v1.3**.
 
 | # | Rohan / Astrapse action (as question) | Answer / evidence | Status |
 |---|---------------------------------------|-------------------|--------|
-| WP4-1 | Implement a server-side Klints AI gateway with a hard-coded EU endpoint, pinned `mistral-small-2603` and returned-model verification? | Direct Mistral; **`mistral-small-latest`**; EU ops practice not hard-pin; no LiteLLM. Evidence: `dataruns/ai/providers/mistral.py`, settings/constants. | Alternative proposed |
+| WP4-1 | Implement a server-side Klints AI gateway with a hard-coded EU endpoint, pinned `mistral-small-2603` and returned-model verification? | We call **Mistral directly**. Model: **`mistral-small-latest`**. EU used in ops; **not** hard-coded fail-if-not-EU. Evidence: `dataruns/ai/providers/mistral.py`. | Alternative proposed |
 | WP4-2 | Implement the allow-listed AI Data Contract, unknown-field fail-closed behaviour, canary corpus, redaction manifest, policy version/hash and input digest? | PrivacyGate + allowlist exist (fail closed). Full ADC canary/manifest suite incomplete. Evidence: `privacy_gate.py`, `allowlist.py`. | In progress |
 | WP4-3 | Apply the provisional minimum of 50 distinct data subjects, rare-value suppression, dimensionality limits and tenant commercial-data flag defaulted off? | **50-subject cohort / suppression not implemented.** | Alternative proposed |
 | WP4-4 | Prevent prompts and responses from entering logs, traces, telemetry or error reporting? | Intent: allowlisted I/O only. **LangSmith active** on `noreplyklints@gmail.com` — confirm only allowlisted I/O sent; evidence packet pending. | Evidence pending |
@@ -466,7 +491,7 @@ Gate B is cumulative and binary. No live tenant data is authorised until every b
 |----|------------------|---------------|--------------------|-----------------------|--------|
 | GB-08 | Mistral evidence handled under the four-group model; Group 1 cannot be dispositioned | Comenius | Not established | Provider packet not established — ask Comenius / Mistral | Legal/provider evidence required |
 | GB-09 | AI Data Contract, allow-list, suppression, manifest and fail-closed behaviour implemented | Comenius + Astrapse | Planned | PrivacyGate + allowlist yes; 50-subject suppression **no** | Alternative proposed |
-| GB-10 | EU region pinned; start-up fails if region is absent; global endpoint cannot be selected | Comenius + Astrapse | Planned | EU **ops practice** only; **no hard-pin / fail-closed in code**; model `mistral-small-latest` | Alternative proposed |
+| GB-10 | EU region pinned; start-up fails if region is absent; global endpoint cannot be selected | Comenius + Astrapse | Planned | We **use EU Mistral in ops**. App does **not** yet refuse to start if a non-EU endpoint were set. Model id: `mistral-small-latest`. | Alternative proposed |
 | GB-11 | No prompt or response content in logs, traces, telemetry or error reporting | Comenius + Astrapse | Planned | LangSmith on; must confirm allowlisted I/O only — evidence pending | Evidence pending |
 | GB-12 | Complete report produced through deterministic fallback with provider unreachable | Comenius + Astrapse | Planned | Deterministic path exists; formal unreachable test evidence pending | In progress |
 
