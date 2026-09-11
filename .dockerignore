@@ -20,6 +20,9 @@ staticfiles/*
 .ruff_cache
 .coverage
 htmlcov
-docs
+# Exclude docs from image, but keep DCS workbook for seed_dcs_master on empty DB.
+docs/**
+!docs/dcs_scoring/
+!docs/dcs_scoring/**
 *.md
 .DS_Store

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Build, migrate + load_use_case_pilots (via web container CMD), ensure TLS, start stack.
+# Build, migrate + ensure_runtime_catalogue (via web container CMD), ensure TLS, start stack.
+# Catalogue: seed_dcs_master when CheckMaster empty/incomplete; always load_use_case_pilots.
 set -euo pipefail
 
 APP_DIR="${APP_DIR:-/opt/klints_backend}"
@@ -132,6 +133,13 @@ done
 echo "==> Verifying MVP1 pilot catalogue (OPS-UC-01)"
 if ! dc exec -T web python scripts/verify_use_case_pilots.py; then
   echo "==> Pilot catalogue verify failed — check web logs:" >&2
+  dc logs --tail=80 web >&2 || true
+  exit 1
+fi
+
+echo "==> Verifying DCS CheckMaster catalogue"
+if ! dc exec -T web python scripts/verify_dcs_master_catalogue.py; then
+  echo "==> DCS master catalogue verify failed — check web logs:" >&2
   dc logs --tail=80 web >&2 || true
   exit 1
 fi
