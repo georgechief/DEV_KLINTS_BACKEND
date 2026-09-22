@@ -2,16 +2,21 @@
 
 from __future__ import annotations
 
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, TestCase
+from django.utils import timezone
 
 from dataruns.connectors.bootstrap_health import (
+    build_latest_bootstrap_payload,
     build_preflight_section,
     compute_summary_status,
     missing_shopify_scopes,
     parse_shopify_scopes,
     postflight_health,
+    recompute_health_report_summary,
     shopify_admin_scope_satisfied,
 )
+from dataruns.models import DataRun
+from tenants.models import ConnectorSnapshot
 
 
 class ShopifyScopeCapabilityTests(SimpleTestCase):
@@ -111,3 +116,135 @@ class PostflightEmptyWindowTests(SimpleTestCase):
         self.assertEqual(
             compute_summary_status(import_succeeded=True, issues=issues), "degraded"
         )
+
+    def test_shopify_exact_page_size_orders_not_partial_fetch(self):
+        """Full pagination: exactly 250 orders is complete, not truncated."""
+        orders = [{"id": i} for i in range(250)]
+        issues = postflight_health(
+            platform="shopify",
+            days=30,
+            result={"counts": {"contacts": 189, "orders": 250}},
+            snapshot_data={"raw": {"customers": [{"id": 1}], "orders": orders}},
+        )
+        codes = [i["code"] for i in issues]
+        self.assertNotIn("PARTIAL_FETCH", codes)
+        self.assertEqual(compute_summary_status(import_succeeded=True, issues=issues), "ok")
+
+    def test_partial_fetch_from_snapshot_notes_still_warns(self):
+        issues = postflight_health(
+            platform="shopify",
+            days=30,
+            result={"counts": {"contacts": 10, "orders": 10}},
+            snapshot_data={
+                "raw": {"customers": [{"id": 1}], "orders": [{"id": 1}]},
+                "notes": ["Pagination truncated early"],
+            },
+        )
+        codes = [i["code"] for i in issues]
+        self.assertIn("PARTIAL_FETCH", codes)
+        self.assertEqual(
+            compute_summary_status(import_succeeded=True, issues=issues), "degraded"
+        )
+
+
+class StaleHealthReportRecomputeTests(TestCase):
+    def setUp(self):
+        from tenants.models import Company, Connector, Tenant
+
+        self.tenant = Tenant.objects.create(name="Demo", slug="demo")
+        self.company = Company.objects.create(
+            tenant=self.tenant,
+            name="Demo",
+            domain="demo.com",
+        )
+        self.connector = Connector.objects.create(
+            company=self.company,
+            name="shopify",
+            type="ecommerce",
+            config={"shop_domain": "klints-dev.myshopify.com"},
+            status="degraded",
+        )
+
+    def test_stale_partial_fetch_recomputed_ok_for_display(self):
+        """Persisted PARTIAL_FETCH from retired heuristics must not degrade display."""
+        snapshot = ConnectorSnapshot.objects.create(
+            connector=self.connector,
+            version=1,
+            snapshot_data={
+                "raw": {
+                    "customers": [{"id": i} for i in range(189)],
+                    "orders": [{"id": i} for i in range(250)],
+                },
+                "notes": [],
+            },
+        )
+        data_run = DataRun.objects.create(
+            tenant=self.tenant,
+            name="connector-bootstrap:shopify",
+            status=DataRun.Status.SUCCEEDED,
+            finished_at=timezone.now(),
+            metadata={
+                "connector": "shopify",
+                "snapshot_id": str(snapshot.id),
+                "counts": {"contacts": 189, "orders": 250},
+                "health_report": {
+                    "platform": "shopify",
+                    "days": 30,
+                    "summary_status": "degraded",
+                    "preflight": {"issues": []},
+                    "postflight": {
+                        "issues": [
+                            {
+                                "code": "PARTIAL_FETCH",
+                                "severity": "warn",
+                                "message": "Order fetch reached Shopify pagination limit; additional pages may exist.",
+                            }
+                        ]
+                    },
+                    "fetch": {
+                        "contacts_upserted": 189,
+                        "orders_upserted": 250,
+                    },
+                },
+            },
+        )
+        payload = build_latest_bootstrap_payload(data_run)
+        self.assertEqual(payload["summary_status"], "ok")
+        self.assertEqual(payload["issue_count"], 0)
+        self.assertEqual(payload["contacts"], 189)
+        self.assertEqual(payload["orders"], 250)
+
+    def test_recompute_preserves_real_snapshot_note_partial_fetch(self):
+        snapshot = ConnectorSnapshot.objects.create(
+            connector=self.connector,
+            version=2,
+            snapshot_data={
+                "raw": {"customers": [{"id": 1}], "orders": [{"id": 1}]},
+                "notes": ["Pagination truncated early"],
+            },
+        )
+        data_run = DataRun.objects.create(
+            tenant=self.tenant,
+            name="connector-bootstrap:shopify",
+            status=DataRun.Status.SUCCEEDED,
+            finished_at=timezone.now(),
+            metadata={
+                "connector": "shopify",
+                "snapshot_id": str(snapshot.id),
+                "counts": {"contacts": 10, "orders": 10},
+                "health_report": {
+                    "platform": "shopify",
+                    "days": 30,
+                    "summary_status": "ok",
+                    "preflight": {"issues": []},
+                    "postflight": {"issues": []},
+                },
+            },
+        )
+        refreshed = recompute_health_report_summary(
+            data_run=data_run,
+            health_report=data_run.metadata["health_report"],
+        )
+        codes = [i["code"] for i in refreshed["postflight"]["issues"]]
+        self.assertIn("PARTIAL_FETCH", codes)
+        self.assertEqual(refreshed["summary_status"], "degraded")

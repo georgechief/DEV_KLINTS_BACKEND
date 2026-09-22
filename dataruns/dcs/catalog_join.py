@@ -6,8 +6,9 @@ Surfaces:
 - Shopify ``products`` (status=active) with variants; line_items as fallback
 
 KNOWN LIMITATION: Manago catalog *entries* require ``product_feed_url`` and/or
-``api_v3_key`` on the Manago connector. Without them PT-03 (and Manago-side
-PT-01 catalog resolve) stay UNKNOWN — intentional, not incomplete check code.
+``api_v3_key`` on the Manago connector. Without them PT-03 stays UNKNOWN.
+PT-01 falls back to Shopify variants (products API + order line items) so
+historical purchase IDs still resolve when the active catalog dropped them.
 """
 
 from __future__ import annotations
@@ -112,32 +113,44 @@ def build_catalog_snapshot(
             if not shopify_products[sid]["sku"] and variant.get("sku"):
                 shopify_products[sid]["sku"] = str(variant.get("sku"))
 
-    # Fallback: line items when products.json not available.
-    if not shopify_products:
-        for order in orders:
-            if order.get("test") is True:
+    # Merge order line-item variants for PT-01 resolve.
+    # products.json is current catalog only; purchase events often reference
+    # variants later removed from active products — line items still prove them.
+    # Do not invent shopify_products from line items when products API is present
+    # (PT-03 must stay scoped to active catalog).
+    shopify_variants_from_line_items = 0
+    for order in orders:
+        if order.get("test") is True:
+            continue
+        for li in order.get("line_items") or []:
+            if not isinstance(li, dict):
                 continue
-            for li in order.get("line_items") or []:
-                if not isinstance(li, dict):
-                    continue
-                vid = li.get("variant_id")
-                pid = li.get("product_id")
-                sku = str(li.get("sku") or "")
-                title = str(li.get("title") or li.get("name") or "")
-                if vid is not None:
-                    shopify_variants[str(vid)] = {
-                        "variant_id": str(vid),
+            vid = li.get("variant_id")
+            pid = li.get("product_id")
+            sku = str(li.get("sku") or "")
+            title = str(li.get("title") or li.get("name") or "")
+            if vid is not None:
+                vkey = str(vid)
+                if vkey not in shopify_variants:
+                    shopify_variants_from_line_items += 1
+                    shopify_variants[vkey] = {
+                        "variant_id": vkey,
                         "product_id": str(pid) if pid is not None else None,
                         "sku": sku,
                         "title": title,
+                        "from_line_item": True,
                     }
-                if pid is not None:
-                    shopify_products[str(pid)] = {
-                        "product_id": str(pid),
+            # Fallback catalog when products.json missing entirely.
+            if not shopify_from_products_api and pid is not None:
+                pkey = str(pid)
+                if pkey not in shopify_products:
+                    shopify_products[pkey] = {
+                        "product_id": pkey,
                         "sku": sku,
                         "title": title,
                         "status": "active",
                         "variant_ids": [],
+                        "from_line_item": True,
                     }
 
     # Manago catalog products (XML feed / future list API).
@@ -259,10 +272,25 @@ def build_catalog_snapshot(
             ],
             "shopify_products_from_api": shopify_from_products_api,
             "shopify_products_from_line_items": (
-                0 if shopify_from_products_api else len(shopify_products)
+                0
+                if shopify_from_products_api
+                else sum(
+                    1
+                    for p in shopify_products.values()
+                    if p.get("from_line_item")
+                )
             ),
-            "shopify_active_product_count": len(shopify_products),
-            "shopify_variants_from_line_items": len(shopify_variants),
+            "shopify_active_product_count": len(
+                [
+                    p
+                    for p in shopify_products.values()
+                    if not p.get("from_line_item")
+                ]
+            )
+            if shopify_from_products_api
+            else len(shopify_products),
+            "shopify_variants_from_line_items": shopify_variants_from_line_items,
+            "shopify_variant_resolve_count": len(shopify_variants),
             "event_product_id_refs": len(event_product_refs),
             "unique_event_product_ids": len(unique_event_ids),
             "resolve_target": resolve_target,

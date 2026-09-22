@@ -7,7 +7,7 @@ from rest_framework.test import APIRequestFactory, force_authenticate
 from dataruns.connectors.base import CONNECTOR_BOOTSTRAP_KIND, CONNECTOR_FETCH_KIND
 from dataruns.models import DataRun
 from tenants.connector_views import ConnectorListCreateView
-from tenants.models import Company, Connector, Tenant, User
+from tenants.models import Company, Connector, ConnectorSnapshot, Tenant, User
 
 
 class ConnectorListLatestBootstrapTests(TestCase):
@@ -261,3 +261,60 @@ class ConnectorListLatestBootstrapTests(TestCase):
         self.assertEqual(refresh["source"], "bootstrap")
         self.assertEqual(refresh["orders"], 80)
         self.assertEqual(refresh["data_run_status"], "succeeded")
+
+    def test_list_reconciles_stale_degraded_status_after_partial_fetch_retire(self):
+        """API status must match recomputed health, not pre-fix degraded."""
+        self.connector.status = "degraded"
+        self.connector.save(update_fields=["status", "updated_at"])
+        snapshot = ConnectorSnapshot.objects.create(
+            connector=self.connector,
+            version=1,
+            snapshot_data={
+                "raw": {
+                    "customers": [{"id": i} for i in range(10)],
+                    "orders": [{"id": i} for i in range(250)],
+                },
+                "notes": [],
+            },
+        )
+        DataRun.objects.create(
+            tenant=self.tenant,
+            name="connector-bootstrap:shopify",
+            status=DataRun.Status.SUCCEEDED,
+            finished_at=timezone.now(),
+            metadata={
+                "kind": CONNECTOR_BOOTSTRAP_KIND,
+                "platform": "shopify",
+                "connector": "shopify",
+                "company_id": str(self.company.id),
+                "snapshot_id": str(snapshot.id),
+                "counts": {"contacts": 10, "orders": 250},
+                "health_report": {
+                    "platform": "shopify",
+                    "days": 30,
+                    "summary_status": "degraded",
+                    "preflight": {"issues": []},
+                    "postflight": {
+                        "issues": [
+                            {
+                                "code": "PARTIAL_FETCH",
+                                "severity": "warn",
+                                "message": "Order fetch reached Shopify pagination limit",
+                            }
+                        ]
+                    },
+                    "fetch": {"contacts_upserted": 10, "orders_upserted": 250},
+                },
+            },
+        )
+
+        request = self.factory.get("/api/v1/connectors/")
+        force_authenticate(request, user=self.admin)
+        response = self.view(request)
+
+        row = response.data["results"][0]
+        self.assertEqual(row["latest_bootstrap"]["summary_status"], "ok")
+        self.assertEqual(row["latest_bootstrap"]["issue_count"], 0)
+        self.assertEqual(row["status"], "connected")
+        self.connector.refresh_from_db()
+        self.assertEqual(self.connector.status, "connected")

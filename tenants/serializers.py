@@ -22,7 +22,8 @@ class TenantSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         )
-        read_only_fields = ("id", "created_at", "updated_at")
+        # slug never changes (workspace invariant); is_active not flipped via this CRUD API.
+        read_only_fields = ("id", "slug", "is_active", "created_at", "updated_at")
 
 
 class UserSerializer(serializers.ModelSerializer):

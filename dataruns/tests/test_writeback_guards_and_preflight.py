@@ -132,9 +132,10 @@ class WritebackGuardsAndPreflightTests(TestCase):
             mapping=mapping,
             evidence_rows=[
                 {
-                    "side": "missing_purchase_event",
+                    "side": "shopify_only",
                     "order.id": "order-42",
-                    "count": 1,
+                    "person.email": "buyer@example.com",
+                    "amount_gross": 10,
                 }
             ],
         )
@@ -143,6 +144,7 @@ class WritebackGuardsAndPreflightTests(TestCase):
         self.assertEqual(intent.op_kind, "event_ingest")
         self.assertEqual(intent.status, "ready")
         self.assertEqual(intent.payload.get("externalId"), "order-42")
+        self.assertEqual(intent.payload.get("email"), "buyer@example.com")
 
     def test_capability_gate_blocks_discovery_required(self):
         adapter = ManagoWriteAdapter()
@@ -195,6 +197,47 @@ class WritebackGuardsAndPreflightTests(TestCase):
         )
         self.assertEqual(result.blocked_reason, "consent_namespace_not_clean")
         self.assertEqual(result.summary.ready, 0)
+
+    @override_settings(
+        WRITEBACKS_ENABLED=False,    )
+    def test_sp07_writeback_not_self_blocked_when_namespace_fail(self):
+        """WB-09: SP-07 mapping must preview while SP-07 is still FAIL."""
+        self.company.writeback_execute_enabled = False
+        self.company.save(update_fields=["writeback_execute_enabled"])
+        from dataruns.models import WritebackAllowedCheck
+
+        WritebackAllowedCheck.objects.get_or_create(
+            check_id="SP-07",
+            defaults={"enabled": True, "note": "test"},
+        )
+        domain_run = Run.objects.create(
+            company=self.company,
+            run_type=Run.RunType.FULL,
+            status=Run.Status.COMPLETED,
+        )
+        DataRun.objects.create(
+            tenant=self.company.tenant,
+            name=DCS_SCORE_DATA_RUN_NAME,
+            status=DataRun.Status.SUCCEEDED,
+            metadata={
+                "kind": DCS_SCORE_KIND,
+                "company_id": str(self.company.id),
+                "run_id": str(domain_run.id),
+                "dcs_run": {"run_id": str(domain_run.id), "run_state": "SCORED"},
+                "check_results": [
+                    {"check_id": "SP-07", "status": "FAIL"},
+                ],
+            },
+        )
+        result = writeback_run(
+            company=self.company,
+            check_id="SP-07",
+            mode="dry_run",
+            actor=self.admin,
+            max_rows=0,
+        )
+        self.assertIsNone(result.blocked_reason)
+        self.assertNotEqual(result.blocked_reason, "consent_namespace_not_clean")
 
     @override_settings(
         WRITEBACKS_ENABLED=False,    )

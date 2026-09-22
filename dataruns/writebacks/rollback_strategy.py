@@ -6,8 +6,8 @@ from dataruns.writebacks.types import WriteIntent
 
 _STRATEGY_BY_OP = {
     "contact_upsert": frozenset({"tagged_backfill_delete", "restore_prior_field"}),
-    "detail_set": frozenset({"revert_detail"}),
-    "tag_add": frozenset({"remove_tag"}),
+    "detail_set": frozenset({"revert_detail", "reverse_rename_map"}),
+    "tag_add": frozenset({"remove_tag", "reverse_rename_map"}),
     "tag_remove": frozenset({"remove_tag"}),
     "shopify_customer_update": frozenset({"restore_prior_field"}),
 }

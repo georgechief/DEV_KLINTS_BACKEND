@@ -5,6 +5,7 @@ from __future__ import annotations
 from django.db import IntegrityError
 from django.db.utils import ProgrammingError
 from django.test import TestCase, override_settings
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from dataruns.ai.complete import complete_json
@@ -23,6 +24,7 @@ from dataruns.dcs.enqueue import DCS_SCORE_DATA_RUN_NAME
 from dataruns.models import AiCall, AiSuggestion, CheckMaster, DataRun, DimensionMaster
 from tenants.models import Company, Tenant, User
 from unittest.mock import MagicMock, patch
+from datetime import timedelta
 
 
 class CapturePromptProvider(MockAiProvider):
@@ -219,6 +221,256 @@ class FixSuggestionServiceTests(TestCase):
         self.assertEqual(second.suggestion.id, first.suggestion.id)
         self.assertEqual(AiCall.objects.count(), calls_before)
         self.assertEqual(AiSuggestion.objects.count(), 1)
+
+    def test_soft_cache_serves_prior_run_without_provider(self):
+        """New DCS run still returns last saved suggestion (soft-first)."""
+        first = get_or_create_fix_suggestion(
+            company=self.company,
+            check_id="LE-04",
+            provider=MockAiProvider(),
+        )
+        newer = DataRun.objects.create(
+            tenant=self.tenant,
+            name=DCS_SCORE_DATA_RUN_NAME,
+            status=DataRun.Status.SUCCEEDED,
+            metadata={
+                "kind": DCS_SCORE_KIND,
+                "company_id": str(self.company.id),
+                "payload": {
+                    "check_results": [
+                        {
+                            "check_id": "LE-04",
+                            "status": "FAIL",
+                            "severity": "high",
+                            "message": "Duplicate PURCHASE rate=50.00% clusters=8.",
+                        }
+                    ],
+                },
+                "check_results": [
+                    {
+                        "check_id": "LE-04",
+                        "status": "FAIL",
+                        "severity": "high",
+                        "message": "Duplicate PURCHASE rate=50.00% clusters=8.",
+                    }
+                ],
+            },
+        )
+        calls_before = AiCall.objects.count()
+        soft = get_or_create_fix_suggestion(
+            company=self.company,
+            check_id="LE-04",
+            dcs_run_id=newer.id,
+            provider=MockAiProvider(),
+        )
+        self.assertTrue(soft.cached)
+        self.assertFalse(soft.stale)
+        self.assertEqual(soft.suggestion.id, first.suggestion.id)
+        self.assertEqual(AiCall.objects.count(), calls_before)
+        self.assertTrue(bool(first.suggestion.content_hash))
+
+    def test_soft_cache_prefers_matching_content_hash(self):
+        """Matching content_hash wins over a newer blank-hash / other-fp row."""
+        first = get_or_create_fix_suggestion(
+            company=self.company,
+            check_id="LE-04",
+            provider=MockAiProvider(),
+        )
+        other_fp = AiSuggestion.objects.create(
+            company=self.company,
+            ai_call=first.suggestion.ai_call,
+            task_type=TASK_FIX_SUGGESTION,
+            check_id="LE-04",
+            dcs_data_run=None,
+            fingerprint="deadbeef" * 8,
+            content_hash="",
+            payload_json=first.suggestion.payload_json,
+            headline="Legacy other fingerprint",
+        )
+        AiSuggestion.objects.filter(pk=other_fp.pk).update(
+            updated_at=timezone.now() + timedelta(days=1)
+        )
+        soft = get_or_create_fix_suggestion(
+            company=self.company,
+            check_id="LE-04",
+            dcs_run_id=self.run.id,
+            provider=MockAiProvider(),
+        )
+        self.assertTrue(soft.cached)
+        self.assertFalse(soft.stale)
+        self.assertEqual(soft.suggestion.id, first.suggestion.id)
+
+    def test_soft_cache_reuses_older_hash_when_newer_differs(self):
+        """Newer mismatched finding must not block soft reuse of older matching hash."""
+        first = get_or_create_fix_suggestion(
+            company=self.company,
+            check_id="LE-04",
+            provider=MockAiProvider(),
+        )
+        changed = DataRun.objects.create(
+            tenant=self.tenant,
+            name=DCS_SCORE_DATA_RUN_NAME,
+            status=DataRun.Status.SUCCEEDED,
+            metadata={
+                "kind": DCS_SCORE_KIND,
+                "company_id": str(self.company.id),
+                "check_results": [
+                    {
+                        "check_id": "LE-04",
+                        "status": "FAIL",
+                        "severity": "high",
+                        "message": "Duplicate PURCHASE rate=91.00% clusters=22.",
+                    }
+                ],
+            },
+        )
+        second = get_or_create_fix_suggestion(
+            company=self.company,
+            check_id="LE-04",
+            dcs_run_id=changed.id,
+            provider=MockAiProvider(),
+        )
+        self.assertFalse(second.cached)
+        self.assertNotEqual(second.suggestion.content_hash, first.suggestion.content_hash)
+
+        # Original finding returns on a new DCS run — soft-hit first row, not second.
+        restored = DataRun.objects.create(
+            tenant=self.tenant,
+            name=DCS_SCORE_DATA_RUN_NAME,
+            status=DataRun.Status.SUCCEEDED,
+            metadata={
+                "kind": DCS_SCORE_KIND,
+                "company_id": str(self.company.id),
+                "check_results": [
+                    {
+                        "check_id": "LE-04",
+                        "status": "FAIL",
+                        "severity": "high",
+                        "message": "Duplicate PURCHASE rate=50.00% clusters=8.",
+                    }
+                ],
+            },
+        )
+        calls_before = AiCall.objects.count()
+        soft = get_or_create_fix_suggestion(
+            company=self.company,
+            check_id="LE-04",
+            dcs_run_id=restored.id,
+            provider=MockAiProvider(),
+        )
+        self.assertTrue(soft.cached)
+        self.assertFalse(soft.stale)
+        self.assertEqual(soft.suggestion.id, first.suggestion.id)
+        self.assertEqual(AiCall.objects.count(), calls_before)
+
+    def test_soft_cache_skips_invalid_payload(self):
+        first = get_or_create_fix_suggestion(
+            company=self.company,
+            check_id="LE-04",
+            provider=MockAiProvider(),
+        )
+        AiSuggestion.objects.filter(pk=first.suggestion.id).update(
+            payload_json={"task_type": "fix_suggestion", "check_id": "LE-04"}
+        )
+        calls_before = AiCall.objects.count()
+        regenerated = get_or_create_fix_suggestion(
+            company=self.company,
+            check_id="LE-04",
+            provider=MockAiProvider(),
+        )
+        self.assertFalse(regenerated.cached)
+        self.assertGreater(AiCall.objects.count(), calls_before)
+
+    def test_soft_cache_skips_invalid_then_uses_older_same_hash(self):
+        """Newest same-hash invalid row must not force a provider call."""
+        first = get_or_create_fix_suggestion(
+            company=self.company,
+            check_id="LE-04",
+            provider=MockAiProvider(),
+        )
+        hash_val = first.suggestion.content_hash
+        newer_invalid = AiSuggestion.objects.create(
+            company=self.company,
+            ai_call=first.suggestion.ai_call,
+            task_type=TASK_FIX_SUGGESTION,
+            check_id="LE-04",
+            dcs_data_run=None,
+            fingerprint="cafebabe" * 8,
+            content_hash=hash_val,
+            payload_json={"task_type": "fix_suggestion", "check_id": "LE-04"},
+            headline="Broken payload",
+        )
+        AiSuggestion.objects.filter(pk=newer_invalid.pk).update(
+            updated_at=timezone.now() + timedelta(days=1)
+        )
+        calls_before = AiCall.objects.count()
+        soft = get_or_create_fix_suggestion(
+            company=self.company,
+            check_id="LE-04",
+            dcs_run_id=self.run.id,
+            provider=MockAiProvider(),
+        )
+        self.assertTrue(soft.cached)
+        self.assertEqual(soft.suggestion.id, first.suggestion.id)
+        self.assertEqual(AiCall.objects.count(), calls_before)
+
+    def test_content_hash_change_regenerates(self):
+        """Same check, different finding_summary → new Mistral call."""
+        first = get_or_create_fix_suggestion(
+            company=self.company,
+            check_id="LE-04",
+            provider=MockAiProvider(),
+        )
+        self.assertTrue(bool(first.suggestion.content_hash))
+        # New DCS run with different finding detail → content_hash mismatch.
+        newer = DataRun.objects.create(
+            tenant=self.tenant,
+            name=DCS_SCORE_DATA_RUN_NAME,
+            status=DataRun.Status.SUCCEEDED,
+            metadata={
+                "kind": DCS_SCORE_KIND,
+                "company_id": str(self.company.id),
+                "check_results": [
+                    {
+                        "check_id": "LE-04",
+                        "status": "FAIL",
+                        "severity": "high",
+                        "message": "Duplicate PURCHASE rate=91.00% clusters=22.",
+                    }
+                ],
+            },
+        )
+        calls_before = AiCall.objects.count()
+        regenerated = get_or_create_fix_suggestion(
+            company=self.company,
+            check_id="LE-04",
+            dcs_run_id=newer.id,
+            provider=MockAiProvider(),
+        )
+        self.assertFalse(regenerated.cached)
+        self.assertGreater(AiCall.objects.count(), calls_before)
+        self.assertNotEqual(
+            regenerated.suggestion.content_hash,
+            first.suggestion.content_hash,
+        )
+
+    def test_force_refresh_calls_provider_again(self):
+        first = get_or_create_fix_suggestion(
+            company=self.company,
+            check_id="LE-04",
+            provider=MockAiProvider(),
+        )
+        calls_before = AiCall.objects.count()
+        refreshed = get_or_create_fix_suggestion(
+            company=self.company,
+            check_id="LE-04",
+            provider=MockAiProvider(),
+            force_refresh=True,
+        )
+        self.assertFalse(refreshed.cached)
+        self.assertFalse(refreshed.stale)
+        self.assertEqual(refreshed.suggestion.check_id, first.suggestion.check_id)
+        self.assertGreater(AiCall.objects.count(), calls_before)
 
     def test_concurrent_upsert_returns_existing_suggestion(self):
         first = get_or_create_fix_suggestion(
@@ -603,11 +855,24 @@ class FixSuggestionApiTests(TestCase):
         self.assertEqual(first.data["check_id"], "LE-04")
         self.assertIn("headline", first.data["payload"])
         self.assertIn("suggestions", first.data["payload"])
+        self.assertIn("stale", first.data)
 
         second = self.client.post(url, {"check_id": "LE-04"}, format="json")
         self.assertEqual(second.status_code, 200)
         self.assertTrue(second.data["cached"])
         self.assertEqual(second.data["suggestion_id"], first.data["suggestion_id"])
+
+    def test_post_force_refresh_bypasses_soft_cache(self):
+        url = "/api/v1/ai/suggestions/fix/"
+        first = self.client.post(url, {"check_id": "LE-04"}, format="json")
+        self.assertEqual(first.status_code, 200)
+        refreshed = self.client.post(
+            url,
+            {"check_id": "LE-04", "force_refresh": True},
+            format="json",
+        )
+        self.assertEqual(refreshed.status_code, 200)
+        self.assertFalse(refreshed.data["cached"])
 
     def test_post_unknown_check_404(self):
         response = self.client.post(

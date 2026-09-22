@@ -97,6 +97,27 @@ class MistralProviderTests(SimpleTestCase):
             )
         self.assertEqual(ctx.exception.code, "provider_error")
 
+    def test_http_429_maps_to_rate_limited(self):
+        fake = FakeMistralClient()
+
+        def boom(**kwargs):
+            exc = RuntimeError("rate limited")
+            exc.status_code = 429  # type: ignore[attr-defined]
+            raise exc
+
+        fake.chat = SimpleNamespace(complete=boom)
+        provider = MistralAiProvider(api_key="test-key", client=fake)
+        with self.assertRaises(AiProviderError) as ctx:
+            provider.complete_json(
+                system_prompt="s",
+                user_prompt="u",
+                context={"check_id": "LE-04"},
+                model=DEFAULT_MODEL_ID,
+                temperature=0.3,
+                timeout_seconds=5,
+            )
+        self.assertEqual(ctx.exception.code, "rate_limited")
+
 
 @override_settings(AI_PROVIDER="mistral", MISTRAL_API_KEY="")
 class ProviderFactoryTests(SimpleTestCase):

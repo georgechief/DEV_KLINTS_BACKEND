@@ -55,6 +55,21 @@ class WritebackPossibleSheetTests(TestCase):
         self.assertEqual(shop["write_possible_today"], "yes")
         self.assertEqual(shop["updates_existing"], "yes")
 
+        sp01 = by_check["SP-01"][0]
+        self.assertEqual(sp01["write_possible_today"], "disabled")
+        self.assertFalse(sp01["registry_enabled"])
+
+        le01 = by_check["LE-01"][0]
+        self.assertEqual(le01["write_possible_today"], "yes")
+        self.assertTrue(le01["registry_enabled"])
+        self.assertEqual(le01["rollback_possible_today"], "limited")
+
+        le09 = by_check["LE-09"][0]
+        self.assertEqual(le09["write_possible_today"], "yes")
+        self.assertTrue(le09["registry_enabled"])
+        self.assertEqual(le09["rollback_possible_today"], "limited")
+        self.assertEqual(le09["op_kind"], "event_ingest")
+
     def test_honest_no_and_disabled_rows(self):
         _source, rows = load_possible_sheet()
         by_check = {row["check_id"]: row for row in rows}

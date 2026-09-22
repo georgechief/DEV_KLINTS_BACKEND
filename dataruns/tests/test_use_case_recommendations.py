@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from django.conf import settings
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from rest_framework.test import APIRequestFactory, force_authenticate
 
 from dataruns.architecture.constants import ARCHITECTURE_ASSESSMENT_KIND
@@ -150,6 +150,7 @@ class UseCaseRecommendationEvalTests(TestCase):
         row = evaluate_pilot(self.pilot, ctx)
         self.assertEqual(row["status"], STATUS_BLOCKED_DCS)
 
+    @override_settings(REQUIRE_ARCHITECTURE_PILOT_GATES=True)
     def test_uc02_blocked_mode_when_incomplete(self):
         self._dcs(score=80, checks=self._uc02_hard_checks())
         self._supplemental_pass()
@@ -161,6 +162,19 @@ class UseCaseRecommendationEvalTests(TestCase):
             any(b.get("href") == "/lifecycle" for b in row["blockers"])
         )
 
+    @override_settings(REQUIRE_ARCHITECTURE_PILOT_GATES=False)
+    def test_uc02_ready_when_architecture_gates_bypassed(self):
+        """Demo flag: False skips AF INCOMPLETE / MCP gate for Studio."""
+        self._dcs(score=80, checks=self._uc02_hard_checks())
+        self._supplemental_pass()
+        self._af(mode=ArchitectureAssessment.Mode.INCOMPLETE)
+        ctx = resolve_recommendation_context(company=self.company)
+        row = evaluate_pilot(self.pilot, ctx)
+        self.assertIn(row["status"], (STATUS_READY, STATUS_READY_PROVISIONAL))
+        self.assertFalse(row["gates"]["architecture_gates_required"])
+        self.assertTrue(row["execution"]["build_available"])
+
+    @override_settings(REQUIRE_ARCHITECTURE_PILOT_GATES=True)
     def test_uc02_blocked_mode_when_no_af(self):
         self._dcs(score=80, checks=self._uc02_hard_checks())
         self._supplemental_pass()
@@ -168,6 +182,7 @@ class UseCaseRecommendationEvalTests(TestCase):
         row = evaluate_pilot(self.pilot, ctx)
         self.assertEqual(row["status"], STATUS_BLOCKED_MODE)
 
+    @override_settings(REQUIRE_PILOT_GATING_CHECKS=True)
     def test_uc02_blocked_checks_when_gate_fails(self):
         self._dcs(score=80, checks=self._uc02_hard_checks())
         self._supplemental_pass(
@@ -181,9 +196,24 @@ class UseCaseRecommendationEvalTests(TestCase):
         row = evaluate_pilot(self.pilot, ctx)
         self.assertEqual(row["status"], STATUS_BLOCKED_CHECKS)
         self.assertTrue(
+            any(b.get("check_id") == "CC-06" for b in row["blockers"])
+        )
+
+    @override_settings(REQUIRE_PILOT_GATING_CHECKS=False)
+    def test_uc02_ready_when_gating_checks_bypassed(self):
+        """Demo flag: False skips FAIL gating checks for Studio; DCS rows stay FAIL."""
+        self._dcs(score=80, checks=[{"check_id": "CC-03", "status": "FAIL"}])
+        self._supplemental_pass()
+        self._af(mode=ArchitectureAssessment.Mode.AUGMENT)
+        ctx = resolve_recommendation_context(company=self.company)
+        row = evaluate_pilot(self.pilot, ctx)
+        self.assertIn(row["status"], (STATUS_READY, STATUS_READY_PROVISIONAL))
+        self.assertFalse(row["gates"]["gating_checks_required"])
+        self.assertTrue(row["execution"]["build_available"])
+        self.assertTrue(
             any(
-                b.get("href") == "/data-consistency?issue=CC-06"
-                for b in row["blockers"]
+                r["check_id"] == "CC-03" and r["result"] == "FAIL"
+                for r in row["check_results"]
             )
         )
 
@@ -233,6 +263,7 @@ class UseCaseRecommendationEvalTests(TestCase):
         self.assertEqual(row["supplemental_status"].get("CC-06"), "not_evaluated")
         self.assertEqual(row["supplemental_status"].get("CI-08"), "not_evaluated")
 
+    @override_settings(REQUIRE_PILOT_GATING_CHECKS=True)
     def test_uc02_blocked_when_42_scoped_cc03_missing(self):
         self._dcs(score=80, checks=[])
         self._supplemental_pass()
@@ -244,6 +275,7 @@ class UseCaseRecommendationEvalTests(TestCase):
             any(b.get("check_id") == "CC-03" for b in row["blockers"])
         )
 
+    @override_settings(REQUIRE_PILOT_GATING_CHECKS=True)
     def test_uc02_warn_treated_as_blocked_checks(self):
         self._dcs(score=80, checks=self._uc02_hard_checks())
         self._supplemental_pass(

@@ -18,6 +18,15 @@ env = environ.Env(
     CSRF_TRUSTED_ORIGINS=(list, []),
     CELERY_TASK_ALWAYS_EAGER=(bool, False),
     WRITEBACKS_ENABLED=(bool, False),
+    # When False, pilot Studio skips Architecture mode gate (INCOMPLETE / MCP gaps).
+    # Demo-only: does not change AF itself or DCS check results. Default True = enforce.
+    REQUIRE_ARCHITECTURE_PILOT_GATES=(bool, True),
+    # When False, pilot Studio skips failing DCS gating checks (e.g. PT-01/PT-04).
+    # Demo-only: DCS score tiles stay FAIL; Generate becomes available. Default True.
+    REQUIRE_PILOT_GATING_CHECKS=(bool, True),
+    # When False, Handoff UI/stage skips QA PASS gate (PT-04 can stay FAIL for Fix story).
+    # Demo-only: DCS/QA truth unchanged on tiles. Default True = enforce.
+    REQUIRE_HANDOFF_QA_PASS=(bool, True),
     WRITEBACK_CHECK_ALLOWLIST=(list, []),
     WRITEBACK_SANDBOX_MAX_ROWS=(int, 10),
     WRITEBACK_DEFAULT_BATCH_SIZE=(int, 25),
@@ -233,7 +242,10 @@ SHOPIFY_API_KEY = env("SHOPIFY_API_KEY", default="")
 SHOPIFY_API_SECRET = env("SHOPIFY_API_SECRET", default="")
 SHOPIFY_SCOPES = env(
     "SHOPIFY_SCOPES",
-    default="read_orders,read_customers",
+    default=(
+        "read_customers,write_customers,read_orders,read_products,"
+        "read_inventory,read_locations,read_store_credit_account_transactions"
+    ),
 )
 SHOPIFY_API_VERSION = env("SHOPIFY_API_VERSION", default="2026-01")
 SHOPIFY_OAUTH_REDIRECT_URI = env(
@@ -270,6 +282,12 @@ MANAGO_API_BASE_URL = env(
 
 # Writeback adapter foundation (PRD-WB-01) — prod execute off by default.
 WRITEBACKS_ENABLED = env("WRITEBACKS_ENABLED")
+# Pilot Studio: Architecture AUGMENT/… gate. False = demo bypass (skip MCP/AF Incomplete).
+REQUIRE_ARCHITECTURE_PILOT_GATES = env("REQUIRE_ARCHITECTURE_PILOT_GATES")
+# Pilot Studio: DCS gating checks. False = demo bypass (PT-01/PT-04 etc. can stay FAIL).
+REQUIRE_PILOT_GATING_CHECKS = env("REQUIRE_PILOT_GATING_CHECKS")
+# Handoff: QA PASS gate. False = demo bypass (open Handoff while QA/PT-04 still FAIL).
+REQUIRE_HANDOFF_QA_PASS = env("REQUIRE_HANDOFF_QA_PASS")
 WRITEBACK_CHECK_ALLOWLIST = env("WRITEBACK_CHECK_ALLOWLIST")
 WRITEBACK_SANDBOX_MAX_ROWS = env("WRITEBACK_SANDBOX_MAX_ROWS")
 WRITEBACK_DEFAULT_BATCH_SIZE = env("WRITEBACK_DEFAULT_BATCH_SIZE")

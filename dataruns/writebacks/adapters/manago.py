@@ -108,6 +108,28 @@ class ManagoWriteAdapter:
         snapshot = intent.rollback_snapshot or {}
 
         if intent.op_kind == "detail_set":
+            rename = (intent.rollback_snapshot or {}).get("rename") or (payload.get("_rename") or {})
+            if isinstance(rename, dict) and rename.get("op") == "detail":
+                from_key = str(rename.get("from") or "")
+                to_key = str(rename.get("to") or "")
+                prior_from = rename.get("prior_from_value")
+                prior_to = rename.get("prior_to_value")
+                email = str(payload.get("email") or "").strip()
+                contact_id = str(payload.get("contactId") or "").strip()
+                properties: dict[str, Any] = {}
+                if from_key:
+                    properties[from_key] = "" if prior_from is None else prior_from
+                if to_key:
+                    properties[to_key] = "" if prior_to is None else prior_to
+                contact = {
+                    "email": email or None,
+                    "contactId": contact_id or None,
+                    "properties": properties,
+                }
+                contact = {k: v for k, v in contact.items() if v is not None}
+                response = upsert_contacts(ctx, [contact])
+                return {"ok": True, "reverse_rename": rename, "response": _safe_response(response)}
+
             detail_key = next(iter((payload.get("properties") or {}).keys()), None)
             if not detail_key:
                 raise ManagoClientError("rollback detail_set missing detail key")
@@ -127,6 +149,18 @@ class ManagoWriteAdapter:
             return {"ok": True, "response": _safe_response(response)}
 
         if intent.op_kind == "tag_add":
+            rename = (intent.rollback_snapshot or {}).get("rename") or (payload.get("_rename") or {})
+            if isinstance(rename, dict) and rename.get("op") == "tag":
+                from_tag = str(rename.get("from") or "")
+                to_tag = str(rename.get("to") or payload.get("tag") or "")
+                email = str(payload.get("email") or "") or None
+                contact_id = str(payload.get("contactId") or "") or None
+                if to_tag and not rename.get("prior_to_present"):
+                    remove_contact_tag(ctx, email=email, contact_id=contact_id, tag=to_tag)
+                if from_tag and rename.get("prior_from_present"):
+                    add_contact_tag(ctx, email=email, contact_id=contact_id, tag=from_tag)
+                return {"ok": True, "reverse_rename": rename}
+
             tag = str(payload.get("tag") or "")
             if snapshot.get("present"):
                 return {"ok": True, "skipped": "tag_already_present"}
@@ -197,10 +231,21 @@ class ManagoWriteAdapter:
                 contact_id=str(payload.get("contactId") or "") or None,
                 tag=str(payload.get("tag") or ""),
             )
+            remove_tag = str(payload.get("_remove_tag") or "").strip()
+            removed = None
+            if remove_tag and remove_tag != str(payload.get("tag") or ""):
+                removed = remove_contact_tag(
+                    ctx,
+                    email=str(payload.get("email") or "") or None,
+                    contact_id=str(payload.get("contactId") or "") or None,
+                    tag=remove_tag,
+                )
             return {
                 "ok": True,
                 "idempotency_key": idempotency_key,
                 "response": _safe_response(response),
+                "removed_tag": remove_tag or None,
+                "remove_response": _safe_response(removed) if isinstance(removed, dict) else None,
             }
         if intent.op_kind == "event_ingest":
             event = {

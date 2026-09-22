@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0.0",
+  "check_id": "PT-04",
+  "template_id": "T6",
+  "title": "Governed net LTV detail (klints_net_ltv)",
+  "enabled": true,
+  "approval_tier": "batch",
+  "requires_consent_namespace_clean": true,
+  "irreversible": false,
+  "operator_disclosure": "Prefer LE-09 PASS before stamping net LTV. Sets klints_net_ltv to Shopify net. After Approve, re-run DCS — PT-04 PASSes when stamped net matches Shopify net on overstated contacts (repeat Approve if batch truncated).",
+  "rollback": {
+    "strategy": "revert_detail"
+  },
+  "operations": [
+    {
+      "operation_id": "manago.detail_set.klints_net_ltv",
+      "op_kind": "detail_set",
+      "target": "manago",
+      "namespace": "klints_",
+      "capability_id": "RESTV2.CONTACT.UPSERT",
+      "entity_type": "contact",
+      "from_evidence": {
+        "match": { "path": "side", "const": "net_overstatement" },
+        "entity_key": { "path": "write_entity_key" },
+        "fields": {
+          "detail_key": { "const": "klints_net_ltv" },
+          "detail_value": { "path": "shopify_net" },
+          "email": { "path": "person.email" },
+          "contact_id": { "path": "manago_contact_id" }
+        }
+      },
+      "guards": ["entity_key_required", "email_format", "klints_prefix"]
+    }
+  ]
+}

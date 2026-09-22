@@ -100,7 +100,17 @@ class MistralAiProvider(AiProvider):
         except AiProviderError:
             raise
         except Exception as exc:
-            logger.warning("mistral_complete_failed error=%s", type(exc).__name__)
+            status_code = _exc_status_code(exc)
+            logger.warning(
+                "mistral_complete_failed error=%s status=%s",
+                type(exc).__name__,
+                status_code,
+            )
+            if status_code == 429:
+                raise AiProviderError(
+                    "Mistral rate limit exceeded. Try again later or raise plan quota.",
+                    code="rate_limited",
+                ) from exc
             raise AiProviderError(
                 "Mistral provider unavailable.",
                 code="provider_error",
@@ -121,6 +131,23 @@ class MistralAiProvider(AiProvider):
             output_tokens=_usage_int(usage, "completion_tokens", "output_tokens"),
             raw={"mock": False},
         )
+
+
+def _exc_status_code(exc: BaseException) -> int | None:
+    """Best-effort HTTP status from mistralai SDKError / httpx-style errors."""
+    for attr in ("status_code", "status"):
+        value = getattr(exc, attr, None)
+        if isinstance(value, int):
+            return value
+    response = getattr(exc, "response", None)
+    if response is not None:
+        value = getattr(response, "status_code", None)
+        if isinstance(value, int):
+            return value
+    message = str(getattr(exc, "message", "") or exc)
+    if "Status 429" in message or "rate_limited" in message:
+        return 429
+    return None
 
 
 def _message_text(response: Any) -> str:

@@ -2,12 +2,12 @@
   "schema_version": "1.0.0",
   "check_id": "LE-01",
   "template_id": "T5",
-  "title": "Purchase event backfill (stub)",
-  "enabled": false,
+  "title": "Purchase event backfill",
+  "enabled": true,
   "approval_tier": "batch",
   "requires_consent_namespace_clean": false,
   "irreversible": true,
-  "operator_disclosure": "Bulk event backfill may not be reversible.",
+  "operator_disclosure": "Bulk PURCHASE event backfill may not be fully reversible. Rollback best-effort only.",
   "rollback": {
     "strategy": "tagged_backfill_delete"
   },
@@ -20,17 +20,16 @@
       "capability_id": "RESTV2.EVENT.INGEST",
       "entity_type": "event",
       "from_evidence": {
-        "match": { "path": "side", "const": "missing_purchase_event" },
+        "match": { "path": "side", "const": "shopify_only" },
         "entity_key": { "path": "order.id" },
         "fields": {
           "order_id": { "path": "order.id" },
           "email": { "path": "person.email" },
           "contact_id": { "path": "manago_contact_id" },
-          "value": { "path": "representative_value" }
+          "value": { "path": "amount_gross" }
         }
       },
-      "guards": ["entity_key_required"],
-      "mark_klints_backfill": true
+      "guards": ["entity_key_required"]
     }
   ]
 }

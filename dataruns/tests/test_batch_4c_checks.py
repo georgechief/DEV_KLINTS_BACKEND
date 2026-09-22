@@ -204,7 +204,7 @@ class EvaluateSp07Tests(SimpleTestCase):
                 _base_snap(
                     segment={
                         "klints_collision_count": 1,
-                        "klints_detail_collisions": ["klints_net_ltv"],
+                        "klints_detail_collisions": ["klints_foreign_example"],
                         "klints_tag_collisions": [],
                         "raw_enrichment": {
                             "manago_contacts_from_raw": True,
@@ -299,7 +299,7 @@ class CatalogJoinUnitTests(SimpleTestCase):
     def test_resolve_event_products_against_shopify_variants(self):
         company = SimpleNamespace(id="c1")
 
-        def fake_raw(*, company, platform):
+        def fake_raw(*, company, platform, source_run_id=None, snapshot_id=None):
             if platform == "shopify":
                 return {
                     "products": [
@@ -326,7 +326,8 @@ class CatalogJoinUnitTests(SimpleTestCase):
             }
 
         with patch(
-            "dataruns.dcs.catalog_join._latest_connector_raw", side_effect=fake_raw
+            "dataruns.dcs.catalog_join._connector_raw_for_platform",
+            side_effect=fake_raw,
         ):
             payload = build_catalog_snapshot(company=company)
         cat = payload["catalog"]
@@ -335,10 +336,59 @@ class CatalogJoinUnitTests(SimpleTestCase):
         self.assertEqual(cat["resolve_target"], "shopify_variants")
         self.assertTrue(cat["shopify_products_from_api"])
 
+    def test_resolve_includes_line_item_variants_missing_from_active_catalog(self):
+        """Historical purchase IDs on orders still clear PT-01 when products API dropped them."""
+        company = SimpleNamespace(id="c1")
+
+        def fake_raw(*, company, platform, source_run_id=None, snapshot_id=None):
+            if platform == "shopify":
+                return {
+                    "products": [
+                        {
+                            "id": 1,
+                            "title": "A",
+                            "status": "active",
+                            "variants": [{"id": 100, "sku": "A", "title": "Default"}],
+                        }
+                    ],
+                    "orders": [
+                        {
+                            "id": 9,
+                            "line_items": [
+                                {"variant_id": 100, "product_id": 1, "title": "A"},
+                                {"variant_id": 999, "product_id": 2, "title": "Old"},
+                            ],
+                        }
+                    ],
+                }
+            return {
+                "transactions": [
+                    {
+                        "contactExtEventType": "PURCHASE",
+                        "products": "100,999",
+                        "eventId": "e1",
+                    }
+                ],
+                "events": [],
+                "products": [],
+                "product_catalogs": [],
+            }
+
+        with patch(
+            "dataruns.dcs.catalog_join._connector_raw_for_platform",
+            side_effect=fake_raw,
+        ):
+            payload = build_catalog_snapshot(company=company)
+        cat = payload["catalog"]
+        self.assertEqual(cat["dangling_count"], 0)
+        self.assertEqual(cat["resolved_count"], 2)
+        self.assertEqual(cat["shopify_variants_from_line_items"], 1)
+        self.assertEqual(cat["shopify_active_product_count"], 1)
+
     def test_pt03_with_manago_xml_products(self):
         company = SimpleNamespace(id="c1")
 
-        def fake_raw(*, company, platform):
+        def fake_raw(*, company, platform, source_run_id=None, snapshot_id=None):
             if platform == "shopify":
                 return {
                     "products": [
@@ -358,7 +408,8 @@ class CatalogJoinUnitTests(SimpleTestCase):
             }
 
         with patch(
-            "dataruns.dcs.catalog_join._latest_connector_raw", side_effect=fake_raw
+            "dataruns.dcs.catalog_join._connector_raw_for_platform",
+            side_effect=fake_raw,
         ):
             payload = build_catalog_snapshot(company=company)
         cat = payload["catalog"]
@@ -371,13 +422,13 @@ class SegmentJoinUnitTests(SimpleTestCase):
     def test_detect_klints_collision_and_mixed_formats(self):
         company = SimpleNamespace(id="c1")
 
-        def fake_raw(*, company, platform):
+        def fake_raw(*, company, platform, source_run_id=None, snapshot_id=None):
             return {
                 "contacts": [
                     {
                         "properties": [
                             {"name": "ORDER_AVG", "value": "10"},
-                            {"name": "klints_net_ltv", "value": "1"},
+                            {"name": "klints_foreign_example", "value": "1"},
                             {"name": "orderAvg", "value": "11"},
                         ],
                         "contactTags": [{"name": "vip"}],
@@ -390,11 +441,12 @@ class SegmentJoinUnitTests(SimpleTestCase):
             }
 
         with patch(
-            "dataruns.dcs.segment_join._latest_connector_raw", side_effect=fake_raw
+            "dataruns.dcs.segment_join._connector_raw_for_platform",
+            side_effect=fake_raw,
         ):
             payload = build_segment_snapshot(company=company)
         seg = payload["segment"]
         self.assertEqual(seg["inconsistent_keys"], 1)
         self.assertGreaterEqual(seg["semantic_duplicate_groups"], 1)
         self.assertEqual(seg["klints_collision_count"], 1)
-        self.assertIn("klints_net_ltv", seg["klints_detail_collisions"])
+        self.assertIn("klints_foreign_example", seg["klints_detail_collisions"])

@@ -84,6 +84,23 @@ def _ai_exception_response(exc) -> Response:
     raise exc
 
 
+def _parse_optional_bool(body: dict, key: str) -> tuple[bool, Response | None]:
+    raw = body.get(key)
+    if raw is None or raw == "":
+        return False, None
+    if isinstance(raw, bool):
+        return raw, None
+    if isinstance(raw, (int, float)) and raw in (0, 1):
+        return bool(raw), None
+    if isinstance(raw, str):
+        token = raw.strip().lower()
+        if token in {"true", "1", "yes"}:
+            return True, None
+        if token in {"false", "0", "no"}:
+            return False, None
+    return False, Response({"detail": f"{key} must be a boolean."}, status=400)
+
+
 class FixSuggestionView(APIView):
     """POST /api/v1/ai/suggestions/fix/ — get or create Fix AI suggestion."""
 
@@ -101,12 +118,16 @@ class FixSuggestionView(APIView):
         dcs_run_id, error = _parse_optional_int(body, "dcs_run_id")
         if error is not None:
             return error
+        force_refresh, error = _parse_optional_bool(body, "force_refresh")
+        if error is not None:
+            return error
 
         try:
             result = get_or_create_fix_suggestion(
                 company=company,
                 check_id=check_id,
                 dcs_run_id=dcs_run_id,
+                force_refresh=force_refresh,
             )
         except (
             AiNotFoundError,

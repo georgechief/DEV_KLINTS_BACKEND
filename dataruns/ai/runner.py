@@ -24,6 +24,7 @@ from dataruns.ai.privacy_gate import ensure_safe_context
 from dataruns.ai.prompts import system_prompt_v1
 from dataruns.ai.providers import get_ai_provider
 from dataruns.ai.providers.base import AiProvider
+from dataruns.ai.schemas import parse_task_output
 from dataruns.models import AiCall, AiSuggestion, DataRun
 from tenants.models import Company
 
@@ -38,6 +39,8 @@ class AiTaskResult:
     model: str
     prompt_version: str
     provider: str
+    # True when served from legacy soft cache (empty content_hash).
+    stale: bool = False
 
 
 def ai_enabled() -> bool:
@@ -93,6 +96,7 @@ def run_gated_ai_task(
     data_run: DataRun | None = None,
     provider: AiProvider | None = None,
     skip_cache: bool = False,
+    content_hash: str | None = None,
 ) -> AiTaskResult:
     """Allowlist context already projected → PrivacyGate → cache → provider → persist."""
     if not ai_enabled():
@@ -133,15 +137,28 @@ def run_gated_ai_task(
             fingerprint=fingerprint,
         )
         if cached is not None:
-            cached_call = cached.ai_call if cached.ai_call_id else None
-            return AiTaskResult(
-                suggestion=cached,
-                fingerprint=fingerprint,
-                cached=True,
-                model=cached_call.model if cached_call else model,
-                prompt_version=prompt_version,
-                provider=cached_call.provider if cached_call else provider_label(provider),
-            )
+            payload = cached.payload_json if isinstance(cached.payload_json, dict) else None
+            try:
+                if not payload:
+                    raise ValueError("empty payload")
+                parse_task_output(task_type, payload)
+            except Exception:
+                logger.info(
+                    "ai_fingerprint_cache_skip_invalid task_type=%s check_id=%s suggestion_id=%s",
+                    task_type,
+                    normalized_check_id,
+                    cached.id,
+                )
+            else:
+                cached_call = cached.ai_call if cached.ai_call_id else None
+                return AiTaskResult(
+                    suggestion=cached,
+                    fingerprint=fingerprint,
+                    cached=True,
+                    model=cached_call.model if cached_call else model,
+                    prompt_version=prompt_version,
+                    provider=cached_call.provider if cached_call else provider_label(provider),
+                )
 
     active_provider = provider
     if active_provider is None:
@@ -237,6 +254,7 @@ def run_gated_ai_task(
                 payload=payload,
                 check_id=normalized_check_id,
                 dcs_data_run=data_run,
+                content_hash=content_hash,
             )
     except IntegrityError:
         raced = get_cached_suggestion(
@@ -268,6 +286,27 @@ def run_gated_ai_task(
     )
 
 
+def result_from_saved_suggestion(
+    *,
+    suggestion: AiSuggestion,
+    prompt_version: str,
+    stale: bool = False,
+    model: str | None = None,
+    provider: str | None = None,
+) -> AiTaskResult:
+    """Build a cached result from a DB row (soft or exact fingerprint hit)."""
+    call = suggestion.ai_call if suggestion.ai_call_id else None
+    return AiTaskResult(
+        suggestion=suggestion,
+        fingerprint=str(suggestion.fingerprint or ""),
+        cached=True,
+        model=(call.model if call else None) or model or model_id(),
+        prompt_version=prompt_version,
+        provider=(call.provider if call else None) or provider or provider_label(None),
+        stale=stale,
+    )
+
+
 def serialize_ai_result(result: AiTaskResult) -> dict[str, Any]:
     suggestion = result.suggestion
     return {
@@ -275,6 +314,7 @@ def serialize_ai_result(result: AiTaskResult) -> dict[str, Any]:
         "check_id": suggestion.check_id,
         "fingerprint": f"sha256:{result.fingerprint}",
         "cached": result.cached,
+        "stale": bool(result.stale),
         "model": result.model,
         "prompt_version": result.prompt_version,
         "payload": suggestion.payload_json,
