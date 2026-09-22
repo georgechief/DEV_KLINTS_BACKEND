@@ -1,14 +1,13 @@
 from rest_framework import serializers
 
 from dataruns.models import DataRun
-from tenants.models import Tenant
 
 
 class DataRunSerializer(serializers.ModelSerializer):
     tenant_slug = serializers.SlugRelatedField(
         source="tenant",
         slug_field="slug",
-        queryset=Tenant.objects.all(),
+        read_only=True,
     )
 
     class Meta:
@@ -24,4 +23,4 @@ class DataRunSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         )
-        read_only_fields = ("id", "created_at", "updated_at")
+        read_only_fields = ("id", "tenant_slug", "created_at", "updated_at")

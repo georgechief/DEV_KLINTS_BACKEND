@@ -757,7 +757,7 @@ class WritebackIrreversibleDisclosureTests(TestCase):
         self.assertEqual(response.status_code, 200)
         row = next(r for r in response.data["mappings"] if r["check_id"] == "LE-01")
         self.assertTrue(row["irreversible"])
-        self.assertIn("Bulk event backfill", row["operator_disclosure"])
+        self.assertIn("PURCHASE event backfill", row["operator_disclosure"])
 
     @override_settings(WRITEBACKS_ENABLED=True)
     def test_wb_shop_preview_stores_operator_disclosure_metadata(self):

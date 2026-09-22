@@ -91,6 +91,8 @@ def _validate_stage_inputs(
     package: WorkflowBuildPackage,
     qa_result: WorkflowQaResult | None,
 ) -> None:
+    from dataruns.use_cases.recommend import handoff_qa_pass_required
+
     if qa_result is None:
         raise HandoffStageError(
             code="qa_missing",
@@ -112,7 +114,10 @@ def _validate_stage_inputs(
             status=409,
         )
 
-    if str(qa_result.status).strip().upper() != QA_STATUS_PASS:
+    # Demo: REQUIRE_HANDOFF_QA_PASS=False allows stage while QA FAIL (Fix story).
+    if handoff_qa_pass_required() and (
+        str(qa_result.status).strip().upper() != QA_STATUS_PASS
+    ):
         raise HandoffStageError(
             code="qa_not_pass",
             detail="Clear QA (≥80, all hard tests) before staging handoff.",

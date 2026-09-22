@@ -102,6 +102,33 @@ def get_cached_suggestion(
     )
 
 
+def get_latest_suggestion_for_check(
+    *,
+    company: Company,
+    task_type: str,
+    check_id: str,
+    prefer_dcs_run_id: int | str | None = None,
+) -> AiSuggestion | None:
+    """Latest saved suggestion for a check — prefer current DCS run when set."""
+    normalized = str(check_id or "").strip().upper()
+    if not normalized:
+        return None
+    base = AiSuggestion.objects.filter(
+        company=company,
+        task_type=task_type,
+        check_id=normalized,
+    ).select_related("ai_call", "dcs_data_run")
+    if prefer_dcs_run_id is not None and str(prefer_dcs_run_id).strip() != "":
+        same_run = (
+            base.filter(dcs_data_run_id=prefer_dcs_run_id)
+            .order_by("-updated_at")
+            .first()
+        )
+        if same_run is not None:
+            return same_run
+    return base.order_by("-updated_at").first()
+
+
 @transaction.atomic
 def upsert_ai_suggestion(
     *,
@@ -112,6 +139,7 @@ def upsert_ai_suggestion(
     payload: dict[str, Any],
     check_id: str | None = None,
     dcs_data_run: DataRun | None = None,
+    content_hash: str | None = None,
 ) -> AiSuggestion:
     """
     Upsert customer-facing artifact on success.
@@ -122,17 +150,23 @@ def upsert_ai_suggestion(
     validated = parse_task_output(task_type, payload)
     output = validated.model_dump(mode="json")
     headline = extract_headline(task_type, output)
+    normalized_check = str(check_id or output.get("check_id") or "").strip().upper()
+
+    defaults: dict[str, Any] = {
+        "ai_call": ai_call,
+        "check_id": normalized_check,
+        "dcs_data_run": dcs_data_run,
+        "payload_json": output,
+        "headline": headline,
+    }
+    # Only write content_hash when provided — avoid wiping on unrelated upserts.
+    if content_hash is not None:
+        defaults["content_hash"] = str(content_hash or "").strip().lower()
 
     row, _created = AiSuggestion.objects.update_or_create(
         company=company,
         task_type=task_type,
         fingerprint=fingerprint,
-        defaults={
-            "ai_call": ai_call,
-            "check_id": check_id,
-            "dcs_data_run": dcs_data_run,
-            "payload_json": output,
-            "headline": headline,
-        },
+        defaults=defaults,
     )
     return row

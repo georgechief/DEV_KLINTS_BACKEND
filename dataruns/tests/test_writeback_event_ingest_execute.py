@@ -8,6 +8,8 @@ from unittest.mock import patch
 
 from django.test import TestCase, override_settings
 
+from dataruns.dcs.enqueue import DCS_SCORE_DATA_RUN_NAME, DCS_SCORE_KIND
+from dataruns.models import DataRun, Run
 from dataruns.tests.writeback_helpers import (
     enable_company_sandbox,
     issue_approved_writeback_token,
@@ -59,6 +61,21 @@ class WritebackEventIngestExecuteTests(TestCase):
             ),
             status="connected",
         )
+        domain_run = Run.objects.create(
+            company=self.company,
+            run_type=Run.RunType.FULL,
+            status=Run.Status.COMPLETED,
+        )
+        DataRun.objects.create(
+            tenant=self.company.tenant,
+            name=DCS_SCORE_DATA_RUN_NAME,
+            status=DataRun.Status.SUCCEEDED,
+            metadata={
+                "kind": DCS_SCORE_KIND,
+                "company_id": str(self.company.id),
+                "domain_run_id": str(domain_run.id),
+            },
+        )
 
     def _settings_with_sandbox(self):
         return sandbox_company(self.company)
@@ -72,11 +89,11 @@ class WritebackEventIngestExecuteTests(TestCase):
             mapping=mapping,
             evidence_rows=[
                 {
-                    "side": "missing_purchase_event",
+                    "side": "shopify_only",
                     "order.id": "order-900",
                     "person.email": "buyer@example.com",
                     "manago_contact_id": "mc-55",
-                    "representative_value": 42.5,
+                    "amount_gross": 42.5,
                 }
             ],
         )

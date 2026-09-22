@@ -11,7 +11,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from django.conf import settings
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.test import APIClient
@@ -246,6 +246,7 @@ class HandoffPackageStep6BeMatrixTests(TestCase):
         self.assertEqual(first.data["handoff_id"], second.data["handoff_id"])
         self.assertEqual(HandoffPackage.objects.filter(package=package).count(), 1)
 
+    @override_settings(REQUIRE_HANDOFF_QA_PASS=True)
     def test_s8_qa_fail_post_handoff_409(self):
         """§8: QA FAIL → POST handoff → 409."""
         package = self._persist_package()

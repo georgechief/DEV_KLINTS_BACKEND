@@ -30,8 +30,22 @@
     },
     "LE-01": {
       "file": "LE-01.event_backfill.v1.json",
-      "enabled": false,
+      "enabled": true,
       "template_id": "T5"
+    },
+    "SP-07": {
+      "file": "SP-07.namespace_clean.v1.json",
+      "enabled": true
+    },
+    "LE-09": {
+      "file": "LE-09.event_backfill.v1.json",
+      "enabled": true,
+      "template_id": "T5"
+    },
+    "PT-04": {
+      "file": "PT-04.net_ltv.v1.json",
+      "enabled": true,
+      "template_id": "T6"
     }
   }
 }

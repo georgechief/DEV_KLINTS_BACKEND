@@ -28,8 +28,8 @@ SHOPIFY_ADMIN_SCOPE_CAPABILITY_HANDLES: dict[str, frozenset[str]] = {
     "read_orders": frozenset({"read_orders", "write_orders"}),
     "read_products": frozenset({"read_products", "write_products"}),
     "read_inventory": frozenset({"read_inventory", "write_inventory"}),
+    "read_locations": frozenset({"read_locations", "write_locations"}),
 }
-_SHOPIFY_PAGE_LIMIT = 250
 
 RC_HINTS: dict[str, str] = {
     "AUTH_FAILED": "Reconnect the connector.",
@@ -193,12 +193,13 @@ def _partial_fetch_issues(
     raw: dict[str, Any],
     snapshot_data: dict[str, Any],
 ) -> list[dict[str, str]]:
-    """Detect PARTIAL_FETCH from snapshot notes or Shopify page-limit heuristic.
+    """Detect PARTIAL_FETCH from explicit snapshot notes only.
 
-    Import snapshots do not record pagination truncation metadata today (see
-    import_data._build_snapshot_data notes=[]). Without changing the import
-    pipeline, notes and the Shopify 250-item boundary heuristic are the only
-    signals available.
+    Shopify Admin fetch paginates until Link rel=next is exhausted
+    (``dataruns.connectors.shopify.client._fetch_paginated_resource``), so a
+    raw customer/order count that is a multiple of the page size (250) is a
+    valid complete window — not evidence of truncation. The old %250 heuristic
+    false-flagged live klints-dev demos as degraded after sample-data fills.
     """
     issues: list[dict[str, str]] = []
     notes = snapshot_data.get("notes")
@@ -216,34 +217,8 @@ def _partial_fetch_issues(
                     )
                 )
                 return issues
-
-    if platform == "shopify":
-        customers = raw.get("customers")
-        orders = raw.get("orders")
-        customer_count = len(customers) if isinstance(customers, list) else 0
-        order_count = len(orders) if isinstance(orders, list) else 0
-        if customer_count > 0 and customer_count % _SHOPIFY_PAGE_LIMIT == 0:
-            issues.append(
-                health_issue(
-                    code="PARTIAL_FETCH",
-                    severity="warn",
-                    message=(
-                        "Customer fetch reached Shopify pagination limit; "
-                        "additional pages may exist."
-                    ),
-                )
-            )
-        if order_count > 0 and order_count % _SHOPIFY_PAGE_LIMIT == 0:
-            issues.append(
-                health_issue(
-                    code="PARTIAL_FETCH",
-                    severity="warn",
-                    message=(
-                        "Order fetch reached Shopify pagination limit; "
-                        "additional pages may exist."
-                    ),
-                )
-            )
+    # platform/raw kept for call-site compatibility; unused after heuristic removal
+    _ = (platform, raw)
     return issues
 
 
@@ -542,6 +517,73 @@ def resolve_last_data_refresh_data_run(
     return max(present, key=_import_data_run_recency_key)
 
 
+def recompute_health_report_summary(
+    *,
+    data_run: DataRun,
+    health_report: dict[str, Any],
+) -> dict[str, Any]:
+    """Refresh postflight/summary from snapshot using current health rules."""
+    if data_run.status != DataRun.Status.SUCCEEDED:
+        return health_report
+
+    metadata = data_run.metadata or {}
+    platform = metadata.get("connector") or health_report.get("platform")
+    if not isinstance(platform, str) or not platform:
+        return health_report
+
+    snapshot_data = load_snapshot_data(metadata.get("snapshot_id"))
+    if not snapshot_data:
+        return health_report
+
+    counts = metadata.get("counts")
+    if not isinstance(counts, dict):
+        counts = {}
+
+    days = health_report.get("days")
+    if not isinstance(days, int):
+        days = 30
+
+    preflight_issues: list[dict[str, str]] = []
+    preflight = health_report.get("preflight")
+    if isinstance(preflight, dict):
+        raw_preflight = preflight.get("issues")
+        if isinstance(raw_preflight, list):
+            preflight_issues = [
+                issue for issue in raw_preflight if isinstance(issue, dict)
+            ]
+
+    postflight_issues = postflight_health(
+        platform=platform,
+        days=days,
+        result={"counts": counts},
+        snapshot_data=snapshot_data,
+    )
+    summary_status = compute_summary_status(
+        import_succeeded=True,
+        issues=preflight_issues + postflight_issues,
+    )
+    return {
+        **health_report,
+        "postflight": {"issues": with_rc_hints(postflight_issues)},
+        "summary_status": summary_status,
+        "blocking": summary_status == "error",
+    }
+
+
+def reconcile_connector_status_from_summary(
+    *,
+    connector: Connector,
+    summary_status: str,
+) -> None:
+    """Align Connector.status when display health rules change after deploy."""
+    if connector.status == "error":
+        return
+    expected = connector_status_from_summary(summary_status)
+    if connector.status != expected:
+        connector.status = expected
+        connector.save(update_fields=["status", "updated_at"])
+
+
 def build_last_data_refresh_payload(data_run: DataRun) -> dict[str, Any]:
     """Build last_data_refresh object for GET /api/v1/connectors/ (PRD-DCS-10 Slice F)."""
     payload = build_latest_bootstrap_payload(data_run)
@@ -560,6 +602,10 @@ def build_latest_bootstrap_payload(data_run: DataRun) -> dict[str, Any]:
     health_report = metadata.get("health_report")
     if not isinstance(health_report, dict):
         health_report = {}
+    health_report = recompute_health_report_summary(
+        data_run=data_run,
+        health_report=health_report,
+    )
 
     fetch = health_report.get("fetch")
     if not isinstance(fetch, dict):

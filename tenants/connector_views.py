@@ -21,10 +21,11 @@ from dataruns.connectors.base import (
 from dataruns.connectors.bootstrap_health import (
     build_last_data_refresh_payload,
     build_latest_bootstrap_payload,
+    reconcile_connector_status_from_summary,
     resolve_last_data_refresh_data_run,
 )
 from dataruns.audit import append_audit_event
-from dataruns.models import AuditLog
+from dataruns.models import AuditLog, DataRun
 from tenants import shopify
 from tenants.connector_types import (
     CONNECTOR_TYPE_ECOMMERCE,
@@ -125,7 +126,18 @@ def _latest_bootstrap_for_connector(
     data_run = find_latest_bootstrap_data_run(company=company, connector=connector)
     if data_run is None:
         return None
-    return build_latest_bootstrap_payload(data_run)
+    payload = build_latest_bootstrap_payload(data_run)
+    summary_status = payload.get("summary_status")
+    if (
+        data_run.status == DataRun.Status.SUCCEEDED
+        and isinstance(summary_status, str)
+        and summary_status
+    ):
+        reconcile_connector_status_from_summary(
+            connector=connector,
+            summary_status=summary_status,
+        )
+    return payload
 
 
 def _last_data_refresh_for_connector(
@@ -147,6 +159,17 @@ def _serialize_connector_list_item(
     company: Company,
     connector: Connector,
 ) -> dict:
+    # Recompute health / reconcile status before reading connector.status so the
+    # list payload does not return a stale degraded badge after PARTIAL_FETCH
+    # heuristics were retired (M3-DEMO-01).
+    latest_bootstrap = _latest_bootstrap_for_connector(
+        company=company,
+        connector=connector,
+    )
+    last_data_refresh = _last_data_refresh_for_connector(
+        company=company,
+        connector=connector,
+    )
     item = {
         "id": str(connector.id),
         "name": connector.name,
@@ -155,14 +178,8 @@ def _serialize_connector_list_item(
         "status": connector.status,
         "config": masked_config(connector.config),
         "created_at": connector.created_at,
-        "latest_bootstrap": _latest_bootstrap_for_connector(
-            company=company,
-            connector=connector,
-        ),
-        "last_data_refresh": _last_data_refresh_for_connector(
-            company=company,
-            connector=connector,
-        ),
+        "latest_bootstrap": latest_bootstrap,
+        "last_data_refresh": last_data_refresh,
     }
     if connector.name == PLATFORM_MANAGO:
         item["has_api_v3_key"] = has_api_v3_key_in_config(connector.config)

@@ -481,7 +481,7 @@ class ProductTruthUnitTests(SimpleTestCase):
 
         company = SimpleNamespace(id="c1")
 
-        def fake_raw(*, company, platform):
+        def fake_raw(*, company, platform, **_kwargs):
             if platform == "shopify":
                 return {
                     "customers": [{"id": 101, "email": "a@x.com"}],
@@ -527,7 +527,7 @@ class ProductTruthUnitTests(SimpleTestCase):
             }
 
         with patch(
-            "dataruns.dcs.product_truth._latest_connector_raw", side_effect=fake_raw
+            "dataruns.dcs.product_truth._connector_raw_for_platform", side_effect=fake_raw
         ):
             payload = build_product_truth_snapshot(company=company)
         truth = payload["product_truth"]
@@ -537,6 +537,8 @@ class ProductTruthUnitTests(SimpleTestCase):
         self.assertEqual(row["manago_purchase_value_deduped"], 100.0)
         self.assertTrue(row["refund_blind"])
         self.assertEqual(truth["contacts_over_delta"], 1)
+        self.assertFalse(row["governed_by_klints_net_ltv"])
+        self.assertEqual(truth.get("contacts_governed_by_klints_net_ltv"), 0)
 
     def test_dedupe_events_without_external_id(self):
         """Events missing externalId/transactionId must not inflate deduped value."""
@@ -545,7 +547,7 @@ class ProductTruthUnitTests(SimpleTestCase):
 
         company = SimpleNamespace(id="c1")
 
-        def fake_raw(*, company, platform):
+        def fake_raw(*, company, platform, **_kwargs):
             if platform == "shopify":
                 return {
                     "customers": [{"id": 101, "email": "a@x.com"}],
@@ -580,7 +582,7 @@ class ProductTruthUnitTests(SimpleTestCase):
             }
 
         with patch(
-            "dataruns.dcs.product_truth._latest_connector_raw", side_effect=fake_raw
+            "dataruns.dcs.product_truth._connector_raw_for_platform", side_effect=fake_raw
         ):
             payload = build_product_truth_snapshot(company=company)
         row = payload["product_truth_rows"][0]

@@ -26,6 +26,18 @@ _FIX_SUGGESTION_FINGERPRINT_KEYS = (
     "architecture_verdict",
 )
 
+# Soft-cache freshness for Fix — same finding across DCS runs should reuse DB.
+_FIX_CONTENT_HASH_KEYS = (
+    "check_id",
+    "status",
+    "severity",
+    "suggested_fix",
+    "fix_type",
+    "finding_summary",
+    "revenue_impact",
+    "currency",
+)
+
 
 def _pick_fingerprint_payload(
     allowlisted_context: dict[str, Any],
@@ -85,6 +97,23 @@ def compute_fingerprint(
             "context": payload,
         }
     )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def compute_fix_content_hash(allowlisted_context: dict[str, Any]) -> str:
+    """
+    Hash of finding-level fields only (no dcs_run_id).
+
+    Same check + same finding_summary → same hash across DCS runs.
+    """
+    body: dict[str, Any] = {}
+    for key in _FIX_CONTENT_HASH_KEYS:
+        if key not in allowlisted_context:
+            continue
+        value = allowlisted_context[key]
+        if value is not None and value != "":
+            body[key] = value
+    canonical = stable_json({"task_type": "fix_suggestion", "content": body})
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 

@@ -1,5 +1,13 @@
 # Releases & deploy (DEV_KLINTS_BACKEND)
 
+
+## Deposit 2026-09-22 — product `main` sync (code only; no tag deploy)
+
+- Source: `klints_backend` `main` @ `b116a01` (includes merged AI+#WB stack + M3-SEC-01).
+- Method: rsync deposit onto `deposit/product-main-2026-09-22` → PR → `main`.
+- Preserved client-only: `RELEASES.md`, `.github/workflows/deploy-on-tag.yml`, claim/security/Build Pack paths.
+- **Deploy:** not auto-deployed. Cut a new `v0.1.x` tag when ready to ship FRA.
+
 Staging deploy is **tag-driven**. Pushing or merging to `main` does **not** deploy.
 
 | Rule | Detail |

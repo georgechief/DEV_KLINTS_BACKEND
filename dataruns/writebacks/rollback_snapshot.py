@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from dataruns.writebacks.snapshot import (
     contact_detail_value,
     contact_has_tag,
@@ -20,18 +22,59 @@ def refresh_rollback_snapshot(company: Company, intent: WriteIntent) -> None:
 
     if intent.op_kind == "detail_set":
         props = payload.get("properties") if isinstance(payload.get("properties"), dict) else {}
-        detail_key = next(iter(props.keys()), "")
-        intent.rollback_snapshot = {
-            detail_key: contact_detail_value(contact, detail_key) if contact else None,
-        }
+        rename = payload.get("_rename") if isinstance(payload.get("_rename"), dict) else None
+        snapshot: dict[str, Any] = {}
+        for detail_key in props.keys():
+            if str(detail_key).startswith("_"):
+                continue
+            snapshot[str(detail_key)] = (
+                contact_detail_value(contact, str(detail_key)) if contact else None
+            )
+        if rename:
+            snapshot["rename"] = {
+                **rename,
+                "prior_from_value": (
+                    contact_detail_value(contact, str(rename.get("from") or ""))
+                    if contact
+                    else rename.get("prior_from_value")
+                ),
+                "prior_to_value": (
+                    contact_detail_value(contact, str(rename.get("to") or ""))
+                    if contact
+                    else rename.get("prior_to_value")
+                ),
+            }
+        intent.rollback_snapshot = snapshot
         return
 
     if intent.op_kind == "tag_add":
         tag = str(payload.get("tag") or "")
-        intent.rollback_snapshot = {
+        rename = payload.get("_rename") if isinstance(payload.get("_rename"), dict) else None
+        snapshot = {
             "tag": tag,
             "present": contact_has_tag(contact, tag) if contact else False,
         }
+        remove_tag = str(payload.get("_remove_tag") or "").strip()
+        if remove_tag:
+            snapshot["remove_tag"] = remove_tag
+            snapshot["remove_present"] = (
+                contact_has_tag(contact, remove_tag) if contact else False
+            )
+        if rename:
+            snapshot["rename"] = {
+                **rename,
+                "prior_from_present": (
+                    contact_has_tag(contact, str(rename.get("from") or ""))
+                    if contact
+                    else rename.get("prior_from_present")
+                ),
+                "prior_to_present": (
+                    contact_has_tag(contact, str(rename.get("to") or ""))
+                    if contact
+                    else rename.get("prior_to_present")
+                ),
+            }
+        intent.rollback_snapshot = snapshot
         return
 
     if intent.op_kind == "contact_upsert":

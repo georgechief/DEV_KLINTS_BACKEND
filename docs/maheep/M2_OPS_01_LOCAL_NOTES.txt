@@ -1,0 +1,36 @@
+M2-OPS-01 staging notes
+(PRD §6 handoff for E2E-01 — paste into E2E PR / Notion when needed)
+
+- Date / env: 2026-08-28 · local (localhost) + staging UI-only (https://klints-frontend.vercel.app → https://apis.klints.io); no SSH to droplet
+- Tenant: Local = Klints Dev Co · Staging UI = Lumera / demo Admin (as used in browser smoke)
+- Pilots count / UC-02: 16 / present (local verify_use_case_pilots PASS; staging DB not checked — no SSH)
+- Latest DCS run id: local ~30 (UI); staging = live score during browser pass
+- Writebacks toggled for smoke (Y/N); check used: Y (ON) · local CC-03 · staging allowlisted FAIL (CC-03/CI-01)
+- Fix smoke result (Approve / 409 / rollback): PASS — Written + re-Approve blocked (409 / gate locked); Activity deep-link OK; LE-04 blocked
+- DCS-09 re-smoke (post-merge BE #68 / FE #45): PASS — worklist headline 42 OK · UC-02 supplemental/readiness visible · Fix Written/409 unchanged · Export fix plan + evidence download OK
+- Known skips: No SSH — droplet migrate/pilots/Celery CLI; no full three-check WB-05 Loom (E2E residual); WB-SHOP-01 skip if no FAIL on latest run
+- Blockers fixed under this PRD (PR links): (add after you open PRs)
+  - BE: audit job_id on API + verify_fe13 teardown (immutability) + smoke_m2_ops01_local_fix.py
+  - FE: Activity focus match by job_id + verify-fe13 updates
+- Ready for E2E-01 Loom: YES (UI-only staging + local Fix path green; server CLI still unowned skip)
+
+---
+## Checklist evidence (M2-OPS-01)
+
+### §3 staging (UI-only + explicit skip)
+[x] FE/API reachable (Vercel + apis.klints.io health)
+[x] Explicit skip owner=Maheep: droplet migrate / pilots verify / Celery inspect (no SSH)
+[x] Local: migrations clean, pilots 16+UC-02, allowlist, connectors, terminal DCS
+
+### §4 Fix smoke
+[x] Allow writebacks ON
+[x] Approve allowlisted FAIL → Written + provenance
+[x] Re-Approve → already applied / 409 path
+[x] Activity / bell deep-link (job_id focus fixed in code)
+[x] LE-04 Approve blocked
+[ ] Optional: writebacks OFF after smoke (policy — do if required)
+
+### Acceptance leftovers for operator
+[ ] Commit/PR BE + FE under fix(M2-OPS-01): … (you commit)
+[ ] Paste this block into Notion / E2E-01 when asked
+[x] After DCS-09 merges: re-smoke Fix + worklist 42 — PASS 2026-08-28 (staging UI)

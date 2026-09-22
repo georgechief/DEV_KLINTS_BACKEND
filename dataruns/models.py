@@ -1043,6 +1043,8 @@ class AiSuggestion(models.Model):
         related_name="ai_suggestions",
     )
     fingerprint = models.CharField(max_length=64)
+    # Finding-level hash (no dcs_run_id) — soft cache freshness for Fix suggestions.
+    content_hash = models.CharField(max_length=64, blank=True, default="")
     payload_json = models.JSONField(default=dict, blank=True)
     headline = models.CharField(max_length=240, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -1063,6 +1065,10 @@ class AiSuggestion(models.Model):
                 name="ai_sugg_company_task_check_idx",
             ),
             models.Index(fields=["fingerprint"], name="ai_sugg_fingerprint_idx"),
+            models.Index(
+                fields=["company", "task_type", "check_id", "content_hash"],
+                name="ai_sugg_content_hash_idx",
+            ),
         ]
 
     def __str__(self) -> str:

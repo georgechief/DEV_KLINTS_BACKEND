@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from dataruns.models import WritebackAllowedCheck
 from tenants.models import Company
 
-DEFAULT_WRITEBACK_ALLOWLIST = ("CI-01", "CC-03", "WB-SHOP-01")
+DEFAULT_WRITEBACK_ALLOWLIST = ("CI-01", "CC-03", "WB-SHOP-01", "LE-01", "LE-09")
 
 
 def clear_writeback_allowlist() -> None:

@@ -107,6 +107,10 @@ def _assert_manifest_hash(*, record: HandoffPackage, manifest_hash: str) -> None
 
 
 def _assert_qa_still_pass(record: HandoffPackage) -> None:
+    from dataruns.use_cases.recommend import handoff_qa_pass_required
+
+    if not handoff_qa_pass_required():
+        return
     qa = getattr(record, "qa_result", None)
     if qa is None or str(qa.status or "").strip().upper() != QA_STATUS_PASS:
         raise HandoffActivationError(

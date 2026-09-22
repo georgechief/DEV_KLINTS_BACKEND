@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0.0",
+  "check_id": "SP-07",
+  "template_id": null,
+  "title": "Rename legacy klints_ / klints: collisions off namespace",
+  "enabled": true,
+  "approval_tier": "batch",
+  "requires_consent_namespace_clean": false,
+  "irreversible": false,
+  "operator_disclosure": "Renames legacy Manago detail keys and tags that collide with the Klints namespace. Prior names are preserved under legacy_* for rollback. Re-run DCS after Approve so SP-07 can PASS.",
+  "rollback": {
+    "strategy": "reverse_rename_map"
+  },
+  "operations": [
+    {
+      "operation_id": "manago.detail_rename.off_klints",
+      "op_kind": "detail_set",
+      "target": "manago",
+      "namespace": "native",
+      "capability_id": "RESTV2.CONTACT.UPSERT",
+      "entity_type": "contact",
+      "from_evidence": {
+        "match": { "path": "side", "const": "klints_detail_collision" },
+        "entity_key": { "path": "entity_key" },
+        "fields": {
+          "detail_key": { "path": "rename_to" },
+          "detail_value": { "path": "detail_value" },
+          "clear_detail_key": { "path": "key" },
+          "contact_id": { "path": "manago_contact_id" },
+          "email": { "path": "person.email" }
+        }
+      },
+      "guards": ["entity_key_required", "email_format"]
+    },
+    {
+      "operation_id": "manago.tag_rename.off_klints",
+      "op_kind": "tag_add",
+      "target": "manago",
+      "namespace": "native",
+      "capability_id": "RESTV2.CONTACT.UPSERT",
+      "entity_type": "contact",
+      "from_evidence": {
+        "match": { "path": "side", "const": "klints_tag_collision" },
+        "entity_key": { "path": "entity_key" },
+        "fields": {
+          "tag": { "path": "rename_to" },
+          "remove_tag": { "path": "tag" },
+          "contact_id": { "path": "manago_contact_id" },
+          "email": { "path": "person.email" }
+        }
+      },
+      "guards": ["entity_key_required", "email_format"]
+    }
+  ]
+}

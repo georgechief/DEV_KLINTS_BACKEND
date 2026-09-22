@@ -2,6 +2,9 @@
 
 Per linked identity: Manago lifetime PURCHASE value vs Shopify net revenue
 (orders − refunds). Quantifies refund-blindness (depends on LE-09 returns).
+
+WB-12: when Manago ``klints_net_ltv`` ≈ Shopify net, the contact is governed
+and does not count toward FAIL / refund_blind (completes Automated writeback loop).
 """
 
 from __future__ import annotations
@@ -25,6 +28,62 @@ from tenants.models import Company
 PT_SAMPLE = 50
 # Sheet 02 qualitative; MVP1 uses 2% relative overstatement band (align LE-01).
 PT04_DELTA_FAIL = 0.02
+# Absolute cents parity with writeback already_at_target / refund_blind floor.
+PT04_ABS_MATCH = 0.01
+KLINTS_NET_LTV_KEY = "klints_net_ltv"
+
+
+def _iter_contact_detail_pairs(contact: dict[str, Any]) -> list[tuple[str, Any]]:
+    """Read Manago detail bags (same shapes as segment_join; no writebacks import)."""
+    pairs: list[tuple[str, Any]] = []
+    for bag_name in ("properties", "dictionaryProperties", "details", "customFields"):
+        bag = contact.get(bag_name)
+        if isinstance(bag, dict):
+            for k, v in bag.items():
+                pairs.append((str(k), v))
+        elif isinstance(bag, list):
+            for item in bag:
+                if not isinstance(item, dict):
+                    continue
+                name = item.get("name") or item.get("key") or item.get("property")
+                if name is None:
+                    continue
+                pairs.append((str(name), item.get("value")))
+    return pairs
+
+
+def _contact_detail_value(contact: dict[str, Any], detail_key: str) -> Any:
+    want = str(detail_key or "").strip().lower()
+    if not want:
+        return None
+    for key, value in _iter_contact_detail_pairs(contact):
+        if str(key).strip().lower() == want:
+            return value
+    return None
+
+
+def klints_net_ltv_matches_shopify_net(
+    *,
+    stamped: float | None,
+    shopify_net: float,
+    rel_fail: float = PT04_DELTA_FAIL,
+    abs_match: float = PT04_ABS_MATCH,
+) -> bool:
+    """WB-12 governed rule: stamp ≈ Shopify net (absolute or relative)."""
+    if stamped is None:
+        return False
+    try:
+        stamped_f = float(stamped)
+        net = float(shopify_net)
+    except (TypeError, ValueError):
+        return False
+    if stamped_f != stamped_f or net != net:  # NaN guard
+        return False
+    delta = abs(stamped_f - net)
+    if delta <= abs_match:
+        return True
+    denom = max(abs(net), abs(stamped_f), 1.0)
+    return (delta / denom) <= rel_fail
 
 
 def build_product_truth_snapshot(
@@ -91,15 +150,20 @@ def build_product_truth_snapshot(
             )
 
     # Manago lifetime PURCHASE value per contact, deduped by externalId (LE-04).
+    # WB-12: also capture klints_net_ltv from contact detail bags.
     manago_by_id: dict[str, dict[str, Any]] = {}
     for contact in contacts:
         mid = str(contact.get("contactId") or contact.get("id") or "")
         if not mid:
             continue
+        stamped = _float_or_none(
+            _contact_detail_value(contact, KLINTS_NET_LTV_KEY)
+        )
         manago_by_id[mid] = {
             "manago_contact_id": mid,
             "person.external_key": str(contact.get("externalId") or "").strip(),
             "person.email": normalize_email(contact.get("email")),
+            "klints_net_ltv": stamped,
         }
 
     purchase_by_contact: dict[str, dict[str, float]] = defaultdict(
@@ -153,13 +217,23 @@ def build_product_truth_snapshot(
         net = paid - refunded
         manago_all = float(purchase_by_contact[mid]["gross_all"])
         manago_deduped = float(purchase_by_contact[mid]["deduped"])
+        stamped = meta.get("klints_net_ltv")
+        stamped_f = float(stamped) if stamped is not None else None
+        governed = klints_net_ltv_matches_shopify_net(
+            stamped=stamped_f, shopify_net=net
+        )
         # Compare Manago lifetime (deduped) to Shopify net — Excel PT-04.
         denom = max(abs(net), abs(manago_deduped), 1.0)
         delta_vs_net = abs(manago_deduped - net) / denom
         # Refund-blindness: Manago vs Shopify gross paid (ignoring refunds).
         denom_g = max(abs(paid), abs(manago_deduped), 1.0)
         delta_vs_gross = abs(manago_deduped - paid) / denom_g
-        refund_blind = refunded > 0 and manago_deduped > net + 0.01
+        if governed:
+            refund_blind = False
+            overstatement = 0.0
+        else:
+            refund_blind = refunded > 0 and manago_deduped > net + 0.01
+            overstatement = max(manago_deduped - net, 0.0)
         per_contact.append(
             {
                 "person.email": meta["person.email"],
@@ -175,12 +249,26 @@ def build_product_truth_snapshot(
                 "delta_vs_net": round(delta_vs_net, 6),
                 "delta_vs_gross": round(delta_vs_gross, 6),
                 "refund_blind": refund_blind,
-                "overstatement": round(max(manago_deduped - net, 0.0), 4),
+                "overstatement": round(overstatement, 4),
+                "klints_net_ltv": (
+                    round(stamped_f, 4) if stamped_f is not None else None
+                ),
+                "governed_by_klints_net_ltv": governed,
             }
         )
 
-    failing = [r for r in per_contact if r["delta_vs_net"] > PT04_DELTA_FAIL]
-    refund_blind_rows = [r for r in per_contact if r["refund_blind"]]
+    failing = [
+        r
+        for r in per_contact
+        if (not r["governed_by_klints_net_ltv"])
+        and r["delta_vs_net"] > PT04_DELTA_FAIL
+    ]
+    refund_blind_rows = [
+        r
+        for r in per_contact
+        if (not r["governed_by_klints_net_ltv"]) and r["refund_blind"]
+    ]
+    governed_rows = [r for r in per_contact if r["governed_by_klints_net_ltv"]]
     total_overstatement = sum(r["overstatement"] for r in per_contact)
 
     return {
@@ -189,6 +277,7 @@ def build_product_truth_snapshot(
             "linked_contacts": len(per_contact),
             "contacts_over_delta": len(failing),
             "contacts_refund_blind": len(refund_blind_rows),
+            "contacts_governed_by_klints_net_ltv": len(governed_rows),
             "total_overstatement": round(total_overstatement, 4),
             "fail_delta": PT04_DELTA_FAIL,
             "failing_sample": failing[:PT_SAMPLE],

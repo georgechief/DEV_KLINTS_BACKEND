@@ -394,6 +394,14 @@ class WritebackRunView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        # Viewer denied before action/key validation (M3-SEC-01): do not teach
+        # valid action names or payload shape to a role that cannot run writebacks.
+        if request.user.role == User.Role.VIEWER:
+            return Response(
+                {"detail": "You do not have permission to run writebacks."},
+                status=403,
+            )
+
         body = _json_body(request)
         action = body.get("action")
         if not isinstance(action, str) or action.strip().lower() not in _RUN_REQUIRED_KEYS:
@@ -405,6 +413,27 @@ class WritebackRunView(APIView):
                 status=400,
             )
         action = action.strip().lower()
+
+        # Wrong-role gate before required-key validation: Analyst must get 403 on
+        # execute/rollback, not a 400 that lists check_id / diff_hash / job_id.
+        if action in ("execute", "rollback") and request.user.role != User.Role.ADMIN:
+            return Response(
+                {
+                    "detail": (
+                        "Only admins can execute writebacks."
+                        if action == "execute"
+                        else "Only admins can rollback writebacks."
+                    ),
+                    "action": action,
+                },
+                status=403,
+            )
+        if action == "preview" and request.user.role not in _PREVIEW_ROLES:
+            return Response(
+                {"detail": "You do not have permission to preview writebacks."},
+                status=403,
+            )
+
         missing = _missing_run_keys(action, body)
         if missing:
             return Response(

@@ -89,18 +89,28 @@ def serialize_qa_result(record: WorkflowQaResult) -> dict[str, Any]:
     except (TypeError, ValueError):
         minimum_score_f = 80.0
 
-    return build_qa_result_payload(
-        qa_run_id=record.id,
-        company_id=company_id,
-        package_id=package_id,
-        use_case_id=record.use_case_id or payload.get("use_case_id") or "",
-        score=record.score if record.score is not None else payload.get("score", 0),
-        status=record.status or payload.get("status") or QA_STATUS_FAIL,
-        hard_tests=hard_tests,
-        evidence=evidence,
-        minimum_score=minimum_score_f,
-        created_at=record.created_at,
-    )
+    return {
+        **build_qa_result_payload(
+            qa_run_id=record.id,
+            company_id=company_id,
+            package_id=package_id,
+            use_case_id=record.use_case_id or payload.get("use_case_id") or "",
+            score=record.score if record.score is not None else payload.get("score", 0),
+            status=record.status or payload.get("status") or QA_STATUS_FAIL,
+            hard_tests=hard_tests,
+            evidence=evidence,
+            minimum_score=minimum_score_f,
+            created_at=record.created_at,
+        ),
+        # Demo gate flag for FE (not part of pack schema body stored on record).
+        "handoff_qa_required": _handoff_qa_required(),
+    }
+
+
+def _handoff_qa_required() -> bool:
+    from dataruns.use_cases.recommend import handoff_qa_pass_required
+
+    return handoff_qa_pass_required()
 
 
 def latest_qa_result_for_package(

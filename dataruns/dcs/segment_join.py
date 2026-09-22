@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 from collections import Counter, defaultdict
+from functools import lru_cache
 from typing import Any
 
 from dataruns.dcs.lifecycle_join import (
@@ -21,6 +22,93 @@ from tenants.models import Company
 SP_SAMPLE = 50
 _KLINTS_DETAIL = re.compile(r"^klints_", re.I)
 _KLINTS_TAG = re.compile(r"^klints:", re.I)
+# Baseline writeback-owned markers (PRD-WB / WB-09). Also union keys/tags declared
+# by enabled writeback mappings with namespace klints_ / klints: (see helpers).
+_KLINTS_OWNED_DETAIL_KEYS_BASE = frozenset(
+    {
+        "klints_backfill",
+        "klints_consent_evidence",
+    }
+)
+_KLINTS_OWNED_TAGS_BASE = frozenset()
+
+
+@lru_cache(maxsize=1)
+def _owned_keys_from_enabled_mappings() -> tuple[frozenset[str], frozenset[str]]:
+    """Pull klints_ / klints: targets from enabled writeback mapping ops."""
+    details: set[str] = set()
+    tags: set[str] = set()
+    try:
+        from dataruns.writebacks.registry import get_check_mapping, list_mapping_entries
+
+        for entry in list_mapping_entries():
+            if not entry.get("enabled"):
+                continue
+            check_id = str(entry.get("check_id") or "").strip().upper()
+            if not check_id:
+                continue
+            try:
+                spec = get_check_mapping(check_id)
+            except Exception:
+                continue
+            for operation in spec.get("operations") or []:
+                if not isinstance(operation, dict):
+                    continue
+                namespace = str(operation.get("namespace") or "")
+                fields = (operation.get("from_evidence") or {}).get("fields") or {}
+                if not isinstance(fields, dict):
+                    continue
+                if namespace == "klints_":
+                    detail = fields.get("detail_key")
+                    if isinstance(detail, dict) and "const" in detail:
+                        text = str(detail.get("const") or "").strip().lower()
+                        if text.startswith("klints_"):
+                            details.add(text)
+                    if operation.get("mark_klints_backfill"):
+                        details.add("klints_backfill")
+                if namespace == "klints:":
+                    tag = fields.get("tag")
+                    if isinstance(tag, dict) and "const" in tag:
+                        text = str(tag.get("const") or "").strip().lower()
+                        if text.startswith("klints:"):
+                            tags.add(text)
+    except Exception:
+        return frozenset(), frozenset()
+    return frozenset(details), frozenset(tags)
+
+
+def clear_klints_owned_keys_cache() -> None:
+    _owned_keys_from_enabled_mappings.cache_clear()
+
+
+def klints_owned_detail_keys() -> frozenset[str]:
+    mapped, _tags = _owned_keys_from_enabled_mappings()
+    return _KLINTS_OWNED_DETAIL_KEYS_BASE | mapped
+
+
+def klints_owned_tags() -> frozenset[str]:
+    _details, mapped = _owned_keys_from_enabled_mappings()
+    return _KLINTS_OWNED_TAGS_BASE | mapped
+
+
+def is_klints_owned_detail(key: str) -> bool:
+    return str(key or "").strip().lower() in klints_owned_detail_keys()
+
+
+def is_klints_owned_tag(tag: str) -> bool:
+    return str(tag or "").strip().lower() in {t.lower() for t in klints_owned_tags()}
+
+
+def legacy_namespace_rename(name: str) -> str:
+    """Excel SP-07 Option A — move collision off namespace under legacy_ prefix."""
+    text = str(name or "").strip()
+    if not text:
+        return text
+    if text.lower().startswith("legacy_"):
+        return text
+    return f"legacy_{text}"
+
+
 _BOOL_TOKENS = frozenset(
     {"true", "false", "yes", "no", "y", "n", "0", "1", "on", "off"}
 )
@@ -160,8 +248,14 @@ def build_segment_snapshot(
         if len(keys) > 1 and norm
     ]
 
-    klints_detail_collisions = sorted(k for k in all_keys if _KLINTS_DETAIL.match(k))
-    klints_tag_collisions = sorted(t for t in all_tags if _KLINTS_TAG.match(t))
+    klints_detail_collisions = sorted(
+        k
+        for k in all_keys
+        if _KLINTS_DETAIL.match(k) and not is_klints_owned_detail(k)
+    )
+    klints_tag_collisions = sorted(
+        t for t in all_tags if _KLINTS_TAG.match(t) and not is_klints_owned_tag(t)
+    )
 
     # Excel SP-03: Shopify customer metafields as source comparison.
     metafield_keys = sorted(

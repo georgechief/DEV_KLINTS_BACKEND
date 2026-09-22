@@ -39,16 +39,91 @@ from dataruns.ai.runner import (
     AiTaskResult,
     ai_enabled,
     policy_version,
+    result_from_saved_suggestion,
     run_gated_ai_task,
     serialize_ai_result,
 )
+from dataruns.ai.fingerprints import compute_fix_content_hash
+from dataruns.ai.privacy_gate import ensure_safe_context
 from dataruns.ai.providers.base import AiProvider
-from dataruns.models import AssessmentReport
+from dataruns.ai.schemas import parse_task_output
+from dataruns.models import AssessmentReport, AiSuggestion
 from tenants.models import Company
 
 logger = logging.getLogger(__name__)
 
 FixSuggestionResult = AiTaskResult
+
+
+def _valid_fix_payload(suggestion: AiSuggestion) -> bool:
+    payload = suggestion.payload_json if isinstance(suggestion.payload_json, dict) else None
+    if not payload:
+        return False
+    try:
+        parse_task_output(TASK_FIX_SUGGESTION, payload)
+    except Exception:
+        return False
+    return True
+
+
+def _first_valid_soft(
+    qs,
+    *,
+    check_id: str,
+    stale: bool,
+) -> AiTaskResult | None:
+    """Walk newest-first; skip invalid payloads instead of failing the soft path."""
+    for soft in qs.iterator(chunk_size=20):
+        if _valid_fix_payload(soft):
+            return result_from_saved_suggestion(
+                suggestion=soft,
+                prompt_version=PROMPT_FIX_SUGGESTION_V1,
+                stale=stale,
+            )
+        logger.info(
+            "fix_suggestion_soft_skip_invalid check_id=%s suggestion_id=%s",
+            check_id,
+            soft.id,
+        )
+    return None
+
+
+def _soft_fix_suggestion_or_none(
+    *,
+    company: Company,
+    check_id: str,
+    content_hash: str,
+) -> AiTaskResult | None:
+    """
+    Soft hit when a valid saved suggestion matches finding-level content_hash.
+
+    - Prefer any run whose content_hash matches current finding
+    - Legacy empty content_hash → reuse latest blank-hash row, mark stale
+    - Never reuse a hashed row for a different finding
+    """
+    normalized = str(check_id or "").strip().upper()
+    current = str(content_hash or "").strip().lower()
+    base = AiSuggestion.objects.filter(
+        company=company,
+        task_type=TASK_FIX_SUGGESTION,
+        check_id=normalized,
+    ).select_related("ai_call", "dcs_data_run")
+
+    if current:
+        matched = _first_valid_soft(
+            base.filter(content_hash=current).order_by("-updated_at"),
+            check_id=normalized,
+            stale=False,
+        )
+        if matched is not None:
+            return matched
+
+    # Legacy rows only — never reuse a hashed row with a different finding.
+    return _first_valid_soft(
+        base.filter(content_hash="").order_by("-updated_at"),
+        check_id=normalized,
+        stale=True,
+    )
 
 
 def get_or_create_fix_suggestion(
@@ -58,11 +133,13 @@ def get_or_create_fix_suggestion(
     dcs_run_id: int | None = None,
     provider: AiProvider | None = None,
     skip_cache: bool = False,
+    force_refresh: bool = False,
 ) -> AiTaskResult:
     """
-    Allowlist → PrivacyGate → fingerprint → cache → provider → validate → persist.
+    Soft-first by finding content_hash (no Mistral) unless force_refresh / skip_cache.
 
-    skip_cache is off by default (PRD: no billable re-call on fingerprint hit).
+    Same check + same finding_summary → reuse DB across DCS runs.
+    Finding changed → generate. force_refresh always generates.
     """
     if not ai_enabled():
         raise AiDisabledError()
@@ -82,6 +159,21 @@ def get_or_create_fix_suggestion(
         prompt_version=prompt_version,
         policy_version=policy_version(),
     )
+    # Hash post-PrivacyGate so soft compare matches what we persist/send.
+    gate = ensure_safe_context(projected)
+    hash_context = gate.context if gate.ok and gate.context is not None else projected
+    content_hash = compute_fix_content_hash(hash_context)
+
+    soft_ok = not force_refresh and not skip_cache
+    if soft_ok:
+        soft_result = _soft_fix_suggestion_or_none(
+            company=company,
+            check_id=normalized_check_id,
+            content_hash=content_hash,
+        )
+        if soft_result is not None:
+            return soft_result
+
     return run_gated_ai_task(
         company=company,
         task_type=TASK_FIX_SUGGESTION,
@@ -91,7 +183,8 @@ def get_or_create_fix_suggestion(
         check_id=normalized_check_id,
         data_run=data_run,
         provider=provider,
-        skip_cache=skip_cache,
+        skip_cache=force_refresh or skip_cache,
+        content_hash=content_hash,
     )
 
 

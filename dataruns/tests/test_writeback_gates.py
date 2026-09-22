@@ -41,3 +41,16 @@ class WritebackGatesTests(TestCase):
         allowed, reason = execute_allowed(company=self.company, check_id="CI-01")
         self.assertFalse(allowed)
         self.assertEqual(reason, "check_not_allowlisted")
+
+    @override_settings(WRITEBACKS_ENABLED=False)
+    def test_wb08_le01_allowlisted_sp01_and_stubs_not(self):
+        seed_writeback_allowlist("LE-01", "CI-01")
+        self.company.writeback_execute_enabled = True
+        self.company.save(update_fields=["writeback_execute_enabled"])
+        allowed, reason = execute_allowed(company=self.company, check_id="LE-01")
+        self.assertFalse(allowed)
+        self.assertEqual(reason, "approval_id_required")
+        for check_id in ("SP-01", "CI-03", "LE-04"):
+            allowed, reason = execute_allowed(company=self.company, check_id=check_id)
+            self.assertFalse(allowed)
+            self.assertEqual(reason, "check_not_allowlisted")

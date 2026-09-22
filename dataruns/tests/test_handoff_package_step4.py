@@ -7,7 +7,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from django.conf import settings
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.test import APIClient, APIRequestFactory, force_authenticate
@@ -213,6 +213,7 @@ class HandoffApiStep4Tests(TestCase):
             1,
         )
 
+    @override_settings(REQUIRE_HANDOFF_QA_PASS=True)
     def test_post_fail_qa_returns_409(self):
         package = self._persist_package()
         self._qa(package, status=QA_STATUS_FAIL)
@@ -399,6 +400,7 @@ class HandoffApiStep4Tests(TestCase):
         response = BuildPackageHandoffView.as_view()(request, package_id=missing)
         self.assertEqual(response.status_code, 404)
 
+    @override_settings(REQUIRE_HANDOFF_QA_PASS=True)
     def test_post_explicit_qa_run_id(self):
         package = self._persist_package()
         older = self._qa(package, status=QA_STATUS_PASS)

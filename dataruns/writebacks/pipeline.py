@@ -68,12 +68,28 @@ def run_writeback_pipeline(
     effective_batch = batch_size or settings.WRITEBACK_DEFAULT_BATCH_SIZE
     # Preview and execute must share the same row cap (Fix UI omits max_rows).
     # Individual-tier mappings (CC-03) may execute only one intent — cap at 1.
+    # SP-07 / PT-04 are multi-contact UPSERT waves (WB-09 / WB-11) — use UPSERT
+    # batch ceiling, not the sandbox demo default of 10, or Approve truncates early.
     effective_max = max_rows
     if effective_max is None:
         if mapping.get("approval_tier") == "individual":
             effective_max = 1
+        elif normalized_check in ("SP-07", "PT-04"):
+            cap = capability_batch_max("RESTV2.CONTACT.UPSERT") or 1000
+            effective_max = max(1, min(int(cap), 1000))
+        elif normalized_check == "LE-09":
+            # DCS mismatch sample is 50; EVENT.INGEST batch_max is higher — use
+            # the ingest ceiling so one Approve can clear a full LE-09 sample.
+            cap = capability_batch_max("RESTV2.EVENT.INGEST") or 1000
+            effective_max = max(1, min(int(cap), 1000))
         else:
             effective_max = settings.WRITEBACK_SANDBOX_MAX_ROWS
+
+    operator_disclosure = mapping.get("operator_disclosure")
+    if isinstance(operator_disclosure, str):
+        operator_disclosure = operator_disclosure.strip() or None
+    else:
+        operator_disclosure = None
 
     blocked_reason = run_preflight(company=company, mapping=mapping)
     if blocked_reason:
@@ -90,6 +106,38 @@ def run_writeback_pipeline(
             check_id=normalized_check,
             max_rows=effective_max,
         )
+        # Honest truncation (PRD-WB-09 §6.4 / WB-10 §5.2 / WB-11 §5.2): probe one past the cap.
+        if (
+            normalized_check in {"SP-07", "LE-09", "PT-04"}
+            and effective_max is not None
+            and len(evidence_rows) >= effective_max
+        ):
+            probe = collect_evidence_rows(
+                company=company,
+                check_id=normalized_check,
+                max_rows=effective_max + 1,
+            )
+            if len(probe) > len(evidence_rows):
+                if normalized_check == "SP-07":
+                    trunc_note = (
+                        f"Preview/execute capped at {effective_max} contact renames. "
+                        "Approve again after re-running DCS if SP-07 still FAILs."
+                    )
+                elif normalized_check == "LE-09":
+                    trunc_note = (
+                        f"Preview/execute capped at {effective_max} return events. "
+                        "Approve again after re-running DCS if LE-09 still FAILs."
+                    )
+                else:
+                    trunc_note = (
+                        f"Preview/execute capped at {effective_max} net-LTV stamps. "
+                        "Approve again after re-running DCS if more overstated contacts remain."
+                    )
+                operator_disclosure = (
+                    f"{operator_disclosure} {trunc_note}".strip()
+                    if operator_disclosure
+                    else trunc_note
+                )
         intents = build_intents_from_mapping(
             company=company,
             mapping=mapping,
@@ -132,7 +180,7 @@ def run_writeback_pipeline(
                 blocked_reason="individual_tier_single_intent_required",
                 approval_tier=mapping.get("approval_tier"),
                 irreversible=bool(mapping.get("irreversible")),
-                operator_disclosure=mapping.get("operator_disclosure"),
+                operator_disclosure=operator_disclosure,
             )
 
         allowed, deny_reason = execute_allowed(
@@ -160,7 +208,7 @@ def run_writeback_pipeline(
                 blocked_reason=reason,
                 approval_tier=mapping.get("approval_tier"),
                 irreversible=bool(mapping.get("irreversible")),
-                operator_disclosure=mapping.get("operator_disclosure"),
+                operator_disclosure=operator_disclosure,
                 data_run_id=dcs_data_run_id,
             )
 
@@ -295,6 +343,7 @@ def run_writeback_pipeline(
                     "errors": summary.errors,
                     "sandbox": sandbox,
                     "data_run_id": dcs_data_run_id,
+                    "irreversible": bool(mapping.get("irreversible")),
                 },
             )
         else:
@@ -313,6 +362,7 @@ def run_writeback_pipeline(
                     "errors": summary.errors,
                     "sandbox": sandbox,
                     "data_run_id": dcs_data_run_id,
+                    "irreversible": bool(mapping.get("irreversible")),
                 },
             )
 
@@ -328,7 +378,7 @@ def run_writeback_pipeline(
             data_run_id=dcs_data_run_id,
             approval_tier=mapping.get("approval_tier"),
             irreversible=bool(mapping.get("irreversible")),
-            operator_disclosure=mapping.get("operator_disclosure"),
+            operator_disclosure=operator_disclosure,
         )
 
     job = WritebackJob.objects.create(
@@ -357,7 +407,7 @@ def run_writeback_pipeline(
         metadata={
             "batch_size": effective_batch,
             "irreversible": bool(mapping.get("irreversible")),
-            "operator_disclosure": mapping.get("operator_disclosure"),
+            "operator_disclosure": operator_disclosure,
         },
     )
     # C4 — force/new dry-run must not leave older APPROVED grants executable
@@ -396,7 +446,7 @@ def run_writeback_pipeline(
         data_run_id=dcs_data_run_id,
         approval_tier=mapping.get("approval_tier"),
         irreversible=bool(mapping.get("irreversible")),
-        operator_disclosure=mapping.get("operator_disclosure"),
+        operator_disclosure=operator_disclosure,
     )
 
 

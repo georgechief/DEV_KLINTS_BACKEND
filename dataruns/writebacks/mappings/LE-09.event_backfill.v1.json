@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0.0",
+  "check_id": "LE-09",
+  "template_id": "T5",
+  "title": "Return / cancellation event backfill",
+  "enabled": true,
+  "approval_tier": "batch",
+  "requires_consent_namespace_clean": false,
+  "irreversible": true,
+  "operator_disclosure": "Bulk RETURN/CANCELLATION event backfill may not be fully reversible. Rollback is not supported as a full reverse.",
+  "rollback": {
+    "strategy": "tagged_backfill_delete"
+  },
+  "operations": [
+    {
+      "operation_id": "manago.event_ingest.return_cancel",
+      "op_kind": "event_ingest",
+      "target": "manago",
+      "namespace": "native",
+      "capability_id": "RESTV2.EVENT.INGEST",
+      "entity_type": "event",
+      "from_evidence": {
+        "match": { "path": "side", "const": "shopify_only_return" },
+        "entity_key": { "path": "order.id" },
+        "fields": {
+          "order_id": { "path": "order.id" },
+          "email": { "path": "person.email" },
+          "contact_id": { "path": "manago_contact_id" },
+          "value": { "path": "amount_gross" },
+          "event_type": { "path": "event_type" }
+        }
+      },
+      "guards": ["entity_key_required"]
+    }
+  ]
+}

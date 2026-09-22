@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone as dt_timezone
 from typing import Any
 
+from django.conf import settings
 from django.utils import timezone
 
 from dataruns.architecture.enqueue import find_latest_architecture_assessment
@@ -25,6 +26,22 @@ from dataruns.use_cases.gaps import (
 from dataruns.use_cases.constants import SUPPLEMENTAL_PREFLIGHT_CHECKS
 from dataruns.use_cases.models import UseCasePilot
 from tenants.models import Company
+
+
+def architecture_pilot_gates_required() -> bool:
+    """True = enforce AF mode for pilots; False = demo bypass (skip MCP/Incomplete)."""
+    return bool(getattr(settings, "REQUIRE_ARCHITECTURE_PILOT_GATES", True))
+
+
+def pilot_gating_checks_required() -> bool:
+    """True = enforce DCS gating checks; False = demo bypass (PT FAIL still unlocks Studio)."""
+    return bool(getattr(settings, "REQUIRE_PILOT_GATING_CHECKS", True))
+
+
+def handoff_qa_pass_required() -> bool:
+    """True = Handoff needs QA PASS; False = demo bypass (open/stage while QA FAIL)."""
+    return bool(getattr(settings, "REQUIRE_HANDOFF_QA_PASS", True))
+
 
 STATUS_READY = "ready"
 STATUS_READY_PROVISIONAL = "ready_provisional"
@@ -262,10 +279,16 @@ def evaluate_pilot(
             supplemental_status=supplemental_status,
         )
 
-    # 2) Architecture mode gate
+    # 2) Architecture mode gate (MCP / graph completeness). Demo: set
+    # REQUIRE_ARCHITECTURE_PILOT_GATES=False to skip while AF stays INCOMPLETE.
     mode = ctx.af_mode
     allowed_modes = set(gates["architecture_modes"])
-    if mode is None or mode == ArchitectureAssessment.Mode.INCOMPLETE or mode not in allowed_modes:
+    enforce_architecture = architecture_pilot_gates_required()
+    if enforce_architecture and (
+        mode is None
+        or mode == ArchitectureAssessment.Mode.INCOMPLETE
+        or mode not in allowed_modes
+    ):
         detail = "Architecture map incomplete or mode not allowed for this pilot."
         if mode is None:
             detail = "Architecture Assessment has not finished yet."
@@ -291,13 +314,15 @@ def evaluate_pilot(
         )
 
     # 3) Gating checks — 42-scoped must PASS; supplementals missing → provisional (§3.2)
+    # Demo: REQUIRE_PILOT_GATING_CHECKS=False skips blockers while check_results stay FAIL.
     check_rows, supplemental_status, provisional_ids = _evaluate_gating_checks(
         gates["gating_check_ids"],
         ctx,
         blockers,
     )
 
-    if blockers:
+    enforce_gating_checks = pilot_gating_checks_required()
+    if blockers and enforce_gating_checks:
         return _pilot_payload(
             pilot=pilot,
             status=STATUS_BLOCKED_CHECKS,
@@ -452,6 +477,8 @@ def build_gates_snapshot(
         "provisional_supplemental": provisional_supplemental,
         "headline_score": ctx.headline_score,
         "architecture_mode": ctx.af_mode,
+        "architecture_gates_required": architecture_pilot_gates_required(),
+        "gating_checks_required": pilot_gating_checks_required(),
     }
 
 
@@ -486,6 +513,8 @@ def _pilot_payload(
             "min_dcs": gates["min_dcs"],
             "gating_check_ids": list(gates["gating_check_ids"]),
             "architecture_modes": list(gates["architecture_modes"]),
+            "architecture_gates_required": architecture_pilot_gates_required(),
+            "gating_checks_required": pilot_gating_checks_required(),
         },
         "blockers": blockers,
         "check_results": check_results,
@@ -574,6 +603,7 @@ def build_recommendations_payload(*, company: Company) -> dict[str, Any]:
             "unavailable": sum(
                 1 for p in ordered if p["status"] == STATUS_UNAVAILABLE
             ),
+            "handoff_qa_required": handoff_qa_pass_required(),
         },
         "pilots": ordered,
     }

@@ -298,6 +298,52 @@ def evaluate_pt_03(ctx: FoundationGateContext) -> CheckResult:
     )
 
 
+def _pt04_project_mismatch(row: dict) -> dict:
+    """Stamp side=net_overstatement for writeback match (WB-11 §3.4)."""
+    return {
+        "side": "net_overstatement",
+        "person.email": row.get("person.email"),
+        "shopify_customer_id": row.get("shopify_customer_id"),
+        "manago_contact_id": row.get("manago_contact_id"),
+        "shopify_net": row.get("shopify_net"),
+        "manago_purchase_value_deduped": row.get("manago_purchase_value_deduped"),
+        "delta_vs_net": row.get("delta_vs_net"),
+        "refund_blind": row.get("refund_blind"),
+        "overstatement": row.get("overstatement"),
+    }
+
+
+def _pt04_mismatch_rows(
+    failing: list,
+    refund_blind_sample: list,
+) -> list[dict]:
+    """Union failing ∪ refund_blind samples; dedupe by manago_contact_id; cap PT_SAMPLE."""
+    mismatches: list[dict] = []
+    seen: set[str] = set()
+
+    def _add(raw: object) -> None:
+        if not isinstance(raw, dict):
+            return
+        # Defensive: never writeback-match a governed row if it leaked into samples.
+        if raw.get("governed_by_klints_net_ltv") is True:
+            return
+        if len(mismatches) >= PT_SAMPLE:
+            return
+        mid = str(raw.get("manago_contact_id") or "").strip()
+        key = mid or str(raw.get("person.email") or "").strip().lower()
+        if key and key in seen:
+            return
+        if key:
+            seen.add(key)
+        mismatches.append(_pt04_project_mismatch(raw))
+
+    for row in failing:
+        _add(row)
+    for row in refund_blind_sample:
+        _add(row)
+    return mismatches
+
+
 def evaluate_pt_04(ctx: FoundationGateContext) -> CheckResult:
     """Net vs gross transaction truth per contact (Excel PT-04)."""
     snapshot = _snapshot(ctx)
@@ -341,17 +387,23 @@ def evaluate_pt_04(ctx: FoundationGateContext) -> CheckResult:
     linked = int(truth.get("linked_contacts") or 0)
     over = int(truth.get("contacts_over_delta") or 0)
     refund_blind = int(truth.get("contacts_refund_blind") or 0)
+    governed = int(truth.get("contacts_governed_by_klints_net_ltv") or 0)
     total_over = float(truth.get("total_overstatement") or 0)
     failing = list(truth.get("failing_sample") or [])
+    refund_blind_sample = list(truth.get("refund_blind_sample") or [])
     value = {
         "linked_contacts": linked,
         "contacts_over_delta": over,
         "contacts_refund_blind": refund_blind,
+        "contacts_governed_by_klints_net_ltv": governed,
         "total_overstatement": money_2(total_over),
         "fail_delta": truth.get("fail_delta") or PT04_DELTA_FAIL,
         "failing_sample": failing[:20],
-        "refund_blind_sample": (truth.get("refund_blind_sample") or [])[:20],
-        "note": "Manago lifetime (deduped externalId) vs Shopify net (paid − refunds/cancels)",
+        "refund_blind_sample": refund_blind_sample[:20],
+        "note": (
+            "Manago lifetime (deduped) vs Shopify net; WB-12: klints_net_ltv ≈ net "
+            "governs contact (excluded from FAIL)"
+        ),
     }
     evidence = [
         _evidence(
@@ -361,23 +413,11 @@ def evaluate_pt_04(ctx: FoundationGateContext) -> CheckResult:
             observed_at=observed,
         )
     ]
+    # WB-11 §3.4: union failing ∪ refund_blind so Fix preview is not empty on
+    # refund_blind-only FAIL. Scores / FAIL bands unchanged.
     provenance = {
         "matches": [],
-        "mismatches": [
-            {
-                "side": "net_overstatement",
-                "person.email": r.get("person.email"),
-                "shopify_customer_id": r.get("shopify_customer_id"),
-                "manago_contact_id": r.get("manago_contact_id"),
-                "shopify_net": r.get("shopify_net"),
-                "manago_purchase_value_deduped": r.get("manago_purchase_value_deduped"),
-                "delta_vs_net": r.get("delta_vs_net"),
-                "refund_blind": r.get("refund_blind"),
-                "overstatement": r.get("overstatement"),
-            }
-            for r in failing[:PT_SAMPLE]
-            if isinstance(r, dict)
-        ],
+        "mismatches": _pt04_mismatch_rows(failing, refund_blind_sample),
     }
     if linked == 0:
         return seal_revenue_on_result(
@@ -413,6 +453,7 @@ def evaluate_pt_04(ctx: FoundationGateContext) -> CheckResult:
                 detail=(
                     f"Per-contact net truth failed: over_delta={over}/{linked} "
                     f"refund_blind={refund_blind} total_overstatement={total_over:.2f}"
+                    + (f" governed={governed}" if governed > 0 else "")
                 ),
                 evidence=evidence,
                 provenance=provenance,
@@ -432,12 +473,20 @@ def evaluate_pt_04(ctx: FoundationGateContext) -> CheckResult:
                 "gap_count": over + refund_blind,
             },
         )
+    pass_detail = (
+        f"Net truth OK on {linked} contacts"
+        + (
+            f" ({governed} via klints_net_ltv)."
+            if governed > 0
+            else f" (within {PT04_DELTA_FAIL:.0%} of Shopify net)."
+        )
+    )
     return seal_revenue_on_result(
         _result(
             check_id="PT-04",
             status="PASS",
             ctx=ctx,
-            detail=f"Net vs Manago lifetime within {PT04_DELTA_FAIL:.0%} on {linked} contacts.",
+            detail=pass_detail,
             evidence=evidence,
             provenance=provenance,
         ),

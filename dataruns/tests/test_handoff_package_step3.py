@@ -7,7 +7,7 @@ from datetime import timedelta
 from pathlib import Path
 
 from django.conf import settings
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from dataruns.models import AuditLog
@@ -187,6 +187,7 @@ class HandoffPackageStep3StageTests(TestCase):
             1,
         )
 
+    @override_settings(REQUIRE_HANDOFF_QA_PASS=True)
     def test_fail_qa_raises_409(self):
         package = self._persist_package()
         qa = self._qa(package, status=QA_STATUS_FAIL)
@@ -199,6 +200,20 @@ class HandoffPackageStep3StageTests(TestCase):
         self.assertEqual(ctx.exception.status, 409)
         self.assertEqual(ctx.exception.code, "qa_not_pass")
         self.assertEqual(HandoffPackage.objects.count(), 0)
+
+    @override_settings(REQUIRE_HANDOFF_QA_PASS=False)
+    def test_fail_qa_stages_when_handoff_qa_bypass(self):
+        """Demo flag: stage while QA FAIL so Handoff page is viewable."""
+        package = self._persist_package()
+        qa = self._qa(package, status=QA_STATUS_FAIL)
+        outcome = create_or_get_staged_handoff(
+            package=package,
+            qa_result=qa,
+            created_by=self.user,
+        )
+        self.assertTrue(outcome.created)
+        self.assertEqual(outcome.record.qa_result_id, qa.id)
+        self.assertEqual(HandoffPackage.objects.count(), 1)
 
     def test_stage_for_package_missing_qa_raises_409(self):
         package = self._persist_package()
@@ -284,6 +299,7 @@ class HandoffPackageStep3StageTests(TestCase):
         self.assertEqual(ctx.exception.code, "qa_package_mismatch")
         self.assertEqual(ctx.exception.status, 409)
 
+    @override_settings(REQUIRE_HANDOFF_QA_PASS=True)
     def test_latest_fail_blocks_stage_for_package(self):
         package = self._persist_package()
         self._qa(package, status=QA_STATUS_PASS)

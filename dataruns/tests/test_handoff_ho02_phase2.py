@@ -7,7 +7,7 @@ from copy import deepcopy
 from pathlib import Path
 
 from django.conf import settings
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from dataruns.capabilities.contract import CAP_STATUS_DISCOVERY_REQUIRED, PACKAGE_ROUTE_HUMAN_FALLBACK
@@ -262,6 +262,7 @@ class HandoffHo02Phase2Tests(TestCase):
         self.assertEqual(ctx.exception.code, HANDOFF_ERROR_FORBIDDEN)
         self.assertEqual(ctx.exception.status, 403)
 
+    @override_settings(REQUIRE_HANDOFF_QA_PASS=True)
     def test_approve_qa_not_pass(self):
         record = self._staged_handoff()
         record.qa_result.status = QA_STATUS_FAIL
@@ -544,6 +545,7 @@ class HandoffHo02Phase2Tests(TestCase):
             )
         )
 
+    @override_settings(REQUIRE_HANDOFF_QA_PASS=True)
     def test_confirm_qa_not_pass_after_approve(self):
         record = self._staged_handoff()
         approved = approve_handoff_for_activation(
