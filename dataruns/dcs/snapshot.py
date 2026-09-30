@@ -12,6 +12,10 @@ from dataruns.dcs.consent_join import build_consent_snapshot
 from dataruns.dcs.drift_join import build_drift_snapshot
 from dataruns.dcs.identity_join import build_identity_snapshot
 from dataruns.dcs.lifecycle_join import build_lifecycle_snapshot
+from dataruns.dcs.pins import (
+    normalize_source_run_ids as _normalize_source_run_ids,
+    pinned_snapshot_ids_from_fresh_imports as _pinned_snapshot_ids,
+)
 from dataruns.dcs.product_truth import build_product_truth_snapshot
 from dataruns.dcs.segment_join import build_segment_snapshot
 from dataruns.dcs.workflow_join import build_workflow_snapshot
@@ -93,32 +97,6 @@ def _gate_inputs_from_import(data_run_id: int | None) -> dict[str, Any]:
     }
 
 
-def _normalize_source_run_ids(source_runs: dict[str, Any]) -> dict[str, int | None]:
-    out: dict[str, int | None] = {"shopify": None, "manago_ai": None}
-    for platform in ("shopify", "manago_ai"):
-        value = source_runs.get(platform)
-        if value is None:
-            continue
-        try:
-            out[platform] = int(value)
-        except (TypeError, ValueError):
-            continue
-    return out
-
-
-def _pinned_snapshot_ids(fresh_imports: dict[str, Any]) -> dict[str, str | None]:
-    """Optional direct snapshot ids from ``fresh_imports`` (Slice E fast path)."""
-    out: dict[str, str | None] = {"shopify": None, "manago_ai": None}
-    for platform in ("shopify", "manago_ai"):
-        block = fresh_imports.get(platform)
-        if not isinstance(block, dict):
-            continue
-        snapshot_id = block.get("snapshot_id")
-        if snapshot_id is not None and str(snapshot_id).strip():
-            out[platform] = str(snapshot_id)
-    return out
-
-
 def build_dcs_run_snapshot(
     *,
     company: Company,
@@ -156,7 +134,11 @@ def build_dcs_run_snapshot(
     shopify_counts = shopify_fresh.get("counts") or {}
     manago_counts = manago_fresh.get("counts") or {}
 
-    identity = build_identity_snapshot(company=company)
+    identity = build_identity_snapshot(
+        company=company,
+        source_run_ids=pinned_source_run_ids,
+        pinned_snapshot_ids=pinned_snapshot_ids,
+    )
     identity_summary = identity.get("identity") or {}
     lifecycle = build_lifecycle_snapshot(
         company=company,
@@ -311,6 +293,10 @@ def build_dcs_run_snapshot(
         "lifecycle": lifecycle_summary,
         "consent": consent_summary,
         "consent_rows": consent.get("consent_rows") or [],
+        # PRD-WB-17 §3.4: uncapped out_in/in_out SoT for Download / live rebuild.
+        "consent_mismatch_email": consent.get("consent_mismatch_email") or [],
+        # PRD-WB-18 §3.4: uncapped SMS out_in/in_out SoT for Download / live rebuild.
+        "consent_mismatch_sms": consent.get("consent_mismatch_sms") or [],
         "product_truth": product_truth_summary,
         "product_truth_rows": product_truth.get("product_truth_rows") or [],
         "catalog": catalog_summary,

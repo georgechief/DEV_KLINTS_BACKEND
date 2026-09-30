@@ -17,6 +17,10 @@ def rollback_supported(intent: WriteIntent) -> tuple[bool, str | None]:
     strategy = intent.rollback_strategy
     if strategy == "tagged_backfill_delete" and intent.op_kind == "event_ingest":
         return False, "rollback_not_supported"
+    if strategy in (None, "none") and intent.op_kind == "event_correct":
+        return False, "rollback_not_supported"
+    if strategy == "none":
+        return False, "rollback_not_supported"
 
     allowed = _STRATEGY_BY_OP.get(intent.op_kind)
     if allowed is None:

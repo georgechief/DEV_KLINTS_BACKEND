@@ -272,6 +272,10 @@ def evaluate_pt_03(ctx: FoundationGateContext) -> CheckResult:
         + [
             {"side": "surplus_in_manago", "product_id": pid}
             for pid in (pt03.get("surplus_sample") or [])[:PT_SAMPLE]
+        ]
+        + [
+            {"side": "attribute_empty", "product_id": pid}
+            for pid in (pt03.get("attribute_empty_sample") or [])[:PT_SAMPLE]
         ],
     }
     if missing or surplus or empty:

@@ -1,6 +1,14 @@
 # Releases & deploy (DEV_KLINTS_BACKEND)
 
 
+
+## Deposit 2026-09-30 — product `main` sync (code only; no tag deploy)
+
+- Source: `klints_backend` `main` @ `6cafd10` (WB-13–21 + REAL-01 + prior AI/SEC stack).
+- Method: rsync deposit onto `deposit/product-main-2026-09-30` → PR → `main`.
+- Preserved client-only: `RELEASES.md`, tag deploy workflow, claim/security docs, `production.env`.
+- **Deploy:** not auto-deployed. Cut a new `v1.0.x` / `v0.1.x` tag when ready to ship FRA.
+
 ## Deposit 2026-09-22 — product `main` sync (code only; no tag deploy)
 
 - Source: `klints_backend` `main` @ `b116a01` (includes merged AI+#WB stack + M3-SEC-01).

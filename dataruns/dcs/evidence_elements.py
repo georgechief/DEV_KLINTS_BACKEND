@@ -113,6 +113,8 @@ _SIDE_LABELS: dict[str, str] = {
     "aov": "AOV baseline gap",
     "stale_decision_field": "Stale decision field",
     "stale_or_stall": "Stale lifecycle domain",
+    "missing_link_key": "Missing Manago externalId (clean email match)",
+    "value_mismatch": "Purchase value mismatch",
 }
 
 _SIDE_SOURCE: dict[str, str] = {
@@ -128,6 +130,8 @@ _SIDE_SOURCE: dict[str, str] = {
     "weak_provenance": "manago_ai",
     "shopify_holds_evidence": "shopify",
     "manago_only_unevidenced": "manago_ai",
+    "missing_link_key": "manago_ai",
+    "value_mismatch": "manago_ai",
 }
 
 _LOCATOR_LABELS: dict[str, str] = {

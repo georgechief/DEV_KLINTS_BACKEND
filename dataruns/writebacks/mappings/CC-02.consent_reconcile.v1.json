@@ -1,0 +1,61 @@
+{
+  "schema_version": "1.0.0",
+  "check_id": "CC-02",
+  "template_id": "T8",
+  "title": "SMS consent reconcile plan (forcePhoneOpt policy)",
+  "enabled": true,
+  "approval_tier": "batch",
+  "execute_mode": "plan_only",
+  "requires_consent_namespace_clean": false,
+  "irreversible": true,
+  "fix_owner": "Data lead",
+  "operator_disclosure": "CC-02 proposes an SMS/mobile consent reconcile plan from the Shopify↔Manago four-quadrant matrix (same SoT policy as CC-01, mobile-specific). Catalogue Fix Owner is Data lead — not Klints automated. Policy: opt-outs propagate everywhere immediately (out_in → forcePhoneOptOut on Manago); opt-ins propagate only with a provable consent record — agent-set Manago opt-ins do not qualify (see CC-03). Consented-but-unreachable phones are Download-only (CI-09-lite) — never forcePhoneOptIn. Phase A: Preview + Download only. Phase B (optional, after product sign-off): Manago contact upsert with forcePhoneOptOut / forcePhoneOptIn strictly per policy. Opt-out writes are deliberately not rolled back. Does not write Shopify SMS marketing consent and does not replace live bi-directional sync (CC-05 / integration). Re-run DCS after Manago state changes.",
+  "rollback": {
+    "strategy": "none",
+    "note": "Excel: same posture as CC-01 — opt-out propagation deliberately not rolled back."
+  },
+  "operations": [
+    {
+      "operation_id": "manago.contact_upsert.force_phone_opt_out_plan",
+      "op_kind": "contact_upsert",
+      "target": "manago",
+      "namespace": "native",
+      "capability_id": "RESTV2.CONTACT.UPSERT",
+      "entity_type": "contact",
+      "from_evidence": {
+        "match": { "path": "side", "const": "out_in" },
+        "entity_key": { "path": "person.email" },
+        "fields": {
+          "contact_id": { "path": "manago_contact_id" },
+          "proposed_action": { "path": "proposed_action" },
+          "evidence_gate": { "path": "evidence_gate" },
+          "prior_optedOutPhone": { "path": "prior_optedOutPhone" },
+          "shopify_customer_id": { "path": "shopify_customer_id" },
+          "phone": { "path": "person.phone" }
+        }
+      },
+      "guards": ["entity_key_required", "email_format", "plan_only"]
+    },
+    {
+      "operation_id": "manago.contact_upsert.force_phone_opt_in_plan",
+      "op_kind": "contact_upsert",
+      "target": "manago",
+      "namespace": "native",
+      "capability_id": "RESTV2.CONTACT.UPSERT",
+      "entity_type": "contact",
+      "from_evidence": {
+        "match": { "path": "side", "const": "in_out" },
+        "entity_key": { "path": "person.email" },
+        "fields": {
+          "contact_id": { "path": "manago_contact_id" },
+          "proposed_action": { "path": "proposed_action" },
+          "evidence_gate": { "path": "evidence_gate" },
+          "prior_optedOutPhone": { "path": "prior_optedOutPhone" },
+          "shopify_customer_id": { "path": "shopify_customer_id" },
+          "phone": { "path": "person.phone" }
+        }
+      },
+      "guards": ["entity_key_required", "email_format", "plan_only"]
+    }
+  ]
+}

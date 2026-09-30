@@ -258,6 +258,16 @@ def refresh_connected_platforms_for_dcs(
         )
         persist_health_report(data_run=import_data_run, health_report=health_report)
 
+        # Soft-tombstone Contact ghosts outside this pin (Order CASCADE-safe).
+        from dataruns.dcs.contact_sync import sync_contacts_to_snapshot
+
+        sync_contacts_to_snapshot(
+            company=company,
+            platform=platform,
+            snapshot_data=snapshot_data if isinstance(snapshot_data, dict) else None,
+            snapshot_id=str(result.get("snapshot_id") or "") or None,
+        )
+
         source_runs[platform] = import_data_run.id
         fresh_imports[platform] = {
             "data_run_id": import_data_run.id,

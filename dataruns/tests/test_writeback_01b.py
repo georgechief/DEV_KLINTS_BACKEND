@@ -86,6 +86,21 @@ class Writeback01BShopifyPipelineTests(TestCase):
             external_id="gid://shopify/Customer/4242",
             email="buyer@example.com",
         )
+        domain_run = Run.objects.create(
+            company=self.company,
+            run_type=Run.RunType.FULL,
+            status=Run.Status.COMPLETED,
+        )
+        DataRun.objects.create(
+            tenant=tenant,
+            name=DCS_SCORE_DATA_RUN_NAME,
+            status=DataRun.Status.SUCCEEDED,
+            metadata={
+                "kind": DCS_SCORE_KIND,
+                "company_id": str(self.company.id),
+                "domain_run_id": str(domain_run.id),
+            },
+        )
 
     def test_collect_evidence_from_shopify_contacts(self):
         rows = collect_evidence_rows(
@@ -312,7 +327,8 @@ class Writeback01BManagoCc03PipelineTests(TestCase):
         email = row.get("person.email")
         if not email and isinstance(row.get("value"), dict):
             email = row["value"].get("person.email")
-        self.assertEqual(email, "worklist@example.com")
+        # Worklist evidence is PII-masked for Download / Fix honesty (WB-07).
+        self.assertEqual(email, "w***@example.com")
 
     @patch("dataruns.writebacks.adapters.manago.upsert_contacts")
     @patch("dataruns.writebacks.adapters.manago.resolve_manago_write_context")

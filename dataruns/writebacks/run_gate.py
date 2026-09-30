@@ -261,6 +261,8 @@ def _serialize_preview_job(job: WritebackJob | None) -> dict[str, Any] | None:
             "executed": int(summary.get("executed") or 0),
         },
         "execute_eligible": {
+            # PRD-WB-21 Phase D: company = Allow writebacks; sandbox kept as legacy alias.
+            "company": bool(job.sandbox),
             "sandbox": bool(job.sandbox),
             "production": bool(settings.WRITEBACKS_ENABLED),
         },

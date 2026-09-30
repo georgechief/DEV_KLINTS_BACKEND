@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0.0",
+  "check_id": "LE-02",
+  "template_id": "T6",
+  "title": "Purchase value correction (matched PURCHASE)",
+  "enabled": true,
+  "approval_tier": "individual",
+  "requires_consent_namespace_clean": false,
+  "irreversible": true,
+  "operator_disclosure": "Updates existing Manago PURCHASE events via updateContactExtEvent (full field resend — not upsert). Overwrites event value with Shopify order gross (total_price). Not reversible in Manago — prior values remain only in Klints raw/import. Does not decide gross vs net mapping (document that separately). Does not backfill missing orders (use LE-05/LE-01) and does not remove Manago-only extras. Prefer clear gaps first, then Approve LE-02. Re-run DCS after Approve to clear LE-02.",
+  "rollback": {
+    "strategy": "none"
+  },
+  "operations": [
+    {
+      "operation_id": "manago.event_correct.purchase_value_le02",
+      "op_kind": "event_correct",
+      "target": "manago",
+      "namespace": "native",
+      "capability_id": "RESTV2.EVENT.UPDATE",
+      "entity_type": "event",
+      "from_evidence": {
+        "match": { "path": "side", "const": "value_mismatch" },
+        "entity_key": { "path": "event_external_id" },
+        "fields": {
+          "order_id": { "path": "event_external_id" },
+          "shopify_order_id": { "path": "order.id" },
+          "email": { "path": "person.email" },
+          "contact_id": { "path": "manago_contact_id" },
+          "value": { "path": "shopify_gross" },
+          "prior_value": { "path": "manago_value" },
+          "occurred_at": { "path": "occurred_at" },
+          "currency": { "path": "currency" }
+        }
+      },
+      "guards": ["entity_key_required"]
+    }
+  ]
+}

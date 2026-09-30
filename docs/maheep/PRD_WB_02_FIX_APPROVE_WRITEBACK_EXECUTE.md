@@ -87,18 +87,19 @@ Grounded in pack MVP1-A + Check Catalogue **and** our sheet/registry **today**:
 
 ### 3.2 Approve must stay OFF (evidence only — FE-12 later)
 
-Excel MVP1-A “Automated writeback + Manago surface” but **not** built / disabled in registry — **do not execute**:
+Excel MVP1-A “Automated writeback + Manago surface” but **Approve execute OFF** (plan/preview only or not built):
 
-`CI-03`, `CI-05`, `LE-02`, `LE-05`, `PT-01`, `PT-03`, `SP-03`, `CC-01`, `CC-02`, `BR-01`
+`CI-03` (WB-16 Phase A plan-only — Preview/Download; not auto-merged), `PT-01`, `PT-03`, `SP-03`, `CC-01`, `CC-02`, `BR-01`
 
-*(PT-04 removed — shipped WB-11. LE-09 removed — shipped WB-10. SP-07 removed — shipped WB-09. LE-01 removed — shipped WB-08.)*
+*(LE-02 removed — shipped WB-14. LE-05 removed — shipped WB-13. PT-04 removed — shipped WB-11. LE-09 removed — shipped WB-10. SP-07 removed — shipped WB-09. LE-01 removed — shipped WB-08. CI-05 removed — shipped WB-15.)*
 
 Plus always off:
 
 | check_id / topic | Why |
 |------------------|-----|
 | **LE-04** | Pack = Integration build + Manual; registry `enabled=false` |
-| CI-03 merge / SP-01 / LE-01 stubs | `mapping_stub` / disabled |
+| CI-03 merge | Phase A `plan_only` + FE allowlist off; Phase B SAFE delete after Loom |
+| SP-01 stub | `mapping_stub` / disabled (not MVP1 42) |
 | Shopify Order / Transaction / Manago Order CRUD | Not write surfaces |
 | Any check with `write_possible_today` ∈ {`no`,`disabled`} | Sheet SoT |
 

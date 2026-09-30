@@ -39,7 +39,9 @@ _IMPLEMENTED_OP_KINDS = frozenset(
         "detail_set",
         "tag_add",
         "event_ingest",
+        "event_correct",
         "shopify_customer_update",
+        "product_upsert",
     }
 )
 

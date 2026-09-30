@@ -2,14 +2,40 @@
   "schema_version": "1.0.0",
   "check_id": "CI-03",
   "template_id": "T3",
-  "title": "Contact merge plan (stub)",
-  "enabled": false,
+  "title": "Contact merge plan (Manago duplicates)",
+  "enabled": true,
   "approval_tier": "individual",
   "requires_consent_namespace_clean": false,
   "irreversible": true,
-  "operator_disclosure": "Contact merges cannot be undone in bulk.",
+  "execute_mode": "plan_only",
+  "fix_owner": "CRM manager",
+  "operator_disclosure": "CI-03 proposes a duplicate-contact merge plan (survivor vs loser). Catalogue: not auto-merged. Fix Owner is CRM manager — Klints does not silently merge. Deletes are irreversible and must never use email-delete when contacts share an email. Phase A: Preview + Download only. Phase B (if enabled): only SAFE_DELETE losers via batchDelete CONTACT_ID after sandbox Loom. Losers with PURCHASE/events require migration first. Re-run DCS after Manago+DB cleanup. Reused externalId clusters also drive CI-05 FAIL until resolved here.",
   "rollback": {
-    "strategy": "restore_prior_field"
+    "strategy": "none"
   },
-  "operations": []
+  "operations": [
+    {
+      "operation_id": "manago.contact_merge.plan_ci03",
+      "op_kind": "contact_merge",
+      "target": "manago",
+      "namespace": "native",
+      "capability_id": null,
+      "entity_type": "contact",
+      "from_evidence": {
+        "match": { "path": "side", "const": "merge_candidate" },
+        "entity_key": { "path": "survivor_manago_id" },
+        "fields": {
+          "cluster_kind": { "path": "cluster_kind" },
+          "cluster_key": { "path": "cluster_key" },
+          "survivor_manago_id": { "path": "survivor_manago_id" },
+          "loser_manago_ids": { "path": "loser_manago_ids" },
+          "safety_class": { "path": "safety_class" },
+          "safety_reason": { "path": "safety_reason" },
+          "email": { "path": "person.email" },
+          "link_key": { "path": "link_key" }
+        }
+      },
+      "guards": ["entity_key_required", "plan_only"]
+    }
+  ]
 }

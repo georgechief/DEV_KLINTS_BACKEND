@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0.0",
+  "check_id": "PT-03",
+  "template_id": "T7",
+  "title": "Reconcile Manago catalog vs Shopify active assortment",
+  "enabled": true,
+  "approval_tier": "batch",
+  "requires_consent_namespace_clean": false,
+  "irreversible": true,
+  "archive_enabled": false,
+  "fix_owner": "Klints (automated)",
+  "operator_disclosure": "PT-03 reconciles Manago product catalog to Shopify active products (Excel T7). Catalogue Fix Owner is Klints (automated). Approve upserts missing products and archive-flags surplus entries when Manago semantics allow. Does not run continuous Shopify webhooks (Integration follow-on). Does not hard-delete products. Product ID convention defaults to Shopify product.id = Manago productId. Requires RESTV2.PRODUCT.IMPORT capability confirmed. Attribute-empty rows stay Download-only in MVP. Re-run DCS after Approve.",
+  "rollback": {
+    "strategy": "none",
+    "note": "product_upsert / archive treated irreversible until reverse archive Loom-proven."
+  },
+  "operations": [
+    {
+      "operation_id": "manago.product_upsert.from_shopify",
+      "op_kind": "product_upsert",
+      "target": "manago",
+      "namespace": "native",
+      "capability_id": "RESTV2.PRODUCT.IMPORT",
+      "entity_type": "product",
+      "from_evidence": {
+        "match": { "path": "side", "const": "missing_in_manago" },
+        "entity_key": { "path": "write_entity_key" },
+        "fields": {
+          "product_id": { "path": "product_id" },
+          "name": { "path": "shopify_title" },
+          "sku": { "path": "shopify_sku" },
+          "catalog_id": { "path": "catalog_id" },
+          "proposed_action": { "path": "proposed_action" }
+        }
+      },
+      "guards": ["entity_key_required"]
+    },
+    {
+      "operation_id": "manago.product_upsert.archive_surplus",
+      "op_kind": "product_upsert",
+      "target": "manago",
+      "namespace": "native",
+      "capability_id": "RESTV2.PRODUCT.IMPORT",
+      "entity_type": "product",
+      "from_evidence": {
+        "match": { "path": "side", "const": "surplus_in_manago" },
+        "entity_key": { "path": "write_entity_key" },
+        "fields": {
+          "product_id": { "path": "product_id" },
+          "catalog_id": { "path": "catalog_id" },
+          "proposed_action": { "path": "proposed_action" }
+        }
+      },
+      "guards": ["entity_key_required"]
+    }
+  ]
+}

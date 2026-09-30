@@ -64,6 +64,12 @@ class WritebackPossibleSheetTests(TestCase):
         self.assertTrue(le01["registry_enabled"])
         self.assertEqual(le01["rollback_possible_today"], "limited")
 
+        le05 = by_check["LE-05"][0]
+        self.assertEqual(le05["write_possible_today"], "yes")
+        self.assertTrue(le05["registry_enabled"])
+        self.assertEqual(le05["rollback_possible_today"], "limited")
+        self.assertEqual(le05["op_kind"], "event_ingest")
+
         le09 = by_check["LE-09"][0]
         self.assertEqual(le09["write_possible_today"], "yes")
         self.assertTrue(le09["registry_enabled"])
@@ -307,6 +313,8 @@ class WritebackRunApiTests(TestCase):
             force_authenticate(preview, user=self.admin)
             preview_response = WritebackRunView.as_view()(preview)
             self.assertEqual(preview_response.status_code, 200, preview_response.data)
+            self.assertTrue(preview_response.data["execute_eligible"]["company"])
+            self.assertTrue(preview_response.data["execute_eligible"]["sandbox"])
 
             # WB-04: company Allow writebacks requires an approved token before execute.
             token = issue_approved_writeback_token(
@@ -334,6 +342,9 @@ class WritebackRunApiTests(TestCase):
         self.assertEqual(execute_response.data["mode"], "execute")
         self.assertEqual(execute_response.data["summary"]["executed"], 1)
         self.assertTrue(execute_response.data["rollback"]["supported"])
+        # PRD-WB-21 Phase D — company = Allow writebacks; sandbox is legacy alias.
+        self.assertTrue(execute_response.data["execute_eligible"]["company"])
+        self.assertTrue(execute_response.data["execute_eligible"]["sandbox"])
         self.assertFalse(execute_response.data["execute_eligible"]["production"])
         job_id = execute_response.data["job_id"]
 

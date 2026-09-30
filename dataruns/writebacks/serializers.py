@@ -64,6 +64,8 @@ def serialize_result(
             "executed": result.summary.executed,
         },
         "execute_eligible": {
+            # PRD-WB-21 Phase D: company = Allow writebacks; sandbox kept as legacy alias.
+            "company": result.execute_eligible.sandbox,
             "sandbox": result.execute_eligible.sandbox,
             "production": result.execute_eligible.production,
         },

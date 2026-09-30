@@ -381,9 +381,15 @@ def evaluate_le_02(ctx: FoundationGateContext) -> CheckResult:
             observed_at=observed,
         )
     ]
-    mismatches = [
-        {"side": "driver", "driver": d} for d in drivers
-    ]
+    mismatches: list[dict[str, Any]] = []
+    # PRD-WB-14: actionable matched value rows first (so sample cap keeps writeable rows).
+    value_rows = life.get("value_mismatches") if isinstance(life.get("value_mismatches"), list) else []
+    for item in value_rows:
+        if isinstance(item, dict) and str(item.get("side") or "") == "value_mismatch":
+            mismatches.append(dict(item))
+    for d in drivers:
+        mismatches.append({"side": "driver", "driver": d})
+    mismatches = mismatches[:LE_MISMATCH_SAMPLE]
 
     if shopify_n == 0 and manago_n == 0:
         return _with_revenue(
@@ -877,10 +883,12 @@ def evaluate_le_09(ctx: FoundationGateContext) -> CheckResult:
     shopify_only_returns_value = float(
         coverage.get("shopify_only_returns_value") or 0
     )
+    raw_enrichment = life.get("raw_enrichment") if isinstance(life.get("raw_enrichment"), dict) else {}
     raw_ok = bool(
-        (life.get("raw_enrichment") or {}).get("return_events_from_raw")
-        or (life.get("raw_enrichment") or {}).get("shopify_orders_from_raw")
+        raw_enrichment.get("return_events_from_raw")
+        or raw_enrichment.get("shopify_orders_from_raw")
     )
+    events_thin = bool(raw_enrichment.get("events_thin_vs_prior"))
     mismatches: list[dict[str, Any]] = []
     for oid in coverage.get("shopify_only_returns") or []:
         mismatches.append({"side": "shopify_only_return", "order.id": str(oid)})
@@ -924,6 +932,25 @@ def evaluate_le_09(ctx: FoundationGateContext) -> CheckResult:
             life=life,
             amount=0.0,
             formula_id=formula,
+        )
+
+    # Incomplete Manago events pull vs prior snap — do not FAIL (false gaps).
+    if events_thin and (shopify_only_n > 0 or (shopify_rc > 0 and manago_rc == 0)):
+        prior_n = raw_enrichment.get("manago_return_events_prior")
+        cur_n = raw_enrichment.get("manago_return_events_current")
+        return _result(
+            check_id="LE-09",
+            status="UNKNOWN",
+            reason_code="INCOMPLETE_FETCH:events",
+            confidence="LOW",
+            ctx=ctx,
+            detail=(
+                f"Manago return events look incomplete vs prior snap "
+                f"(current={cur_n} prior={prior_n}); re-run DCS fresh import. "
+                f"Shopify refunds/cancels={shopify_rc}."
+            ),
+            evidence=evidence,
+            provenance=provenance,
         )
 
     # Shopify has returns/cancels but Manago RETURN/CANCELLATION stream is empty.

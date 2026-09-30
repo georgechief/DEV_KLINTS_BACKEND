@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import json
+import urllib.error
+import urllib.request
 from dataclasses import dataclass
 from typing import Any
 
 from dataruns.connectors.base import decrypt_connector_config, get_connector
 from dataruns.connectors.manago_ai.client import (
     ManagoClientError,
+    _manago_v3_headers,
+    _manago_v3_url,
     _post_manago,
     _resolve_credentials,
     _resolve_owner,
@@ -21,6 +26,7 @@ class ManagoWriteContext:
     client_id: str
     api_secret: str
     owner: str
+    api_v3_key: str | None = None
 
 
 def resolve_manago_write_context(company: Company) -> ManagoWriteContext:
@@ -34,11 +40,17 @@ def resolve_manago_write_context(company: Company) -> ManagoWriteContext:
         timeout=30.0,
         config=config,
     )
+    api_v3_key = config.get("api_v3_key") or config.get("apiV3Key")
+    if not isinstance(api_v3_key, str) or not api_v3_key.strip():
+        api_v3_key = None
+    else:
+        api_v3_key = api_v3_key.strip()
     return ManagoWriteContext(
         endpoint=endpoint,
         client_id=client_id,
         api_secret=api_secret,
         owner=owner,
+        api_v3_key=api_v3_key,
     )
 
 
@@ -181,3 +193,105 @@ def batch_add_external_events(
         payload={"owner": ctx.owner, "events": events},
         timeout=timeout,
     )
+
+
+def update_contact_ext_event(
+    ctx: ManagoWriteContext,
+    event: dict[str, Any],
+    *,
+    timeout: float = 30.0,
+) -> dict[str, Any]:
+    """Update an existing external event (PRD-WB-14 / catalogue updateContactExtEvent).
+
+    Full field resend — not upsert. Path confirmed as catalogue API name under
+    ``api/contact/updateContactExtEvent`` (ingest sibling).
+    """
+    if not isinstance(event, dict) or not event:
+        raise ManagoClientError("update_contact_ext_event requires event payload")
+    if not str(event.get("externalId") or "").strip():
+        raise ManagoClientError("update_contact_ext_event requires externalId")
+    if not str(event.get("email") or event.get("contactId") or "").strip():
+        raise ManagoClientError("update_contact_ext_event requires email or contactId")
+    payload: dict[str, Any] = {"owner": ctx.owner, **event}
+    return _post_manago(
+        endpoint=ctx.endpoint,
+        path="api/contact/updateContactExtEvent",
+        client_id=ctx.client_id,
+        api_secret=ctx.api_secret,
+        payload=payload,
+        timeout=timeout,
+    )
+
+
+def upsert_products(
+    ctx: ManagoWriteContext,
+    products: list[dict[str, Any]],
+    *,
+    catalog_id: str | None = None,
+    timeout: float = 30.0,
+) -> dict[str, Any]:
+    """PRD-WB-20 — Manago API v3 ``product/upsert`` (Excel T7 / PRODUCT.IMPORT).
+
+    Requires connector ``api_v3_key``. Body shape refined by sandbox Loom.
+    """
+    if not products:
+        raise ManagoClientError("upsert_products requires at least one product")
+    if not ctx.api_v3_key:
+        raise ManagoClientError("upsert_products requires api_v3_key on Manago connector")
+    last: dict[str, Any] | None = None
+    for product in products:
+        if not isinstance(product, dict):
+            raise ManagoClientError("upsert_products product must be an object")
+        wire_product = {
+            k: v
+            for k, v in product.items()
+            if v is not None and not str(k).startswith("_") and k != "proposed_action"
+        }
+        if not str(wire_product.get("productId") or "").strip():
+            raise ManagoClientError("upsert_products requires productId")
+        body: dict[str, Any] = {"product": wire_product}
+        if catalog_id:
+            body["catalogId"] = str(catalog_id).strip()
+        last = _post_manago_v3_json(
+            path="product/upsert",
+            api_v3_key=ctx.api_v3_key,
+            payload=body,
+            timeout=timeout,
+        )
+    assert last is not None
+    return last
+
+
+def _post_manago_v3_json(
+    *,
+    path: str,
+    api_v3_key: str,
+    payload: dict[str, Any],
+    timeout: float,
+) -> dict[str, Any]:
+    url = _manago_v3_url(path)
+    body = json.dumps(payload).encode("utf-8")
+    headers = _manago_v3_headers(
+        api_v3_key=api_v3_key,
+        extra={"Content-Type": "application/json;charset=UTF-8"},
+    )
+    request = urllib.request.Request(url, data=body, method="POST", headers=headers)
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            raw = response.read().decode("utf-8")
+    except urllib.error.HTTPError as exc:
+        detail = ""
+        try:
+            detail = exc.read().decode("utf-8", errors="replace")[:500]
+        except Exception:
+            detail = str(exc)
+        raise ManagoClientError(f"manago_v3_http_{exc.code}:{detail}") from exc
+    except Exception as exc:  # noqa: BLE001
+        raise ManagoClientError(f"manago_v3_request_failed:{exc}") from exc
+    if not raw:
+        return {"ok": True}
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ManagoClientError(f"manago_v3_invalid_json:{exc}") from exc
+    return data if isinstance(data, dict) else {"ok": True, "raw": data}

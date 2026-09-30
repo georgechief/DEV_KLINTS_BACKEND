@@ -195,6 +195,50 @@ class EvaluateLe02Tests(SimpleTestCase):
         )
         self.assertEqual(result.status, "FAIL")
 
+    def test_value_mismatch_rows_precede_drivers(self):
+        """PRD-WB-14: actionable value_mismatch first so sample cap keeps writeable rows."""
+        result = evaluate_le_02(
+            _ctx(
+                _base_lifecycle(
+                    shopify_order_value=1000,
+                    manago_purchase_value=800,
+                    value_mismatches=[
+                        {
+                            "side": "value_mismatch",
+                            "order.id": "gid-1",
+                            "event_external_id": "1001",
+                            "shopify_gross": 120.0,
+                            "manago_value": 100.0,
+                            "abs_delta": 20.0,
+                            "match_kind": "order_number",
+                        }
+                    ],
+                    value_decomposition={
+                        "missing_events_value": 0,
+                        "extra_events_value": 0,
+                        "matched_gross_delta": 200,
+                        "matched_net_delta": 200,
+                    },
+                    monthly=[
+                        {
+                            "month": "2026-07",
+                            "shopify_orders": 100,
+                            "manago_purchases": 100,
+                            "shopify_value": 1000,
+                            "manago_value": 800,
+                            "count_delta": 0.0,
+                            "value_delta": 0.2,
+                        }
+                    ],
+                )
+            )
+        )
+        self.assertEqual(result.status, "FAIL")
+        mismatches = result.provenance["mismatches"]
+        self.assertEqual(mismatches[0]["side"], "value_mismatch")
+        self.assertEqual(mismatches[0]["event_external_id"], "1001")
+        self.assertTrue(any(m.get("side") == "driver" for m in mismatches))
+
 
 class EvaluateLe03Tests(SimpleTestCase):
     def test_fail_low_external_id_share(self):
@@ -328,6 +372,85 @@ class LifecycleJoinDbTests(TestCase):
         self.assertFalse(life["test_filter_applied"])  # no Shopify raw
         types = {e["type"] for e in payload["events"]}
         self.assertIn("PURCHASE", types)
+
+
+class LifecycleJoinValueMismatchTests(SimpleTestCase):
+    """PRD-WB-14 / Excel LE-02 — matched value_mismatch emission rules."""
+
+    def test_emit_skips_heuristic_dedupes_and_uses_event_external_id(self):
+        from dataruns.dcs.lifecycle_join import (
+            _reconcile_order_events,
+            _value_mismatches_from_events,
+        )
+
+        paid = [
+            {
+                "order.id": "55",
+                "order_number": "1001",
+                "person.email": "a@x.com",
+                "amount_gross": 120.0,
+                "amount_net": 100.0,
+                "currency": "USD",
+                "ordered_at": "2026-01-15T12:00:00Z",
+            },
+            {
+                "order.id": "66",
+                "order_number": "1002",
+                "person.email": "b@x.com",
+                "amount_gross": 50.0,
+                "amount_net": 50.0,
+                "currency": "USD",
+                "ordered_at": "2026-01-16T12:00:00Z",
+            },
+        ]
+        events = [
+            # order_number match — Manago spine ≠ Shopify id
+            {
+                "order.id": "1001",
+                "value": 100.0,
+                "person.email": "a@x.com",
+                "person.external_key": "mc-a",
+                "currency": "USD",
+                "occurred_at": "2026-01-15T12:00:00Z",
+                "has_external_id": True,
+                "join_key_source": "externalId",
+            },
+            # duplicate Manago row for same Shopify order — larger delta wins
+            {
+                "order.id": "1001",
+                "value": 80.0,
+                "person.email": "a@x.com",
+                "person.external_key": "mc-a",
+                "currency": "USD",
+                "occurred_at": "2026-01-15T12:00:00Z",
+                "has_external_id": True,
+                "join_key_source": "externalId",
+            },
+            # heuristic-only — must not emit
+            {
+                "order.id": "",
+                "value": 50.0,
+                "person.email": "b@x.com",
+                "person.external_key": "mc-b",
+                "currency": "USD",
+                "occurred_at": "2026-01-16T12:00:00Z",
+            },
+        ]
+        reconcile = _reconcile_order_events(paid_shopify=paid, purchase_events=events)
+        self.assertEqual(reconcile["match_kinds"].get("55"), "order_number")
+        self.assertEqual(reconcile["match_kinds"].get("66"), "heuristic_email_date_value")
+
+        rows = _value_mismatches_from_events(
+            purchase_events=events,
+            shopify_by_id={o["order.id"]: o for o in paid},
+            match_kinds=reconcile["match_kinds"],
+        )
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["order.id"], "55")
+        self.assertEqual(rows[0]["event_external_id"], "1001")
+        self.assertEqual(rows[0]["abs_delta"], 40.0)  # 120 - 80
+        self.assertEqual(rows[0]["shopify_gross"], 120.0)
+        self.assertEqual(rows[0]["manago_value"], 80.0)
 
 
 class LifecycleJoinRawTests(SimpleTestCase):

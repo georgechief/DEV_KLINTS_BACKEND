@@ -185,3 +185,15 @@ python manage.py test
 ```
 
 Celery tests run with `CELERY_TASK_ALWAYS_EAGER` so Redis is not required for `manage.py test`.
+
+### WB-21 sandbox contract
+
+```bash
+# Static matrix: Tier A/B/C/D ↔ FE allowlist ↔ possible sheet ↔ harness test methods
+python scripts/verify_wb21_sandbox_contract.py
+
+# Mocked contract suite (Phase A–D); live suite skips unless WRITEBACK_EXECUTE_COMPANY_ID is set
+python manage.py test dataruns.tests.test_writeback_sandbox_contract dataruns.tests.test_writeback_sandbox_integration --keepdb
+```
+
+See `docs/maheep/PRD_WB_21_SANDBOX_TEST_ALL_WRITEBACKS.md`.

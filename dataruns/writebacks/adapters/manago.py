@@ -12,9 +12,11 @@ from dataruns.writebacks.adapters.manago_transport import (
     batch_add_external_events,
     remove_contact_tag,
     resolve_manago_write_context,
+    update_contact_ext_event,
     upsert_contacts,
+    upsert_products,
 )
-from dataruns.writebacks.capabilities import capability_allows_execute
+from dataruns.writebacks.capabilities import capability_allows_execute, capability_status
 from dataruns.writebacks.rollback_snapshot import refresh_rollback_snapshot
 from dataruns.writebacks.types import WriteIntent
 from tenants.models import Company
@@ -28,13 +30,42 @@ class ManagoWriteAdapter:
     def dry_run(self, company: Company, intents: list[WriteIntent]) -> list[WriteIntent]:
         updated: list[WriteIntent] = []
         for intent in intents:
-            if intent.status == "error":
+            # Preserve transform honesty gates (archive_semantics_unknown,
+            # needs_catalog_id, skip_needs_contract, already_at_target, …).
+            # Flipping skipped→ready would defeat archive_enabled / contract skips
+            # and become executable once the capability is CONFIRMED_*.
+            if intent.status in ("error", "skipped"):
                 updated.append(intent)
                 continue
             if intent.target_system not in ("manago", "manago_ai"):
                 updated.append(intent)
                 continue
+            # PRD-WB-16 Phase A: plan intents have no capability — skip gate.
+            payload = intent.payload or {}
+            if (
+                str(payload.get("mode") or "").strip().lower() == "plan"
+                or intent.op_kind == "contact_merge"
+            ):
+                if not self._validate_payload(intent, execute=False):
+                    intent.status = "error"
+                    intent.error_reason = intent.error_reason or "invalid_payload"
+                    updated.append(intent)
+                    continue
+                intent.status = "ready"
+                updated.append(intent)
+                continue
             if not capability_allows_execute(intent.capability_id):
+                # PRD-WB-20: Preview may show plan while DISCOVERY_REQUIRED;
+                # execute path re-checks and blocks.
+                if capability_status(intent.capability_id) == "DISCOVERY_REQUIRED":
+                    if not self._validate_payload(intent, execute=False):
+                        intent.status = "error"
+                        intent.error_reason = intent.error_reason or "invalid_payload"
+                        updated.append(intent)
+                        continue
+                    intent.status = "ready"
+                    updated.append(intent)
+                    continue
                 intent.status = "error"
                 intent.error_reason = "capability_not_confirmed"
                 updated.append(intent)
@@ -70,6 +101,11 @@ class ManagoWriteAdapter:
         updated: list[WriteIntent] = []
         for intent in intents:
             if intent.status != "ready":
+                updated.append(intent)
+                continue
+            if not capability_allows_execute(intent.capability_id):
+                intent.status = "error"
+                intent.error_reason = "capability_not_confirmed"
                 updated.append(intent)
                 continue
             if not self._validate_payload(intent, execute=True):
@@ -174,11 +210,38 @@ class ManagoWriteAdapter:
 
         if intent.op_kind == "contact_upsert":
             email = str(payload.get("email") or snapshot.get("email") or "")
+            contact_id = (
+                payload.get("contactId")
+                or snapshot.get("contactId")
+                or snapshot.get("contact_id")
+            )
+            # PRD-WB-15: restore_prior_field restores prior externalId (empty clears).
+            if intent.rollback_strategy == "restore_prior_field":
+                prior = snapshot.get("externalId")
+                if prior is None:
+                    prior = snapshot.get("prior_external_id")
+                if prior is None:
+                    prior = (intent.before or {}).get("externalId")
+                restore_value = "" if prior is None else str(prior)
+                contact = {
+                    "email": email or None,
+                    "contactId": contact_id,
+                    "externalId": restore_value,
+                }
+                contact = {k: v for k, v in contact.items() if v is not None}
+                # Empty string must stay on the wire to clear externalId.
+                contact["externalId"] = restore_value
+                response = upsert_contacts(ctx, [contact])
+                return {
+                    "ok": True,
+                    "restored_external_id": restore_value,
+                    "response": _safe_response(response),
+                }
             if snapshot.get("existed"):
                 return {"ok": True, "skipped": "contact_pre_existed"}
             contact = {
                 "email": email or None,
-                "contactId": payload.get("contactId") or snapshot.get("contactId"),
+                "contactId": contact_id,
                 "properties": {"klints_backfill": ""},
             }
             contact = {k: v for k, v in contact.items() if v is not None}
@@ -261,6 +324,48 @@ class ManagoWriteAdapter:
                 "idempotency_key": idempotency_key,
                 "response": _safe_response(response),
             }
+        if intent.op_kind == "event_correct":
+            event = {
+                k: v
+                for k, v in payload.items()
+                if v is not None and not str(k).startswith("_")
+            }
+            if not str(event.get("externalId") or "").strip():
+                raise ManagoClientError("event_correct requires externalId")
+            if not str(event.get("email") or event.get("contactId") or "").strip():
+                raise ManagoClientError("event_correct requires email or contactId")
+            response = update_contact_ext_event(ctx, event)
+            return {
+                "ok": True,
+                "idempotency_key": idempotency_key,
+                "response": _safe_response(response),
+            }
+        if intent.op_kind == "product_upsert":
+            product = payload.get("product")
+            if not isinstance(product, dict):
+                product = {
+                    k: v
+                    for k, v in payload.items()
+                    if v is not None
+                    and not str(k).startswith("_")
+                    and k not in ("proposed_action", "catalogId", "product")
+                }
+            wire = {
+                k: v
+                for k, v in (product or {}).items()
+                if v is not None and k != "proposed_action" and not str(k).startswith("_")
+            }
+            catalog_id = payload.get("catalogId")
+            response = upsert_products(
+                ctx,
+                [wire],
+                catalog_id=str(catalog_id).strip() if catalog_id else None,
+            )
+            return {
+                "ok": True,
+                "idempotency_key": idempotency_key,
+                "response": _safe_response(response),
+            }
         raise NotImplementedError(f"adapter_not_implemented:{intent.op_kind}")
 
     def _validate_payload(self, intent: WriteIntent, *, execute: bool) -> bool:
@@ -269,6 +374,16 @@ class ManagoWriteAdapter:
             if not str(payload.get("email") or "").strip():
                 intent.error_reason = "missing_email"
                 return False
+            # CI-05 identity repair: require Shopify id on the wire as externalId.
+            if intent.rollback_strategy == "restore_prior_field" and str(
+                intent.check_id or ""
+            ).upper() == "CI-05":
+                if not str(payload.get("externalId") or "").strip():
+                    intent.error_reason = "missing_external_id"
+                    return False
+                if not str(payload.get("contactId") or "").strip():
+                    intent.error_reason = "missing_contact_reference"
+                    return False
             return True
         if intent.op_kind == "detail_set":
             props = payload.get("properties")
@@ -297,6 +412,41 @@ class ManagoWriteAdapter:
                 intent.error_reason = "missing_contact_reference"
                 return False
             return True
+        if intent.op_kind == "event_correct":
+            if not str(payload.get("externalId") or "").strip():
+                intent.error_reason = "missing_external_id"
+                return False
+            if payload.get("value") is None or payload.get("value") == "":
+                intent.error_reason = "missing_event_value"
+                return False
+            if execute and not str(
+                payload.get("email") or payload.get("contactId") or ""
+            ).strip():
+                intent.error_reason = "missing_contact_reference"
+                return False
+            return True
+        if intent.op_kind == "product_upsert":
+            product = payload.get("product")
+            if isinstance(product, dict):
+                product_id = str(product.get("productId") or "").strip()
+            else:
+                product_id = str(payload.get("productId") or intent.entity_key or "").strip()
+            if not product_id:
+                intent.error_reason = "missing_product_id"
+                return False
+            return True
+        if intent.op_kind == "contact_merge":
+            # Phase A plan-only — never mutate. Phase B will validate SAFE_DELETE.
+            if str(payload.get("mode") or "").strip().lower() == "plan":
+                if not str(payload.get("survivor_id") or "").strip():
+                    intent.error_reason = "missing_survivor_id"
+                    return False
+                return True
+            if execute:
+                intent.error_reason = "contact_merge_execute_not_enabled"
+                return False
+            intent.error_reason = "adapter_not_implemented"
+            return False
         intent.error_reason = "adapter_not_implemented"
         return False
 

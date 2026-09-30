@@ -20,6 +20,8 @@ from dataruns.dcs.lifecycle_join import (
 from tenants.models import Company
 
 SP_SAMPLE = 50
+# PRD-WB-19: FE-12 Download needs a fuller per-contact list than Preview (SP_SAMPLE).
+SP_DOWNLOAD_CONTACT_CAP = 500
 _KLINTS_DETAIL = re.compile(r"^klints_", re.I)
 _KLINTS_TAG = re.compile(r"^klints:", re.I)
 # Baseline writeback-owned markers (PRD-WB / WB-09). Also union keys/tags declared
@@ -238,6 +240,39 @@ def build_segment_snapshot(
                 }
             )
 
+    # PRD-WB-19: contact-level rows for Download / Fix evidence (key-level alone is thin).
+    inconsistent_key_set = {
+        str(item.get("key") or "").strip()
+        for item in inconsistent
+        if isinstance(item, dict) and str(item.get("key") or "").strip()
+    }
+    inconsistent_contact_sample: list[dict[str, Any]] = []
+    if inconsistent_key_set:
+        for contact in contacts:
+            email = str(contact.get("email") or "").strip()
+            contact_id = str(
+                contact.get("contactId") or contact.get("id") or ""
+            ).strip()
+            if not email and not contact_id:
+                continue
+            for key, value in _iter_detail_pairs(contact):
+                if key not in inconsistent_key_set:
+                    continue
+                inconsistent_contact_sample.append(
+                    {
+                        "side": "inconsistent_detail_format",
+                        "key": key,
+                        "person.email": email or None,
+                        "manago_contact_id": contact_id or None,
+                        "value_before": value,
+                        "fmt_before": _classify_value(value),
+                    }
+                )
+                if len(inconsistent_contact_sample) >= SP_DOWNLOAD_CONTACT_CAP:
+                    break
+            if len(inconsistent_contact_sample) >= SP_DOWNLOAD_CONTACT_CAP:
+                break
+
     # Excel SP-03: keys duplicating each other semantically.
     semantic_groups: dict[str, list[str]] = defaultdict(list)
     for key in all_keys:
@@ -292,6 +327,10 @@ def build_segment_snapshot(
             "tag_count": len(all_tags),
             "inconsistent_keys": len(inconsistent),
             "inconsistent_sample": inconsistent[:SP_SAMPLE],
+            "inconsistent_contact_sample": inconsistent_contact_sample,
+            "normalise_candidate_count": len(inconsistent_contact_sample),
+            "preview_sample_cap": SP_SAMPLE,
+            "download_contact_cap": SP_DOWNLOAD_CONTACT_CAP,
             "semantic_duplicate_groups": len(semantic_dupes),
             "semantic_duplicate_sample": semantic_dupes[:SP_SAMPLE],
             "shopify_metafield_keys": metafield_keys[:SP_SAMPLE],

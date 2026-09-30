@@ -5,6 +5,11 @@
       "file": "CI-01.identity_backfill.v1.json",
       "enabled": true
     },
+    "CI-05": {
+      "file": "CI-05.identity_key_repair.v1.json",
+      "enabled": true,
+      "template_id": "T2"
+    },
     "CC-03": {
       "file": "CC-03.consent_provenance.v1.json",
       "enabled": true
@@ -20,8 +25,28 @@
     },
     "CI-03": {
       "file": "CI-03.contact_merge.v1.json",
-      "enabled": false,
+      "enabled": true,
       "template_id": "T3"
+    },
+    "CC-01": {
+      "file": "CC-01.consent_reconcile.v1.json",
+      "enabled": true,
+      "template_id": "T8"
+    },
+    "CC-02": {
+      "file": "CC-02.consent_reconcile.v1.json",
+      "enabled": true,
+      "template_id": "T8"
+    },
+    "SP-03": {
+      "file": "SP-03.detail_schema_normalize.v1.json",
+      "enabled": true,
+      "template_id": "T4"
+    },
+    "PT-03": {
+      "file": "PT-03.catalog_reconcile.v1.json",
+      "enabled": true,
+      "template_id": "T7"
     },
     "SP-01": {
       "file": "SP-01.tag_consolidation.v1.json",
@@ -32,6 +57,16 @@
       "file": "LE-01.event_backfill.v1.json",
       "enabled": true,
       "template_id": "T5"
+    },
+    "LE-05": {
+      "file": "LE-05.purchase_gap.v1.json",
+      "enabled": true,
+      "template_id": "T5"
+    },
+    "LE-02": {
+      "file": "LE-02.value_correct.v1.json",
+      "enabled": true,
+      "template_id": "T6"
     },
     "SP-07": {
       "file": "SP-07.namespace_clean.v1.json",

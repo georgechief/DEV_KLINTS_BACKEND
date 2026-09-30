@@ -9,9 +9,15 @@
       "status": "CONFIRMED_LIVE",
       "batch_max": 1000
     },
+    "RESTV2.EVENT.UPDATE": {
+      "status": "CONFIRMED_LIMITED",
+      "batch_max": 50,
+      "scope_note": "updateContactExtEvent — LE-02 value correct; path api/contact/updateContactExtEvent; full field resend (not upsert); batch_max=50 matches LE_MISMATCH_SAMPLE until Loom proves higher"
+    },
     "RESTV2.PRODUCT.IMPORT": {
       "status": "DISCOVERY_REQUIRED",
-      "batch_max": 100
+      "batch_max": 100,
+      "scope_note": "PRD-WB-20 — Manago v3 product/upsert wired in adapter; Preview OK; execute blocked until sandbox Loom upgrades to CONFIRMED_LIMITED/LIVE. Archive surplus gated by mapping archive_enabled=false until Loom."
     },
     "SHOPIFY.CUSTOMER.UPDATE": {
       "status": "CONFIRMED_LIVE",

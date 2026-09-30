@@ -30,6 +30,9 @@ _REFUND_FINANCIAL = frozenset({"refunded", "partially_refunded"})
 _CANCEL_FINANCIAL = frozenset({"voided", "cancelled", "canceled"})
 _PURCHASE_TYPES = frozenset({"PURCHASE", "TRANSACTION"})
 _RETURN_TYPES = frozenset({"RETURN", "CANCELLATION", "CANCEL", "CANCELLED"})
+# Thin Manago events pull vs prior snap — avoid false LE-09 FAIL on incomplete fetch.
+_EVENTS_THIN_DROP_ABS = 3
+_EVENTS_THIN_DROP_RATIO = 0.10
 
 
 def _iso(dt) -> str | None:
@@ -372,6 +375,8 @@ def _manago_purchases_from_db(company: Company) -> list[dict[str, Any]]:
         company=company, source="manago_ai", status=Order.Status.PAID
     ).select_related("contact"):
         contact = order.contact
+        if contact is not None and getattr(contact, "excluded", False):
+            continue
         oid = str(order.external_id)
         rows.append(
             {
@@ -432,16 +437,20 @@ def _manago_return_cancel_from_raw(raw: dict[str, Any]) -> list[dict[str, Any]]:
 
 def _manago_return_cancel_from_db(company: Company) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    for order in Order.objects.filter(company=company, source="manago_ai").exclude(
-        status=Order.Status.PAID
-    ).select_related("contact"):
+    for order in (
+        Order.objects.filter(company=company, source="manago_ai")
+        .exclude(status=Order.Status.PAID)
+        .select_related("contact")
+    ):
+        contact = order.contact
+        if contact is not None and getattr(contact, "excluded", False):
+            continue
         if order.status == Order.Status.REFUNDED:
             event_type = "RETURN"
         elif order.status == Order.Status.FAILED:
             event_type = "CANCELLATION"
         else:
             continue
-        contact = order.contact
         rows.append(
             {
                 "type": event_type,
@@ -579,6 +588,74 @@ def _reconcile_order_events(
     }
 
 
+def _value_mismatches_from_events(
+    *,
+    purchase_events: list[dict[str, Any]],
+    shopify_by_id: dict[str, dict[str, Any]],
+    match_kinds: dict[str, str],
+) -> list[dict[str, Any]]:
+    """PRD-WB-14 / Excel LE-02 Part B — actionable matched value rows.
+
+    Skip heuristic-only matches. Entity spine = Manago event ``order.id``
+    (externalId / order_number), which may differ from Shopify ``order.id``.
+    Dedupe one row per Shopify order (largest abs_delta). Cap at LE_GAP_SAMPLE.
+    """
+    value_mismatches: list[dict[str, Any]] = []
+    for event in purchase_events:
+        if not event.get("matched_order.id"):
+            continue
+        if event.get("match_kind") == "heuristic_email_date_value":
+            continue
+        shopify_oid = str(event.get("matched_order.id") or "").strip()
+        order = shopify_by_id.get(shopify_oid) if shopify_oid else None
+        if not order:
+            continue
+        if event.get("value") is None:
+            continue
+        shopify_gross = float(order.get("amount_gross") or 0)
+        manago_value = float(event.get("value") or 0)
+        abs_delta = abs(shopify_gross - manago_value)
+        if abs_delta <= 0.01:
+            continue
+        event_ext = str(event.get("order.id") or "").strip() or shopify_oid
+        row: dict[str, Any] = {
+            "side": "value_mismatch",
+            "order.id": shopify_oid,
+            "event_external_id": event_ext,
+            "shopify_gross": round(shopify_gross, 2),
+            "manago_value": round(manago_value, 2),
+            "abs_delta": round(abs_delta, 2),
+            "match_kind": event.get("match_kind") or match_kinds.get(shopify_oid),
+        }
+        cur = str(event.get("currency") or order.get("currency") or "").strip()
+        if cur:
+            row["currency"] = cur
+        email = str(event.get("person.email") or "").strip()
+        if email:
+            row["person.email"] = email
+        contact_id = str(event.get("person.external_key") or "").strip()
+        if contact_id:
+            row["manago_contact_id"] = contact_id
+        occurred = event.get("occurred_at")
+        if occurred:
+            row["occurred_at"] = occurred
+        value_mismatches.append(row)
+
+    by_shopify: dict[str, dict[str, Any]] = {}
+    for row in value_mismatches:
+        oid = str(row.get("order.id") or "")
+        prev = by_shopify.get(oid)
+        if prev is None or float(row.get("abs_delta") or 0) > float(
+            prev.get("abs_delta") or 0
+        ):
+            by_shopify[oid] = row
+    return sorted(
+        by_shopify.values(),
+        key=lambda r: float(r.get("abs_delta") or 0),
+        reverse=True,
+    )[:LE_GAP_SAMPLE]
+
+
 def build_lifecycle_snapshot(
     *,
     company: Company,
@@ -624,17 +701,23 @@ def build_lifecycle_snapshot(
         external_id_known = False
 
     return_from_raw = _manago_return_cancel_from_raw(manago_raw)
-    return_from_db = _manago_return_cancel_from_db(company)
-    # Prefer raw RETURN/CANCELLATION; union DB rows whose order.id not already present.
-    seen_return_keys: set[str] = set()
-    return_cancel_events: list[dict[str, Any]] = []
-    for event in return_from_raw + return_from_db:
-        key = f"{event.get('type')}:{event.get('order.id')}"
-        if key in seen_return_keys:
-            continue
-        seen_return_keys.add(key)
-        return_cancel_events.append(event)
-    return_events_from_raw = bool(return_from_raw)
+    # When pinned raw carries an events list, treat it as authoritative for LE-09
+    # (do not union Contact/Order DB ghosts that mask thin fetches).
+    manago_events_list = manago_raw.get("events") if isinstance(manago_raw, dict) else None
+    if isinstance(manago_events_list, list):
+        return_cancel_events = list(return_from_raw)
+        return_events_from_raw = True
+    else:
+        return_from_db = _manago_return_cancel_from_db(company)
+        seen_return_keys: set[str] = set()
+        return_cancel_events = []
+        for event in return_from_raw + return_from_db:
+            key = f"{event.get('type')}:{event.get('order.id')}"
+            if key in seen_return_keys:
+                continue
+            seen_return_keys.add(key)
+            return_cancel_events.append(event)
+        return_events_from_raw = bool(return_from_raw)
 
     reconcile = _reconcile_order_events(
         paid_shopify=paid_shopify,
@@ -796,6 +879,11 @@ def build_lifecycle_snapshot(
     for event in purchase_events:
         if event.get("matched_order.id") and event.get("match_kind") != "heuristic_email_date_value":
             matched_event_value += float(event.get("value") or 0)
+    value_mismatches = _value_mismatches_from_events(
+        purchase_events=purchase_events,
+        shopify_by_id=shopify_by_id,
+        match_kinds=reconcile["match_kinds"],
+    )
 
     shopify_value_gross = sum(float(o.get("amount_gross") or 0) for o in paid_shopify)
     shopify_value_net = sum(
@@ -869,6 +957,8 @@ def build_lifecycle_snapshot(
                 "matched_gross_delta": round(abs(matched_gross - matched_event_value), 4),
                 "matched_net_delta": round(abs(matched_net - matched_event_value), 4),
             },
+            "value_mismatches": value_mismatches,
+            "value_mismatch_count": len(value_mismatches),
             "in_both": reconcile["in_both"],
             "shopify_only": shopify_only,
             "manago_only": manago_only,
@@ -917,6 +1007,77 @@ def build_lifecycle_snapshot(
                 "return_events_from_raw": return_events_from_raw,
                 "external_id_from_raw": external_id_known,
                 "test_filter_applied": test_filter_applied,
+                **_manago_events_thin_vs_prior(
+                    company=company,
+                    pinned_snapshot_id=snaps.get("manago_ai"),
+                    current_return_count=len(return_from_raw),
+                ),
             },
         },
     }
+
+
+def _count_manago_returnish_events(raw: dict[str, Any] | None) -> int:
+    if not isinstance(raw, dict):
+        return 0
+    events = raw.get("events")
+    if not isinstance(events, list):
+        return 0
+    n = 0
+    for event in events:
+        if not isinstance(event, dict):
+            continue
+        et = str(
+            event.get("contactExtEventType")
+            or event.get("type")
+            or event.get("eventType")
+            or ""
+        ).upper()
+        if et in _RETURN_TYPES or "RETURN" in et or "CANCEL" in et:
+            n += 1
+    return n
+
+
+def _manago_events_thin_vs_prior(
+    *,
+    company: Company,
+    pinned_snapshot_id: str | None,
+    current_return_count: int,
+) -> dict[str, Any]:
+    """Flag when current Manago RETURN/CANCEL events look thinner than prior snap."""
+    out: dict[str, Any] = {
+        "events_thin_vs_prior": False,
+        "manago_return_events_current": current_return_count,
+        "manago_return_events_prior": None,
+    }
+    connector = (
+        Connector.objects.filter(company=company, name="manago_ai")
+        .order_by("-updated_at")
+        .first()
+    )
+    if connector is None:
+        return out
+
+    prior_qs = ConnectorSnapshot.objects.filter(connector=connector).order_by(
+        "-version"
+    )
+    if pinned_snapshot_id:
+        prior_qs = prior_qs.exclude(pk=pinned_snapshot_id)
+    prior = prior_qs.first()
+    if prior is None:
+        return out
+
+    prior_raw = (prior.snapshot_data or {}).get("raw")
+    prior_n = _count_manago_returnish_events(
+        prior_raw if isinstance(prior_raw, dict) else None
+    )
+    out["manago_return_events_prior"] = prior_n
+    if prior_n < 10:
+        return out
+    drop = prior_n - current_return_count
+    if drop < _EVENTS_THIN_DROP_ABS:
+        return out
+    if drop / max(prior_n, 1) < _EVENTS_THIN_DROP_RATIO:
+        return out
+    out["events_thin_vs_prior"] = True
+    return out
