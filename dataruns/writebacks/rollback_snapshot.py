@@ -78,10 +78,22 @@ def refresh_rollback_snapshot(company: Company, intent: WriteIntent) -> None:
         return
 
     if intent.op_kind == "contact_upsert":
+        prior_external = ""
+        if contact is not None:
+            prior_external = str(
+                contact.get("externalId") or contact.get("link_key") or ""
+            )
+        # Prefer transform-captured prior when mapping supplied prior_external_id.
+        if intent.before and intent.before.get("externalId") is not None:
+            prior_external = str(intent.before.get("externalId") or "")
         intent.rollback_snapshot = {
             "email": email or intent.entity_key,
             "existed": contact is not None,
-            "contactId": (contact or {}).get("contactId") or (contact or {}).get("id"),
+            "contactId": (contact or {}).get("contactId")
+            or (contact or {}).get("id")
+            or contact_id,
+            "externalId": prior_external,
+            "prior_external_id": prior_external,
         }
         return
 

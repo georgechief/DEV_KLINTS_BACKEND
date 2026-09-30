@@ -446,32 +446,78 @@ def build_consent_snapshot(
     def _sample(rows: list[dict[str, Any]], *, channel: str) -> list[dict[str, Any]]:
         out = []
         for r in rows[:CC_SAMPLE]:
-            out.append(
-                {
-                    "person.email": r.get("person.email"),
-                    "shopify_customer_id": r.get("shopify_customer_id"),
-                    "manago_contact_id": r.get("manago_contact_id"),
-                    "channel": channel,
-                    "email_quadrant": r.get("email_quadrant"),
-                    "sms_quadrant": r.get("sms_quadrant"),
-                    "shopify_email_consent_updated_at": r.get(
-                        "shopify_email_consent_updated_at"
-                    ),
-                    "shopify_email_opt_in_level": r.get("shopify_email_opt_in_level"),
-                    "manago_modified_on": r.get("modified_on"),
-                    "email_propagation_lag_seconds": r.get(
-                        "email_propagation_lag_seconds"
-                    ),
-                    "sms_propagation_lag_seconds": r.get("sms_propagation_lag_seconds"),
-                    "person.phone": r.get("person.phone"),
-                    "phone_valid": r.get("phone_valid"),
-                    "manago_invalid": r.get("manago_invalid"),
-                }
-            )
+            row: dict[str, Any] = {
+                "person.email": r.get("person.email"),
+                "shopify_customer_id": r.get("shopify_customer_id"),
+                "manago_contact_id": r.get("manago_contact_id"),
+                "channel": channel,
+                "email_quadrant": r.get("email_quadrant"),
+                "sms_quadrant": r.get("sms_quadrant"),
+                "manago_modified_on": r.get("modified_on"),
+                "email_propagation_lag_seconds": r.get(
+                    "email_propagation_lag_seconds"
+                ),
+                "sms_propagation_lag_seconds": r.get("sms_propagation_lag_seconds"),
+                "person.phone": r.get("person.phone"),
+                "phone_valid": r.get("phone_valid"),
+                "manago_invalid": r.get("manago_invalid"),
+                "provenance_ok": r.get("provenance_ok"),
+                "provenance_weak": r.get("provenance_weak"),
+                "provenance_note": r.get("provenance_note"),
+                "link_kind": r.get("link_kind"),
+            }
+            if channel == "sms":
+                # PRD-WB-18: phone prior — do not stamp email optedOut as phone prior.
+                opted_phone = r.get("optedOutPhone")
+                row.update(
+                    {
+                        "shopify_sms_consent_updated_at": r.get(
+                            "shopify_sms_consent_updated_at"
+                        ),
+                        "shopify_sms_opt_in_level": r.get("shopify_sms_opt_in_level"),
+                        "optedOutPhone": opted_phone,
+                        "prior_optedOutPhone": opted_phone,
+                        "manago_sms_in": r.get("manago_sms_in"),
+                        "shopify_sms_in": r.get("shopify_sms_in"),
+                    }
+                )
+            else:
+                # PRD-WB-17: email gate FORCE_OPT_IN vs SKIP_UNEVIDENCED
+                opted_out = r.get("optedOut")
+                row.update(
+                    {
+                        "shopify_email_consent_updated_at": r.get(
+                            "shopify_email_consent_updated_at"
+                        ),
+                        "shopify_email_opt_in_level": r.get(
+                            "shopify_email_opt_in_level"
+                        ),
+                        "optedOut": opted_out,
+                        "prior_optedOut": opted_out,
+                        "manago_email_in": r.get("manago_email_in"),
+                        "shopify_email_in": r.get("shopify_email_in"),
+                    }
+                )
+            out.append(row)
         return out
+
+    email_mismatch_full = [
+        r
+        for r in linked
+        if r.get("email_quadrant") in ("out_in", "in_out")
+    ]
+    sms_mismatch_full = [
+        r
+        for r in linked
+        if r.get("sms_quadrant") in ("out_in", "in_out")
+    ]
 
     return {
         "consent_rows": linked[:500],
+        # PRD-WB-17 §3.4: Download/rebuild SoT (not capped at 500 / sample 50).
+        "consent_mismatch_email": email_mismatch_full,
+        # PRD-WB-18 §3.4: SMS uncapped Download/rebuild SoT.
+        "consent_mismatch_sms": sms_mismatch_full,
         "consent": {
             "linked_identities": len(linked),
             "shopify_customers_with_consent": len(shopify_by_id),

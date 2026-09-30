@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0.0",
+  "check_id": "SP-03",
+  "template_id": "T4",
+  "title": "Normalise Manago detail formats (per-key contract)",
+  "enabled": true,
+  "approval_tier": "batch",
+  "requires_consent_namespace_clean": true,
+  "irreversible": false,
+  "fix_owner": "Klints (automated)",
+  "operator_disclosure": "SP-03 normalises Manago contact detail property formats to a per-key contract (Excel T4). Catalogue Fix Owner is Klints (automated). Approve rewrites mixed-format keys (e.g. ORDER_NUMBER string 1/0 misclassified as boolean → numeric 1.0). Does not merge semantic duplicate key names in MVP — those remain Download-only. Requires SP-07 namespace clean. Re-run DCS after Approve.",
+  "format_contract": {
+    "ORDER_NUMBER": {
+      "target_format": "numeric",
+      "coerce": "decimal_string_if_01"
+    },
+    "ORDER_AVG": {
+      "target_format": "numeric",
+      "coerce": "decimal_string_if_01"
+    },
+    "ORDER_SUMMARY": {
+      "target_format": "numeric",
+      "coerce": "decimal_string_if_01"
+    }
+  },
+  "rollback": {
+    "strategy": "revert_detail",
+    "note": "Restore prior property value from before-state (detail_set allowed strategy)."
+  },
+  "operations": [
+    {
+      "operation_id": "manago.detail_set.normalize_format",
+      "op_kind": "detail_set",
+      "target": "manago",
+      "namespace": "native",
+      "capability_id": "RESTV2.CONTACT.UPSERT",
+      "entity_type": "contact",
+      "from_evidence": {
+        "match": { "path": "side", "const": "inconsistent_detail_format" },
+        "entity_key": { "path": "write_entity_key" },
+        "fields": {
+          "contact_id": { "path": "manago_contact_id" },
+          "detail_key": { "path": "key" },
+          "detail_value": { "path": "value_after" },
+          "email": { "path": "person.email" }
+        }
+      },
+      "guards": ["entity_key_required", "email_format"]
+    }
+  ]
+}

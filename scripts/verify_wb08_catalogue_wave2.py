@@ -67,7 +67,7 @@ def main() -> int:
         return _fail("SP-01 mapping must stay stub: enabled=false and operations=[]")
     print("SP-01 mapping stub (ops empty): OK")
 
-    for check_id in ("LE-04", "CI-03"):
+    for check_id in ("LE-04",):
         entry = by_id.get(check_id)
         if entry and entry.get("enabled"):
             return _fail(f"{check_id} must stay disabled")
@@ -76,6 +76,15 @@ def main() -> int:
             return _fail(f"{check_id} get_check_mapping should raise MappingDisabled")
         except MappingDisabled:
             print(f"{check_id} MappingDisabled: OK")
+
+    # WB-16: CI-03 is enabled plan-only (Preview/Download) — not MappingDisabled.
+    ci03_entry = by_id.get("CI-03")
+    if not ci03_entry or not ci03_entry.get("enabled"):
+        return _fail("CI-03 must be enabled (WB-16 Phase A plan-only)")
+    ci03 = get_check_mapping("CI-03")
+    if str(ci03.get("execute_mode") or "") != "plan_only":
+        return _fail("CI-03 execute_mode must be plan_only")
+    print("CI-03 enabled plan_only (WB-16): OK")
 
     le01 = get_check_mapping("LE-01")
     if not le01.get("irreversible"):
@@ -130,7 +139,7 @@ def main() -> int:
             return _fail("FE approve allowlist must not include SP-01")
         for needle in (
             "writebackIrreversibleHonestyNotice",
-            "PURCHASE event backfill",
+            "Bulk event backfill",
         ):
             if needle not in text:
                 return _fail(f"FE writebacks.ts missing {needle!r}")

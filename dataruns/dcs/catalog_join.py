@@ -41,6 +41,16 @@ def _split_ids(raw: Any) -> list[str]:
     return [p.strip() for p in text.split(",") if p.strip()]
 
 
+def _manago_product_in_assortment(row: dict[str, Any]) -> bool:
+    """PRD-WB-20 §3.2a — active/non-archived Manago catalog rows only."""
+    if row.get("archived") is True or row.get("archive") is True:
+        return False
+    active = row.get("active")
+    if active is False or str(active).strip().lower() in {"false", "0", "no"}:
+        return False
+    return True
+
+
 def build_catalog_snapshot(
     *,
     company: Company,
@@ -172,6 +182,7 @@ def build_catalog_snapshot(
             "name": prod.get("name") or prod.get("title") or "",
             "sku": prod.get("sku") or "",
             "active": active if active is not None else True,
+            "archived": bool(prod.get("archived") or prod.get("archive")),
             "available": available,
             "margin": prod.get("margin"),
             "price": prod.get("price"),
@@ -229,21 +240,37 @@ def build_catalog_snapshot(
     dangling_rate = round(len(dangling) / max(len(unique_event_ids), 1), 4)
 
     # PT-03: active Shopify vs Manago catalog entries.
+    # PRD-WB-20 §3.2a: surplus counts only in-assortment Manago products
+    # (active/non-archived). Archived/inactive rows must not keep FAIL after
+    # archive-flag Approve.
     shopify_active = set(shopify_products)
+    manago_in_assortment = {
+        key
+        for key, row in manago_catalog.items()
+        if _manago_product_in_assortment(row)
+    }
     manago_ids = set(manago_catalog)
     missing_in_manago = (
-        sorted(shopify_active - manago_ids) if manago_catalog_available else []
+        sorted(shopify_active - manago_in_assortment)
+        if manago_catalog_available
+        else []
     )
     surplus_in_manago = (
-        sorted(manago_ids - shopify_active) if manago_catalog_available else []
+        sorted(manago_in_assortment - shopify_active)
+        if manago_catalog_available
+        else []
     )
     attribute_empty = [
         row["product_id"]
         for row in manago_catalog.values()
-        if row.get("attribute_empty")
+        # Align with §3.2a assortment: archived/inactive empties must not keep
+        # FAIL after surplus archive clears the in-assortment set.
+        if row.get("attribute_empty") and _manago_product_in_assortment(row)
     ]
-    # Also treat missing name+sku as empty.
+    # Also treat missing name+sku as empty (in-assortment only).
     for row in manago_catalog.values():
+        if not _manago_product_in_assortment(row):
+            continue
         if not (row.get("name") or row.get("sku")) and row["product_id"] not in attribute_empty:
             attribute_empty.append(row["product_id"])
 
@@ -304,6 +331,7 @@ def build_catalog_snapshot(
             "pt03": {
                 "shopify_active_count": len(shopify_active),
                 "manago_catalog_count": len(manago_ids),
+                "manago_in_assortment_count": len(manago_in_assortment),
                 "missing_in_manago": len(missing_in_manago),
                 "surplus_in_manago": len(surplus_in_manago),
                 "attribute_empty": len(attribute_empty),

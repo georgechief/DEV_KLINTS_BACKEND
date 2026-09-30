@@ -7,9 +7,8 @@ from typing import Any
 
 from dataruns.dcs.catalogue import foundation_gate_meta, root_cause_details
 from dataruns.dcs.executors.foundation import FoundationGateContext
+from dataruns.dcs.segment_join import SP_DOWNLOAD_CONTACT_CAP, SP_SAMPLE
 from dataruns.dcs.types import CheckResult, Confidence, Evidence
-
-SP_SAMPLE = 50
 
 
 def _utcnow_iso() -> str:
@@ -125,6 +124,7 @@ def evaluate_sp_03(ctx: FoundationGateContext) -> CheckResult:
     inconsistent = int(segment.get("inconsistent_keys") or 0)
     semantic = int(segment.get("semantic_duplicate_groups") or 0)
     samples = list(segment.get("inconsistent_sample") or [])
+    contact_samples = list(segment.get("inconsistent_contact_sample") or [])
     semantic_samples = list(segment.get("semantic_duplicate_sample") or [])
     value = {
         "contacts_scanned": segment.get("contacts_scanned"),
@@ -132,6 +132,12 @@ def evaluate_sp_03(ctx: FoundationGateContext) -> CheckResult:
         "detail_key_count": keys,
         "inconsistent_keys": inconsistent,
         "semantic_duplicate_groups": semantic,
+        "normalise_candidate_count": int(
+            segment.get("normalise_candidate_count") or len(contact_samples)
+        ),
+        "preview_sample_cap": segment.get("preview_sample_cap") or SP_SAMPLE,
+        "download_contact_cap": segment.get("download_contact_cap")
+        or SP_DOWNLOAD_CONTACT_CAP,
         "shopify_metafield_keys": (segment.get("shopify_metafield_keys") or [])[:20],
         "shopify_metafield_overlap": (segment.get("shopify_metafield_overlap") or [])[
             :20
@@ -147,27 +153,34 @@ def evaluate_sp_03(ctx: FoundationGateContext) -> CheckResult:
             observed_at=observed,
         )
     ]
+    # Key-level summaries stay for format_distribution; contact rows feed FE-12 Download.
+    key_mismatches = [
+        {
+            "side": "inconsistent_detail_format",
+            "key": s.get("key"),
+            "format_distribution": s.get("format_distribution"),
+            "samples": s.get("samples"),
+        }
+        for s in samples[:SP_SAMPLE]
+        if isinstance(s, dict)
+    ]
+    contact_mismatches = [
+        dict(s)
+        for s in contact_samples[:SP_DOWNLOAD_CONTACT_CAP]
+        if isinstance(s, dict)
+    ]
+    semantic_mismatches = [
+        {
+            "side": "semantic_duplicate_keys",
+            "normalized": s.get("normalized"),
+            "keys": s.get("keys"),
+        }
+        for s in semantic_samples[:SP_SAMPLE]
+        if isinstance(s, dict)
+    ]
     provenance = {
         "matches": [],
-        "mismatches": [
-            {
-                "side": "inconsistent_detail_format",
-                "key": s.get("key"),
-                "format_distribution": s.get("format_distribution"),
-                "samples": s.get("samples"),
-            }
-            for s in samples[:SP_SAMPLE]
-            if isinstance(s, dict)
-        ]
-        + [
-            {
-                "side": "semantic_duplicate_keys",
-                "normalized": s.get("normalized"),
-                "keys": s.get("keys"),
-            }
-            for s in semantic_samples[:SP_SAMPLE]
-            if isinstance(s, dict)
-        ],
+        "mismatches": key_mismatches + contact_mismatches + semantic_mismatches,
     }
     if keys == 0:
         # No details populated — schema consistency N/A → PASS (nothing drifted).

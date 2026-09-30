@@ -24,7 +24,7 @@ class ShopifyWriteAdapter:
     def dry_run(self, company: Company, intents: list[WriteIntent]) -> list[WriteIntent]:
         del company
         for intent in intents:
-            if intent.status == "error":
+            if intent.status in ("error", "skipped"):
                 continue
             if intent.op_kind in ("shopify_customer_update", "shopify_metafield_set"):
                 if not capability_allows_execute(intent.capability_id):

@@ -32,9 +32,9 @@
 | G9b staging A2 + A10 | **Residual** post-merge |
 | **G10 PT-04 writeback** | **Closed (WB-11+WB-12)** — stamp `klints_net_ltv`; re-score PASSes when stamp ≈ Shopify net · see §Writeback gaps |
 
-**Client Excel:** [CLIENT_BLOCKERS_AND_GAPS_BRIEF.xlsx](./CLIENT_BLOCKERS_AND_GAPS_BRIEF.xlsx) — Architecture false INCOMPLETE + writeback gaps + pilot/Handoff traps (for client share).
+**Client Excel:** [BLOCKERS_AND_GAPS_BRIEF_v2.xlsx](./BLOCKERS_AND_GAPS_BRIEF_v2.xlsx) (Lumera + MCP callouts; refreshed 2026-09-23 for Live WBs) · prior: [CLIENT_BLOCKERS_AND_GAPS_BRIEF.xlsx](./CLIENT_BLOCKERS_AND_GAPS_BRIEF.xlsx)
 
-## Writeback / Fix-path gaps (2026-09-17)
+## Writeback / Fix-path gaps (updated 2026-09-29 · REAL-01 Phase A)
 
 **Marked gap — G10 PT-04 writeback** — **Closed by WB-11** (stamp) + **WB-12** (PASS when `klints_net_ltv` ≈ Shopify net on re-score). Treating loop: Approve → re-run DCS → PT-04 can PASS.
 
@@ -44,41 +44,44 @@
 | **Reality (now)** | Mapping + registry + `WritebackAllowedCheck` + FE allowlist shipped (WB-11). |
 | **Remaining honesty** | After WB-12: re-run DCS after Approve; PASS when stamp ≈ Shopify net (partial batch may still FAIL until all stamped). |
 
-### Same class of gaps (CheckMaster “Automated writeback” but not execute-ready)
+### Writeback status (CheckMaster vs registry + allowlist)
 
-Compare: CheckMaster `fix_type` contains writeback vs registry enabled + `WritebackAllowedCheck`.
+Compare: CheckMaster `fix_type` contains writeback vs registry enabled + `WritebackAllowedCheck`.  
+SoT: `WRITEBACK_FIX_OWNERSHIP_MVP1_42.md` + `WRITEBACK_POSSIBLE_NOT_SHEET.csv` (not this table alone).
 
 | check_id | CheckMaster writeback? | Mapping | Registry enabled | DB allowlisted | Status |
 |----------|------------------------|---------|------------------|----------------|--------|
 | **CI-01** | Yes | Yes | **Yes** | **Yes** | Live path OK |
-| **CC-03** | Yes | Yes | **Yes** | **Yes** | Live path OK |
+| **CC-03** | Yes | Yes | **Yes** | **Yes** | Live path OK (Data lead owner; Approve exception) |
 | **WB-SHOP-01** | Sandbox proof | Yes | **Yes** | **Yes** | Live path OK |
-| **CI-03** | Yes | Stub | No | No | Gap — stub only |
-| **LE-01** | Yes | Stub | No | No | Gap — stub only |
+| **LE-01** | Yes | **Yes** | **Yes** | **Yes** | **Live (WB-08)** — PURCHASE `event_ingest` |
+| **SP-07** | Yes | **Yes** | **Yes** | **Yes** | **Live (WB-09)** — namespace rename |
+| **LE-09** | Yes | **Yes** | **Yes** | **Yes** | **Live (WB-10)** — RETURN `event_ingest` |
+| **PT-04** | Yes | **Yes** | **Yes** | **Yes** | **Live (WB-11+WB-12)** — stamp `klints_net_ltv`; re-score PASSes when stamp ≈ net |
+| **LE-05** | Yes | **Yes** | **Yes** | **Yes** | **Live (WB-13)** — order-level PURCHASE gap |
+| **CI-03** | Yes | Plan mapping | **Yes** (plan) | No FE Approve | **Plan-only (WB-16A)** — Preview/Download; CRM executes in Manago |
 | **LE-04** | Pack ≠ pure writeback | Stub | No | No | Intentionally off (PRD) |
-| **SP-01** | (stub) | Stub | No | No | Gap — stub only |
-| **PT-04** | Yes | **Yes** | **Yes** | Yes | **Live (WB-11+WB-12)** — stamp `klints_net_ltv`; re-score PASSes when stamp ≈ net |
-| **LE-09** | Yes | **Yes** | **Yes** | Yes | **Live (WB-10)** |
-| **LE-02** | Yes | **None** | — | No | Gap — not connected |
-| **LE-05** | Yes | **None** | — | No | Gap — not connected |
-| **CI-05** | Yes | **None** | — | No | Gap — not connected |
-| **PT-01** | Yes | **None** | — | No | Gap — not connected |
-| **PT-03** | Yes | **None** | — | No | Gap — not connected |
-| **SP-03** | Yes | **None** | — | No | Gap — not connected |
-| **SP-07** | Yes | **Yes** | `SP-07.namespace_clean.v1.json` | Yes | WB-09 — rename collisions off namespace |
-| **CC-01** | Yes | **None** | — | No | Gap — not connected |
-| **CC-02** | Yes | **None** | — | No | Gap — not connected |
-| **BR-01** | Yes | **None** | — | No | Gap — not connected |
-| **LE-08** | Yes | **None** | — | No | Gap — not connected |
+| **SP-01** | (stub) | Stub | No | No | Disabled stub — not in MVP1-42 |
+| **LE-02** | Yes | **Yes** | **Yes** | **Yes** | **Live (WB-14)** — matched PURCHASE value → Shopify gross via `event_correct` |
+| **CI-05** | Yes | **`contact_upsert`** | CI-05.identity_key_repair.v1.json | Yes (WB-15) | Live — missing_link_key backfill; reused → CI-03 |
+| **SP-03** | Yes | **Yes** | **Yes** | **Yes** | **Live (WB-19)** — detail schema normalize Approve |
+| **PT-03** | Yes | **Yes** | **Yes** | No FE Approve yet | **Preview live (WB-20)** — execute blocked until PRODUCT.IMPORT confirmed |
+| **CC-01** | Yes | Plan mapping | **Yes** (plan) | No FE Approve | **Plan-only (WB-17A)** — Data lead; Preview/Download |
+| **CC-02** | Yes | Plan mapping | **Yes** (plan) | No FE Approve | **Plan-only (WB-18A)** — Data lead; Preview/Download |
+| **PT-01** | Yes | **None** | — | No | **Not Klints execute** — External integrator (ID convention) |
+| **BR-01** | Yes | **None** | — | No | **Not Klints execute** — Data lead / ERP margin |
+| **LE-08** | Yes | **None** | — | No | **Not Klints execute** — External integrator |
 
-PRD-WB-02 §3.2 already lists most of these as **Approve must stay OFF** until built. Gap vs demo UX: **pilot/Handoff still gate on FAIL checks** while Fix is incomplete. **PT-04** treating loop closed by WB-11+WB-12 (Approve → re-score → PASS when stamp ≈ net).
+Closed treating loops (Approve → re-score): **CI-01 / CI-05 / LE-01 / LE-02 / LE-05 / LE-09 / SP-07 / SP-03 / PT-04 / CC-03**.  
+**REAL-01:** Studio/Handoff gates use `REQUIRE_*=True` (real path). Do **not** set flags False to unlock — clear FAIL checks or Architecture instead. Steps UI for non-Approve = REAL-01 Phase B.
 
 ### Related product trap (not writeback code)
 
 | Trap | Detail |
 |------|--------|
-| Gate without Fix execute | FAIL gating check blocks Studio/Handoff, but check has no writeback → only manual Manago + re-score or demo bypass flags. |
-| Demo bypass ≠ writeback | `REQUIRE_PILOT_GATING_CHECKS=False` unlocks Studio; `REQUIRE_HANDOFF_QA_PASS=False` opens Handoff while QA FAIL. Neither adds PT-04 writeback. |
+| Gate without Fix execute | FAIL gating check blocks Studio/Handoff, but check has no writeback → manual/External/Data lead path + re-score (REAL-01 §5), **not** demo flags. |
+| Demo bypass ≠ writeback | **Historical only:** Flag=False unlocked Studio/Handoff while checks FAIL. **Real path (REAL-01 Phase A):** all three REQUIRE_* = **True**. Neither ever replaces Fix Approve for open gaps. |
+| Fixture issues in prod FE | **FE-13:** `iss-*` fixtures blocked when `import.meta.env.PROD` (`fixturesAllowedInBuild`). Prototype `Frontend_design` is not production. |
 
 ## Local smoke snapshot (2026-09-15)
 

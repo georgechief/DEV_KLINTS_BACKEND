@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0.0",
+  "check_id": "LE-05",
+  "template_id": "T5",
+  "title": "Order-level PURCHASE gap backfill",
+  "enabled": true,
+  "approval_tier": "batch",
+  "requires_consent_namespace_clean": false,
+  "irreversible": true,
+  "operator_disclosure": "Bulk PURCHASE event backfill for order-level gaps may not be fully reversible. Does not remove extra Manago-only events. Prefer Fix LE-05 (not also LE-01) for the same orders before re-running DCS — dual Approve can duplicate PURCHASE events. Rollback is not supported as a full reverse. Re-run DCS after Approve to clear LE-05.",
+  "rollback": {
+    "strategy": "tagged_backfill_delete"
+  },
+  "operations": [
+    {
+      "operation_id": "manago.event_ingest.purchase_le05",
+      "op_kind": "event_ingest",
+      "target": "manago",
+      "namespace": "native",
+      "capability_id": "RESTV2.EVENT.INGEST",
+      "entity_type": "event",
+      "from_evidence": {
+        "match": { "path": "side", "const": "shopify_only" },
+        "entity_key": { "path": "order.id" },
+        "fields": {
+          "order_id": { "path": "order.id" },
+          "email": { "path": "person.email" },
+          "contact_id": { "path": "manago_contact_id" },
+          "value": { "path": "amount_gross" }
+        }
+      },
+      "guards": ["entity_key_required"]
+    }
+  ]
+}

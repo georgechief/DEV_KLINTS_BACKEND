@@ -130,6 +130,12 @@ class Contact(models.Model):
     )
     email = models.TextField(blank=True, default="")
     phone = models.TextField(blank=True, default="")
+    # Soft tombstone after DCS fresh-import sync — never hard-delete (Order CASCADE).
+    excluded = models.BooleanField(
+        default=False,
+        help_text="True when contact is outside the latest import pin (ghost).",
+    )
+    excluded_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

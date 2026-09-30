@@ -315,6 +315,8 @@ def persist_normalized_records(
                 "email": str(record.get("email") or ""),
                 "phone": str(record.get("phone") or ""),
                 "link_key": str(record.get("link_key") or "").strip(),
+                "excluded": False,
+                "excluded_at": None,
             },
         )
         contacts_upserted += 1

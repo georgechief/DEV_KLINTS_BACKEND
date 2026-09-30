@@ -15,7 +15,11 @@ from dataruns.writebacks.approvals.service import (
     consume_approval_token,
     revoke_superseded_grants_for_new_preview,
 )
-from dataruns.writebacks.capabilities import capability_batch_max
+from dataruns.writebacks.capabilities import (
+    capability_allows_execute,
+    capability_batch_max,
+    capability_status,
+)
 from dataruns.writebacks.exceptions import (
     DiffHashMismatchError,
     WritebackAlreadyExecutedForRunError,
@@ -72,14 +76,47 @@ def run_writeback_pipeline(
     # batch ceiling, not the sandbox demo default of 10, or Approve truncates early.
     effective_max = max_rows
     if effective_max is None:
-        if mapping.get("approval_tier") == "individual":
+        if normalized_check == "CI-03":
+            # PRD-WB-16 Phase A: plan sample ≤50 — do not use individual tier max=1.
+            from dataruns.dcs.executors.identity import CI_MISMATCH_SAMPLE
+
+            effective_max = CI_MISMATCH_SAMPLE
+        elif normalized_check == "CC-01":
+            # PRD-WB-17 Phase A: consent plan sample ≤50.
+            from dataruns.dcs.consent_join import CC_SAMPLE
+
+            effective_max = CC_SAMPLE
+        elif normalized_check == "CC-02":
+            # PRD-WB-18 Phase A: SMS consent plan sample ≤50.
+            from dataruns.dcs.consent_join import CC_SAMPLE
+
+            effective_max = CC_SAMPLE
+        elif normalized_check == "SP-03":
+            # PRD-WB-19: detail normalise sample ≤ SP_SAMPLE.
+            from dataruns.dcs.segment_join import SP_SAMPLE
+
+            effective_max = SP_SAMPLE
+        elif normalized_check == "PT-03":
+            # PRD-WB-20: catalog reconcile ≤ min(PT_SAMPLE, PRODUCT.IMPORT batch_max).
+            from dataruns.dcs.catalog_join import PT_SAMPLE
+
+            cap = capability_batch_max("RESTV2.PRODUCT.IMPORT") or 100
+            effective_max = max(1, min(PT_SAMPLE, int(cap)))
+        elif normalized_check == "LE-02":
+            # PRD-WB-14: EVENT.UPDATE ceiling (sample ≤50) — do not use
+            # individual-tier max_rows=1 (that would force 50 Approves).
+            cap = capability_batch_max("RESTV2.EVENT.UPDATE") or 50
+            effective_max = max(1, min(int(cap), 1000))
+        elif mapping.get("approval_tier") == "individual":
             effective_max = 1
-        elif normalized_check in ("SP-07", "PT-04"):
+        elif normalized_check in ("SP-07", "PT-04", "CI-05"):
+            # PRD-WB-15: CI-05 is T2 but overrides to batch — UPSERT ceiling.
             cap = capability_batch_max("RESTV2.CONTACT.UPSERT") or 1000
             effective_max = max(1, min(int(cap), 1000))
-        elif normalized_check == "LE-09":
+        elif normalized_check in ("LE-09", "LE-05"):
             # DCS mismatch sample is 50; EVENT.INGEST batch_max is higher — use
-            # the ingest ceiling so one Approve can clear a full LE-09 sample.
+            # the ingest ceiling so one Approve can clear a full LE-05/LE-09 sample.
+            # Excel LE-05 Suggested Fix: 1000/batch. Do NOT use SANDBOX_MAX_ROWS (LE-01).
             cap = capability_batch_max("RESTV2.EVENT.INGEST") or 1000
             effective_max = max(1, min(int(cap), 1000))
         else:
@@ -94,6 +131,7 @@ def run_writeback_pipeline(
     blocked_reason = run_preflight(company=company, mapping=mapping)
     if blocked_reason:
         return _blocked_result(
+            company=company,
             check_id=normalized_check,
             mode=mode,
             mapping=mapping,
@@ -106,9 +144,10 @@ def run_writeback_pipeline(
             check_id=normalized_check,
             max_rows=effective_max,
         )
-        # Honest truncation (PRD-WB-09 §6.4 / WB-10 §5.2 / WB-11 §5.2): probe one past the cap.
+        # Honest truncation (PRD-WB-09 §6.4 / WB-10 §5.2 / WB-11 §5.2 / WB-13 §5.1 / WB-14):
+        # probe one past the cap.
         if (
-            normalized_check in {"SP-07", "LE-09", "PT-04"}
+            normalized_check in {"SP-07", "LE-09", "LE-05", "PT-04", "LE-02", "CI-05", "CI-03", "CC-01", "CC-02", "SP-03", "PT-03"}
             and effective_max is not None
             and len(evidence_rows) >= effective_max
         ):
@@ -128,6 +167,46 @@ def run_writeback_pipeline(
                         f"Preview/execute capped at {effective_max} return events. "
                         "Approve again after re-running DCS if LE-09 still FAILs."
                     )
+                elif normalized_check == "LE-05":
+                    trunc_note = (
+                        f"Preview/execute capped at {effective_max} purchase events. "
+                        "Approve again after re-running DCS if LE-05 still FAILs."
+                    )
+                elif normalized_check == "LE-02":
+                    trunc_note = (
+                        f"Preview/execute capped at {effective_max} value corrections. "
+                        "Approve again after re-running DCS if LE-02 still FAILs."
+                    )
+                elif normalized_check == "CI-05":
+                    trunc_note = (
+                        f"Preview/execute capped at {effective_max} identity key repairs. "
+                        "Approve again after re-running DCS if CI-05 still FAILs."
+                    )
+                elif normalized_check == "CI-03":
+                    trunc_note = (
+                        f"Merge plan sample capped at {effective_max} clusters. "
+                        "Download / re-score for the next sample if CI-03 still FAILs."
+                    )
+                elif normalized_check == "CC-01":
+                    trunc_note = (
+                        f"Consent plan sample capped at {effective_max} mismatches. "
+                        "Download / re-score for the next sample if CC-01 still FAILs."
+                    )
+                elif normalized_check == "CC-02":
+                    trunc_note = (
+                        f"SMS consent plan sample capped at {effective_max} mismatches. "
+                        "Download for full estate; re-score after Data lead clears remaining FAIL."
+                    )
+                elif normalized_check == "SP-03":
+                    trunc_note = (
+                        f"Detail normalise sample capped at {effective_max} contact writes. "
+                        "Download / Approve again after re-score if SP-03 still FAILs."
+                    )
+                elif normalized_check == "PT-03":
+                    trunc_note = (
+                        f"Catalog reconcile sample capped at {effective_max} products. "
+                        "Download / Approve again after re-score if PT-03 still FAILs."
+                    )
                 else:
                     trunc_note = (
                         f"Preview/execute capped at {effective_max} net-LTV stamps. "
@@ -143,6 +222,128 @@ def run_writeback_pipeline(
             mapping=mapping,
             evidence_rows=evidence_rows,
         )
+        # PRD-WB-15: when CI-05 preview is empty, keep an honest reason visible
+        # (reused-only FAIL → CI-03; stale score → live rebuild already tried).
+        if normalized_check == "CI-05":
+            readyish = [
+                i
+                for i in intents
+                if i.status in ("ready", "skipped") and i.op_kind == "contact_upsert"
+            ]
+            if not readyish:
+                empty_note = (
+                    "No clean missing_link_key pairs to write on this estate. "
+                    "CI-05 only backfills empty Manago externalId on 1:1 email matches. "
+                    "If FAIL is from dangling externalId (Shopify id not found), "
+                    "Download evidence lists each Manago contact to clear manually — "
+                    "Approve does not clear dangling keys. "
+                    "If FAIL is from reused externalId clusters, resolve duplicates "
+                    "(CI-03) first. Re-run DCS after manual fixes. "
+                    "Request approval stays disabled until there is at least one ready intent."
+                )
+                operator_disclosure = (
+                    f"{operator_disclosure} {empty_note}".strip()
+                    if operator_disclosure
+                    else empty_note
+                )
+        if normalized_check == "CI-03":
+            readyish = [
+                i
+                for i in intents
+                if i.status in ("ready", "skipped") and i.op_kind == "contact_merge"
+            ]
+            if not readyish:
+                empty_note = (
+                    "No merge_candidate rows in this sample. "
+                    "CI-03 proposes a plan only — not auto-merged. "
+                    "Re-run DCS after CRM clears duplicates in Manago, "
+                    "then tombstone loser UUIDs in Klints Contact DB."
+                )
+                operator_disclosure = (
+                    f"{operator_disclosure} {empty_note}".strip()
+                    if operator_disclosure
+                    else empty_note
+                )
+        if normalized_check == "CC-01":
+            readyish = [
+                i
+                for i in intents
+                if i.status in ("ready", "skipped") and i.op_kind == "contact_upsert"
+            ]
+            if not readyish:
+                empty_note = (
+                    "No email consent mismatch rows in this sample. "
+                    "CC-01 proposes a reconcile plan only — forceOpt is not auto-applied. "
+                    "Re-run DCS after Data lead clears opt-in/out parity in Manago."
+                )
+                operator_disclosure = (
+                    f"{operator_disclosure} {empty_note}".strip()
+                    if operator_disclosure
+                    else empty_note
+                )
+        if normalized_check == "CC-02":
+            readyish = [
+                i
+                for i in intents
+                if i.status in ("ready", "skipped") and i.op_kind == "contact_upsert"
+            ]
+            if not readyish:
+                empty_note = (
+                    "No SMS consent mismatch rows in this sample. "
+                    "CC-02 proposes a reconcile plan only — forcePhoneOpt is not auto-applied. "
+                    "Re-run DCS after Data lead clears SMS opt-in/out parity in Manago."
+                )
+                operator_disclosure = (
+                    f"{operator_disclosure} {empty_note}".strip()
+                    if operator_disclosure
+                    else empty_note
+                )
+        if normalized_check == "SP-03":
+            readyish = [
+                i
+                for i in intents
+                if i.status in ("ready", "skipped") and i.op_kind == "detail_set"
+            ]
+            if not readyish:
+                empty_note = (
+                    "No mixed-format detail values to normalise in this sample. "
+                    "If SP-03 still FAILs, check semantic duplicate key names (Download) — "
+                    "Approve does not merge keys in MVP."
+                )
+                operator_disclosure = (
+                    f"{operator_disclosure} {empty_note}".strip()
+                    if operator_disclosure
+                    else empty_note
+                )
+        if normalized_check == "PT-03":
+            readyish = [
+                i
+                for i in intents
+                if i.status in ("ready", "skipped") and i.op_kind == "product_upsert"
+            ]
+            if not readyish:
+                empty_note = (
+                    "No catalog reconcile rows in this sample. "
+                    "If PT-03 is UNKNOWN, connect Manago catalog ingest (API v3 key / product feed). "
+                    "If FAIL remains from attribute_empty only, Download lists empty Manago rows — "
+                    "Approve does not fill them in MVP."
+                )
+                operator_disclosure = (
+                    f"{operator_disclosure} {empty_note}".strip()
+                    if operator_disclosure
+                    else empty_note
+                )
+            if not capability_allows_execute("RESTV2.PRODUCT.IMPORT"):
+                cap_note = (
+                    "Manago PRODUCT.IMPORT is not confirmed for execute on this environment "
+                    f"(status={capability_status('RESTV2.PRODUCT.IMPORT') or 'unknown'}) — "
+                    "Preview only until Loom upgrades capability status."
+                )
+                operator_disclosure = (
+                    f"{operator_disclosure} {cap_note}".strip()
+                    if operator_disclosure
+                    else cap_note
+                )
 
     intents = _dry_run_intents(company=company, intents=intents)
 
@@ -169,6 +370,27 @@ def run_writeback_pipeline(
     if mode in ("execute", "sandbox_execute"):
         # PRD-WB-03 §6 — accept legacy sandbox_execute callers; report mode as execute.
         report_mode: WriteMode = "execute"
+        # PRD-WB-16 / WB-17 Phase A: plan_only hard-stop (sandbox ON must not mutate).
+        if str(mapping.get("execute_mode") or "").strip() == "plan_only":
+            plan_reasons = {
+                "CI-03": "ci03_plan_only",
+                "CC-01": "cc01_plan_only",
+                "CC-02": "cc02_plan_only",
+            }
+            plan_reason = plan_reasons.get(normalized_check, "plan_only")
+            return WritebackResult(
+                check_id=normalized_check,
+                mode=report_mode,
+                diff_hash=diff_hash,
+                intents=intents,
+                summary=summary,
+                execute_eligible=execute_eligible,
+                blocked_reason=plan_reason,
+                approval_tier=mapping.get("approval_tier"),
+                irreversible=bool(mapping.get("irreversible")),
+                operator_disclosure=operator_disclosure,
+                data_run_id=dcs_data_run_id,
+            )
         if mapping.get("approval_tier") == "individual" and summary.ready > 1:
             return WritebackResult(
                 check_id=normalized_check,
@@ -560,7 +782,8 @@ def deserialize_intents(rows: list[dict]) -> list[WriteIntent]:
 def _dry_run_intents(*, company: Company, intents: list[WriteIntent]) -> list[WriteIntent]:
     updated: list[WriteIntent] = []
     for intent in intents:
-        if intent.status == "error":
+        # Preserve transform honesty skips (archive_semantics_unknown, etc.).
+        if intent.status in ("error", "skipped"):
             updated.append(intent)
             continue
         adapter = get_adapter(intent.target_system)
@@ -589,18 +812,23 @@ def _summarize(intents: list[WriteIntent]) -> WritebackSummary:
 
 def _blocked_result(
     *,
+    company,
     check_id: str,
     mode: WriteMode,
     mapping: dict,
     blocked_reason: str,
 ) -> WritebackResult:
+    # PRD-WB-21: preflight block must not lie that Allow writebacks is off.
     return WritebackResult(
         check_id=check_id,
         mode=mode,
         diff_hash=compute_diff_hash([]),
         intents=[],
         summary=WritebackSummary(),
-        execute_eligible=ExecuteEligibility(),
+        execute_eligible=ExecuteEligibility(
+            sandbox=is_writeback_execute_enabled(company),
+            production=bool(settings.WRITEBACKS_ENABLED),
+        ),
         blocked_reason=blocked_reason,
         approval_tier=mapping.get("approval_tier"),
         irreversible=bool(mapping.get("irreversible")),

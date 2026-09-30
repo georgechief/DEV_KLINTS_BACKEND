@@ -23,6 +23,93 @@ CI03_WARN_DUP_RATE = 0.01
 CI03_FAIL_DUP_RATE = 0.02
 CI05_PASS_LINK_COVERAGE = 0.80
 CI05_WARN_LINK_COVERAGE = 0.50
+CI_MISMATCH_SAMPLE = 50
+
+
+def _ci05_mismatches(identity: dict[str, Any]) -> list[dict[str, Any]]:
+    """PRD-WB-15: actionable missing_link_key; dangling rows for manual Fix; drivers.
+
+    Cap actionable rows at CI_MISMATCH_SAMPLE; always append driver tags after
+    so a full missing sample does not drop reused/dangling/coverage honesty.
+    """
+    mismatches: list[dict[str, Any]] = []
+    missing = identity.get("missing_link_key")
+    if isinstance(missing, list):
+        for item in missing:
+            if isinstance(item, dict) and str(item.get("side") or "") == "missing_link_key":
+                mismatches.append(dict(item))
+            if len(mismatches) >= CI_MISMATCH_SAMPLE:
+                break
+    dangling_rows = identity.get("link_key_dangling_rows")
+    if isinstance(dangling_rows, list) and dangling_rows:
+        for item in dangling_rows:
+            if not isinstance(item, dict):
+                continue
+            if str(item.get("side") or "") != "link_key_dangling":
+                continue
+            mismatches.append(dict(item))
+            if len(mismatches) >= CI_MISMATCH_SAMPLE * 2:
+                break
+    else:
+        # Older scores: only bare dangling ids — still surface for Download/Fix.
+        for link in list(identity.get("link_key_dangling") or [])[:CI_MISMATCH_SAMPLE]:
+            link_s = str(link or "").strip()
+            if not link_s:
+                continue
+            mismatches.append(
+                {
+                    "side": "link_key_dangling",
+                    "dangling_external_id": link_s,
+                    "manual_fix": (
+                        "Clear Manago contact.externalId - Shopify customer id "
+                        "not found in current Shopify"
+                    ),
+                }
+            )
+    dangling = list(identity.get("link_key_dangling") or [])
+    reused = list(identity.get("link_key_reused") or [])
+    if reused:
+        mismatches.append({"side": "driver", "driver": "link_key_reused"})
+    if dangling:
+        mismatches.append({"side": "driver", "driver": "link_key_dangling"})
+    with_link = int(identity.get("manago_with_link_key") or 0)
+    matched = int(identity.get("link_key_matched") or 0)
+    if with_link > 0:
+        coverage = matched / max(with_link, 1)
+        if coverage < CI05_PASS_LINK_COVERAGE:
+            mismatches.append({"side": "driver", "driver": "low_link_coverage"})
+    return mismatches
+
+
+def _ci03_mismatches(identity: dict[str, Any]) -> list[dict[str, Any]]:
+    """PRD-WB-16: merge_candidate plan rows + driver honesty tags.
+
+    Cap actionable merge rows at CI_MISMATCH_SAMPLE; drivers always appended.
+    """
+    mismatches: list[dict[str, Any]] = []
+    candidates = identity.get("merge_candidates")
+    if isinstance(candidates, list):
+        for item in candidates:
+            if not isinstance(item, dict):
+                continue
+            if str(item.get("side") or "") != "merge_candidate":
+                continue
+            mismatches.append(dict(item))
+            if len(mismatches) >= CI_MISMATCH_SAMPLE:
+                break
+
+    rate = None
+    manago_n = int(identity.get("manago_contacts") or 0)
+    dup_contacts = int(identity.get("duplicate_extra_contacts_total") or 0)
+    if manago_n > 0:
+        rate = round(dup_contacts / max(manago_n, 1), 4)
+        mismatches.append(
+            {"side": "driver", "driver": "duplicate_rate", "rate": rate}
+        )
+    mismatches.append(
+        {"side": "driver", "driver": "cluster_cap_note", "sample_cap": CI_MISMATCH_SAMPLE}
+    )
+    return mismatches
 
 
 def _utcnow_iso() -> str:
@@ -405,19 +492,31 @@ def evaluate_ci_03(ctx: FoundationGateContext) -> CheckResult:
     email_dups = list(clusters.get("email") or [])
     phone_dups = list(clusters.get("phone") or [])
     link_dups = list(clusters.get("externalId") or [])
-    cluster_count = len(email_dups) + len(phone_dups) + len(link_dups)
-    dup_contacts = sum(
-        max(int(c.get("count") or 0) - 1, 0)
-        for group in (email_dups, phone_dups, link_dups)
-        for c in group
-        if isinstance(c, dict)
-    )
+    # Prefer uncapped totals when identity_join emitted them (fresh estates).
+    counts = identity.get("duplicate_cluster_counts")
+    if isinstance(counts, dict) and counts:
+        cluster_count = (
+            int(counts.get("email") or 0)
+            + int(counts.get("phone") or 0)
+            + int(counts.get("externalId") or 0)
+        )
+        dup_contacts = int(identity.get("duplicate_extra_contacts_total") or 0)
+    else:
+        cluster_count = len(email_dups) + len(phone_dups) + len(link_dups)
+        dup_contacts = sum(
+            max(int(c.get("count") or 0) - 1, 0)
+            for group in (email_dups, phone_dups, link_dups)
+            for c in group
+            if isinstance(c, dict)
+        )
     rate = dup_contacts / max(manago_n, 1)
+    contacts_source = identity.get("contacts_source") or {}
     value = {
         "manago_contacts": manago_n,
         "duplicate_clusters": cluster_count,
         "duplicate_extra_contacts": dup_contacts,
         "duplicate_rate": round(rate, 4),
+        "contacts_source": contacts_source,
         "clusters": {
             "email": email_dups[:20],
             "phone": phone_dups[:20],
@@ -432,6 +531,7 @@ def evaluate_ci_03(ctx: FoundationGateContext) -> CheckResult:
             observed_at=observed,
         )
     ]
+    provenance = {"matches": [], "mismatches": _ci03_mismatches(identity)}
 
     if manago_n == 0:
         return _result(
@@ -452,6 +552,7 @@ def evaluate_ci_03(ctx: FoundationGateContext) -> CheckResult:
             ctx=ctx,
             detail=f"Manago duplicate rate={rate:.2%} clusters={cluster_count}.",
             evidence=evidence,
+            provenance=provenance,
         )
     if rate > CI03_WARN_DUP_RATE or cluster_count > 0:
         return _result(
@@ -463,6 +564,7 @@ def evaluate_ci_03(ctx: FoundationGateContext) -> CheckResult:
             ctx=ctx,
             detail=f"Manago near-duplicates detected clusters={cluster_count}.",
             evidence=evidence,
+            provenance=provenance,
         )
     return _result(
         check_id="CI-03",
@@ -507,12 +609,17 @@ def evaluate_ci_05(ctx: FoundationGateContext) -> CheckResult:
     matched = int(identity.get("link_key_matched") or 0)
     dangling = list(identity.get("link_key_dangling") or [])
     reused = list(identity.get("link_key_reused") or [])
+    reused_count = int(identity.get("link_key_reused_count") or len(reused))
+    dangling_count = int(identity.get("link_key_dangling_count") or len(dangling))
+    contacts_source = identity.get("contacts_source") or {}
     value = {
         "manago_contacts": manago_n,
         "manago_with_link_key": with_link,
         "link_key_matched": matched,
-        "dangling_count": len(dangling),
-        "reused_count": len(reused),
+        "dangling_count": dangling_count,
+        "reused_count": reused_count,
+        "missing_link_key_count": int(identity.get("missing_link_key_count") or 0),
+        "contacts_source": contacts_source,
         "dangling_sample": dangling[:10],
         "reused_sample": reused[:10],
     }
@@ -524,6 +631,7 @@ def evaluate_ci_05(ctx: FoundationGateContext) -> CheckResult:
             observed_at=observed,
         )
     ]
+    provenance = {"matches": [], "mismatches": _ci05_mismatches(identity)}
 
     if manago_n == 0:
         return _result(
@@ -533,9 +641,11 @@ def evaluate_ci_05(ctx: FoundationGateContext) -> CheckResult:
             confidence="LOW",
             ctx=ctx,
             evidence=evidence,
+            provenance=provenance,
         )
 
     # Excel: externalId must be populated — if none ingested → UNKNOWN.
+    # WB-15: still attach missing_link_key so Fix can backfill a cold estate.
     if with_link == 0:
         return _result(
             check_id="CI-05",
@@ -548,10 +658,11 @@ def evaluate_ci_05(ctx: FoundationGateContext) -> CheckResult:
                 "cannot verify bijective Shopify linkage yet."
             ),
             evidence=evidence,
+            provenance=provenance,
         )
 
     coverage = matched / max(with_link, 1)
-    if reused or dangling:
+    if reused_count > 0 or dangling_count > 0:
         return _result(
             check_id="CI-05",
             status="FAIL",
@@ -560,10 +671,11 @@ def evaluate_ci_05(ctx: FoundationGateContext) -> CheckResult:
             confidence="HIGH",
             ctx=ctx,
             detail=(
-                f"Link key integrity broken: reused={len(reused)} "
-                f"dangling={len(dangling)} matched={matched}/{with_link}."
+                f"Link key integrity broken: reused={reused_count} "
+                f"dangling={dangling_count} matched={matched}/{with_link}."
             ),
             evidence=evidence,
+            provenance=provenance,
         )
     if coverage >= CI05_PASS_LINK_COVERAGE:
         return _result(
@@ -573,6 +685,7 @@ def evaluate_ci_05(ctx: FoundationGateContext) -> CheckResult:
             ctx=ctx,
             detail=f"Link coverage={coverage:.2%} ({matched}/{with_link}).",
             evidence=evidence,
+            provenance=provenance,
         )
     if coverage >= CI05_WARN_LINK_COVERAGE:
         return _result(
@@ -584,6 +697,7 @@ def evaluate_ci_05(ctx: FoundationGateContext) -> CheckResult:
             ctx=ctx,
             detail=f"Partial link coverage={coverage:.2%} ({matched}/{with_link}).",
             evidence=evidence,
+            provenance=provenance,
         )
     return _result(
         check_id="CI-05",
@@ -594,6 +708,7 @@ def evaluate_ci_05(ctx: FoundationGateContext) -> CheckResult:
         ctx=ctx,
         detail=f"Low link coverage={coverage:.2%} ({matched}/{with_link}).",
         evidence=evidence,
+        provenance=provenance,
     )
 
 

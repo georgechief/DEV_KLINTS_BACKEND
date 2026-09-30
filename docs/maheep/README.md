@@ -1,6 +1,6 @@
 # Maheep PRD series
 
-Product/implementation contracts for connector uniqueness, auth route guards, daily DCS scheduling, Shopify offline token refresh (+ failure handling), DCS-based app lock, signup company website, governance audit / Activity timeline, Integrations connector status/stats, audit notifications, gated DCS run progress, Spotlight global search, Manago API v3 key on Connected stack, live guided DCS worklist (Overview + Data Consistency), Manago primary owner picker (FD-06), onboarding v3 key step, Settings honesty (Coming soon for API keys / Billing), Overview period compare / Captured wiring (consumes DCS-10), Fix screen ↔ live Data Center issue bridge, DCS title casing + Fix friendly evidence (no raw JSON), writeback adapter foundation, Fix Approve writeback (WB-02), evidence download (FE-12), possible-sheet runtime (WB-02B), real writeback DB gate + Loom (WB-03), shell honesty / deep-links / Data Center assessment export (FE-13), once-per-DCS-run writeback gate (WB-04), Fix writeback Loom staging proof (WB-05), Fix writeback provenance / restore Written (WB-06), Fix/shell/notifications polish + Postgres audit immutability (POLISH-01), atomic once-per-run claim + writeback response hygiene (WB-07), M2 staging harden / Fix support (M2-OPS-01), catalogue writeback wave 2 SP-01 + LE-01 (WB-08), SP-07 namespace clean writeback (WB-09), LE-09 return/cancellation event writeback (WB-10), PT-04 klints_net_ltv writeback (WB-11), and PT-04 PASS when stamped net matches (WB-12).
+Product/implementation contracts for connector uniqueness, auth route guards, daily DCS scheduling, Shopify offline token refresh (+ failure handling), DCS-based app lock, signup company website, governance audit / Activity timeline, Integrations connector status/stats, audit notifications, gated DCS run progress, Spotlight global search, Manago API v3 key on Connected stack, live guided DCS worklist (Overview + Data Consistency), Manago primary owner picker (FD-06), onboarding v3 key step, Settings honesty (Coming soon for API keys / Billing), Overview period compare / Captured wiring (consumes DCS-10), Fix screen ↔ live Data Center issue bridge, DCS title casing + Fix friendly evidence (no raw JSON), writeback adapter foundation, Fix Approve writeback (WB-02), evidence download (FE-12), possible-sheet runtime (WB-02B), real writeback DB gate + Loom (WB-03), shell honesty / deep-links / Data Center assessment export (FE-13), once-per-DCS-run writeback gate (WB-04), Fix writeback Loom staging proof (WB-05), Fix writeback provenance / restore Written (WB-06), Fix/shell/notifications polish + Postgres audit immutability (POLISH-01), atomic once-per-run claim + writeback response hygiene (WB-07), M2 staging harden / Fix support (M2-OPS-01), catalogue writeback wave 2 SP-01 + LE-01 (WB-08), SP-07 namespace clean writeback (WB-09), LE-09 return/cancellation event writeback (WB-10), PT-04 klints_net_ltv writeback (WB-11), PT-04 PASS when stamped net matches (WB-12), LE-05 order-level PURCHASE gap writeback (WB-13), and LE-02 purchase value correction draft (WB-14).
 
 ## Build order
 
@@ -46,6 +46,16 @@ Product/implementation contracts for connector uniqueness, auth route guards, da
 | 38 | [PRD_WB_10_LE09_RETURN_EVENT_WRITEBACK.md](./PRD_WB_10_LE09_RETURN_EVENT_WRITEBACK.md) | **WB-10 (P0 M2 · Sahil)** — LE-09 Automated writeback: Manago `event_ingest` RETURN/CANCELLATION from Shopify refunds/cancels; irreversible honesty |
 | 39 | [PRD_WB_11_PT04_NET_LTV_WRITEBACK.md](./PRD_WB_11_PT04_NET_LTV_WRITEBACK.md) | **WB-11 (P0 M2 · Sahil)** — PT-04 Automated writeback: `detail_set` `klints_net_ltv` = Shopify net; owns key for SP-07 |
 | 40 | [PRD_WB_12_PT04_PASS_ON_KLINTS_NET_LTV.md](./PRD_WB_12_PT04_PASS_ON_KLINTS_NET_LTV.md) | **WB-12 (P0 M2 · Sahil · Shipped)** — PT-04 PASS when `klints_net_ltv` ≈ Shopify net (completes treating loop after WB-11) |
+| 41 | [PRD_WB_13_LE05_PURCHASE_GAP_WRITEBACK.md](./PRD_WB_13_LE05_PURCHASE_GAP_WRITEBACK.md) | **WB-13 (P0 M2 · Sahil · Shipped)** — LE-05 order-level PURCHASE gap `event_ingest` (MVP1 #2 after LE-09; LE-09-style batch ceiling) |
+| 42 | [PRD_WB_14_LE02_PURCHASE_VALUE_CORRECT_WRITEBACK.md](./PRD_WB_14_LE02_PURCHASE_VALUE_CORRECT_WRITEBACK.md) | **WB-14 (P0 M2 · Sahil · Shipped)** — LE-02 purchase value correction via `event_correct` / `updateContactExtEvent` (DCS `value_mismatch` rows; after LE-05) |
+| 43 | [PRD_WB_15_CI05_IDENTITY_KEY_REPAIR_WRITEBACK.md](./PRD_WB_15_CI05_IDENTITY_KEY_REPAIR_WRITEBACK.md) | **WB-15 (P0 M2 · Sahil · Shipped)** — CI-05 identity key repair: backfill Manago `externalId` from clean email matches (`contact_upsert`; missing_link_key only; reused → CI-03) |
+| 44 | [PRD_WB_16_CI03_CONTACT_MERGE_WRITEBACK.md](./PRD_WB_16_CI03_CONTACT_MERGE_WRITEBACK.md) | **WB-16 (P0 M2 · Sahil · Phase A shipping)** — CI-03 merge plan (not auto-merged); Phase B SAFE CONTACT_ID delete + soft tombstone gated |
+| 45 | [PRD_WB_17_CC01_EMAIL_CONSENT_RECONCILE.md](./PRD_WB_17_CC01_EMAIL_CONSENT_RECONCILE.md) | **WB-17 (P0 M2 · Sahil · Phase A shipping)** — CC-01 email consent reconcile plan (T8 / Data lead); Phase B gated `forceOpt*` after product |
+| 46 | [PRD_WB_18_CC02_SMS_CONSENT_RECONCILE.md](./PRD_WB_18_CC02_SMS_CONSENT_RECONCILE.md) | **WB-18 (P0 M2 · Sahil · Phase A live)** — CC-02 SMS/mobile consent reconcile plan (T8 / Data lead); twin of WB-17; Phase B `forcePhoneOpt*` optional |
+| 47 | [PRD_WB_19_SP03_DETAIL_SCHEMA_NORMALIZE.md](./PRD_WB_19_SP03_DETAIL_SCHEMA_NORMALIZE.md) | **WB-19 (P0 M2 · Sahil · shipped)** — SP-03 detail format contract + normalise Approve (T4 / Klints); semantic key merge deferred |
+| 48 | [PRD_WB_20_PT03_CATALOG_COMPLETENESS_WRITEBACK.md](./PRD_WB_20_PT03_CATALOG_COMPLETENESS_WRITEBACK.md) | **WB-20 (P0 M2 · Sahil · Preview live)** — PT-03 catalog reconcile (T7 `product_upsert`); execute after PRODUCT.IMPORT Loom; webhooks Integration follow-on |
+| 49 | [PRD_WB_21_SANDBOX_TEST_ALL_WRITEBACKS.md](./PRD_WB_21_SANDBOX_TEST_ALL_WRITEBACKS.md) | **WB-21 (P0 · Phase A–D shipping)** — Sandbox-test contract for **every** writeback (harness + honesty); Phase A first wave → Tier A/B/C + Phase D live/naming |
+| 50 | [PRD_REAL_01_NO_DEMO_GATES_AND_PASS_STEPS.md](./PRD_REAL_01_NO_DEMO_GATES_AND_PASS_STEPS.md) | **REAL-01 (P0 · contract locked)** — No demo REQUIRE_* bypass; Fix/Studio show **Steps to pass** when not Klints Approve; MCP unlocks AF separately |
 
 ## Deploy order (writeback activation)
 
@@ -62,7 +72,17 @@ Product/implementation contracts for connector uniqueness, auth route guards, da
 11. **WB-09** — SP-07 namespace clean rename writeback (after WB-08; unlocks gated writebacks)  
 12. **WB-10** — LE-09 RETURN/CANCELLATION event writeback (after WB-09; unlocks PT-04 next)  
 13. **WB-11** — PT-04 `klints_net_ltv` governed net writeback (after WB-10)  
-14. **WB-12** — PT-04 PASS when stamped `klints_net_ltv` matches Shopify net (after WB-11)
+14. **WB-12** — PT-04 PASS when stamped `klints_net_ltv` matches Shopify net (after WB-11)  
+15. **WB-13** — LE-05 order-level PURCHASE gap writeback (after WB-12; MVP1 P0 #2)
+16. **WB-14** — LE-02 purchase value correction (`event_correct`; after WB-13; capability CONFIRMED_LIMITED)
+17. **WB-15** — CI-05 identity key repair (`contact_upsert` externalId; after WB-14; MVP1 P0 #5)
+18. **WB-16** — CI-03 contact merge plan (Phase A); SAFE CONTACT_ID delete (Phase B after Loom)
+19. **WB-17** — CC-01 email consent reconcile plan (Phase A); Manago `forceOpt*` (Phase B optional after product)
+20. **WB-18** — CC-02 SMS consent reconcile plan (Phase A); Manago `forcePhoneOpt*` (Phase B optional after product)
+21. **WB-19** — SP-03 detail schema normalise (format contract + Approve; Klints)
+22. **WB-20** — PT-03 catalog completeness reconcile (T7 product_upsert; after PRODUCT.IMPORT Loom)
+23. **WB-21** — Sandbox-test harness for all writebacks (Phases A–D shipping: first wave → Tier A/B/C + live/naming honesty)
+24. **REAL-01** — Real path only: REQUIRE_* = True; Fix Steps to pass for non–Klints-Approve; Studio/Handoff honesty; MCP/graph_complete separate
 
 Do not merge FE-12 before WB-02.  
 WB-04/06/07 do **not** block Sahil HO-01 / CAP-01 / Studio / QA.  
@@ -71,11 +91,34 @@ WB-08 does **not** touch Handoff Send / HO-02.
 WB-09 does **not** ship versioned Klints prefix (Option B deferred).  
 WB-10 does **not** ship PT-04.  
 WB-11 ships PT-04 via `detail_set` (not `event_correct`). Stamp alone may not clear PT-04 PASS.  
-WB-12 teaches product truth to PASS when the stamp matches net (closes treating loop).
+WB-12 teaches product truth to PASS when the stamp matches net (closes treating loop).  
+WB-13 ships LE-05 PURCHASE gap backfill (shares write surface with LE-01; no manago_only delete).  
+WB-14 ships LE-02 T6 `event_correct` / `updateContactExtEvent` (DCS `value_mismatch` rows; not `event_ingest`).  
+WB-15 ships CI-05 T2 `contact_upsert` externalId backfill (missing_link_key only; reused → CI-03).  
+WB-16 Phase A ships CI-03 T3 merge plan (not auto-merged; CRM manager; Preview/Download); Phase B SAFE `batchDelete` by CONTACT_ID only after Loom — never email-delete.  
+WB-17 Phase A ships CC-01 T8 consent reconcile **plan** (Data lead; Preview/Download; not auto forceOpt); Phase B Manago `forceOptOut`/`forceOptIn` optional after product — do not copy CC-03 Approve exception; opt-out not rolled back.  
+WB-18 Phase A ships CC-02 T8 SMS consent reconcile **plan** (Data lead; Preview/Download; not auto forcePhoneOpt); unreachable phones Download-only; Phase B `forcePhoneOpt*` optional after product.  
+WB-19 ships SP-03 T4 detail format **contract + Approve** (Klints; `detail_set` native properties; semantic key merge deferred).  
+WB-20 drafts PT-03 T7 catalog **reconcile Approve** (Klints; `product_upsert`; Loom gate; continuous webhooks Integration follow-on).  
+WB-20 **Preview live** for PT-03 (mapping + expand + adapter wired; PRODUCT.IMPORT still DISCOVERY_REQUIRED — FE Approve allowlist deferred until Loom).  
+WB-21 ships the **sandbox-test contract** for every writeback (not a new mapping): shared harness; first wave CI-01/CC-03/WB-SHOP-01; all Tier A execute + Tier B plan_only + PT-03 blocked; Phase D live suite + `execute_eligible.company` + mapping-only Fix honesty. Old WB-01B/02 “only 3” = first wave history, not permanent scope.  
+**Solid scoring universe (follow-on):** Fix live rebuild uses DCS run pins; Contact soft-tombstone (`excluded`) after fresh import; LE-09 → UNKNOWN on thin Manago events vs prior snap.
 
 ## Cross-track testing
 
 - **[../CROSS_TRACK_TEST_LAST_5_PRDS.md](../CROSS_TRACK_TEST_LAST_5_PRDS.md)** — Sahil↔Maheep polish: last 5 PRDs each (common TCs TC-M* / TC-S*)
+
+## Writeback ownership (MVP1 42 only)
+
+- **[WRITEBACK_FIX_OWNERSHIP_MVP1_42.md](./WRITEBACK_FIX_OWNERSHIP_MVP1_42.md)** — Per-check Fix Owner / Fix Type from CheckMaster Excel; Klints vs Manual/CRM/Data lead/External; verdict Correct / plan-only / not built / borderline (use before implementing or changing writebacks)
+- **[ANALYSIS_CC01_EMAIL_CONSENT_RECONCILE.md](./ANALYSIS_CC01_EMAIL_CONSENT_RECONCILE.md)** — Deep analysis for **CC-01** (Excel + live DCS + T8 gaps)  
+- **[PRD_WB_17_CC01_EMAIL_CONSENT_RECONCILE.md](./PRD_WB_17_CC01_EMAIL_CONSENT_RECONCILE.md)** — **WB-17** — CC-01 plan-only Phase A; gated forceOpt Phase B  
+- **[ANALYSIS_CC02_SMS_CONSENT_RECONCILE.md](./ANALYSIS_CC02_SMS_CONSENT_RECONCILE.md)** — Deep analysis for **CC-02** (Excel extract + live DCS + twin of CC-01)  
+- **[PRD_WB_18_CC02_SMS_CONSENT_RECONCILE.md](./PRD_WB_18_CC02_SMS_CONSENT_RECONCILE.md)** — **WB-18 Phase A live** — CC-02 plan-only; optional forcePhoneOpt Phase B  
+- **[ANALYSIS_SP03_DETAIL_SCHEMA_NORMALIZE.md](./ANALYSIS_SP03_DETAIL_SCHEMA_NORMALIZE.md)** — Deep analysis for **SP-03** (Excel Suggested Fix + DCS-486 coerce lesson + format contract)  
+- **[PRD_WB_19_SP03_DETAIL_SCHEMA_NORMALIZE.md](./PRD_WB_19_SP03_DETAIL_SCHEMA_NORMALIZE.md)** — **WB-19 shipped** — SP-03 Klints Approve (format contract + normalise; semantic merge deferred)  
+- **[ANALYSIS_PT03_CATALOG_COMPLETENESS.md](./ANALYSIS_PT03_CATALOG_COMPLETENESS.md)** — Deep analysis for **PT-03** (Excel reconcile + archive; PRODUCT.IMPORT Loom gate)  
+- **[PRD_WB_20_PT03_CATALOG_COMPLETENESS_WRITEBACK.md](./PRD_WB_20_PT03_CATALOG_COMPLETENESS_WRITEBACK.md)** — **WB-20 draft** — PT-03 Klints Approve (T7 product_upsert; not webhooks MVP)
 
 ## Related existing docs
 

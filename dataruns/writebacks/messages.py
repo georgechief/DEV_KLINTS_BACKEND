@@ -35,6 +35,25 @@ def writeback_execute_denial_detail(blocked_reason: str | None) -> str:
         "dcs_run_required": (
             "Run a Data Consistency Score before approving writebacks."
         ),
+        "ci03_plan_only": (
+            "CI-03 is plan-only: Preview and Download show the merge plan. "
+            "Klints does not auto-merge. CRM manager executes in Manago "
+            "(or Phase B SAFE_DELETE after Loom)."
+        ),
+        "cc01_plan_only": (
+            "CC-01 is plan-only: Preview and Download show the consent reconcile plan. "
+            "Klints does not auto-apply forceOpt in Phase A. Data lead applies policy "
+            "in Manago (or Phase B Approve after Loom + product sign-off)."
+        ),
+        "cc02_plan_only": (
+            "CC-02 is plan-only: Preview and Download show the SMS consent reconcile plan. "
+            "Klints does not auto-apply forcePhoneOpt in Phase A. Data lead applies policy "
+            "in Manago (or Phase B Approve after product sign-off)."
+        ),
+        "plan_only": (
+            "This check is plan-only: Preview and Download are available. "
+            "Approve will not write until product enables execute for this check."
+        ),
     }
     if reason in exact:
         return exact[reason]

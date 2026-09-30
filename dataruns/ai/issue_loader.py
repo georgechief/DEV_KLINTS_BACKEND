@@ -12,6 +12,7 @@ from dataruns.dcs.worklist import (
     build_enriched_issue,
     extract_dcs_payload,
     get_latest_terminal_dcs_run,
+    is_worklist_actionable_status,
     load_check_master_by_id,
     load_optional_check_ids,
     load_run_issues_by_check_id,
@@ -108,7 +109,9 @@ def load_issue_for_ai(
         if candidate in INCLUDE_STATUSES:
             status = candidate
 
-    if status not in INCLUDE_STATUSES:
+    if not is_worklist_actionable_status(
+        status, result if isinstance(result, dict) else None
+    ):
         raise AiNotFoundError("Worklist issue not found.")
 
     master = check_master_by_id.get(check_id)

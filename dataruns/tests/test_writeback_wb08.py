@@ -64,9 +64,11 @@ class WritebackWb08RegistryAndAllowlistTests(TestCase):
             "shopify_only",
         )
 
-    def test_ci03_and_le04_stay_disabled(self):
-        with self.assertRaises(MappingDisabled):
-            get_check_mapping("CI-03")
+    def test_ci03_enabled_plan_only_le04_stays_disabled(self):
+        ci03 = get_check_mapping("CI-03")
+        self.assertEqual(ci03.get("execute_mode"), "plan_only")
+        self.assertEqual(ci03["operations"][0]["op_kind"], "contact_merge")
+        self.assertEqual((ci03.get("rollback") or {}).get("strategy"), "none")
         with self.assertRaises(MappingDisabled):
             get_check_mapping("LE-04")
 

@@ -174,24 +174,101 @@ def _require_consent_inputs(
     return snapshot, consent, observed
 
 
+def _cc01_propose_action(row: dict[str, Any]) -> tuple[str, str]:
+    """PRD-WB-17 §5.2 — score-time proposed_action for Download/provenance.
+
+    Transform may still enrich ``klints_consent_evidence`` at Preview time.
+    """
+    side = str(row.get("email_quadrant") or row.get("side") or "").strip()
+    if side == "out_in":
+        return "FORCE_OPT_OUT", "opt_out_wins"
+    if row.get("provenance_ok") is True:
+        return "FORCE_OPT_IN", "provenance_ok"
+    evidence = str(row.get("klints_consent_evidence") or "").strip()
+    if evidence == "shopify_verified":
+        return "FORCE_OPT_IN", "klints_consent_evidence"
+    level = str(row.get("shopify_email_opt_in_level") or "").strip()
+    ts = row.get("shopify_email_consent_updated_at")
+    if level and level.lower() not in ("", "unknown") and ts:
+        return "FORCE_OPT_IN", "shopify_opt_in_level+ts"
+    return "SKIP_UNEVIDENCED", "fail"
+
+
+def _cc01_provenance_mismatches(
+    snapshot: dict[str, Any],
+    consent: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Uncapped out_in/in_out plan rows for FE-12 Download (PRD-WB-17 §3.4).
+
+    Prefer scoring-snapshot ``consent_mismatch_email``; fall back to sample keys
+    when older snaps omit the full list.
+    """
+    raw = snapshot.get("consent_mismatch_email")
+    source: list[dict[str, Any]] = []
+    if isinstance(raw, list) and raw:
+        for item in raw:
+            if not isinstance(item, dict):
+                continue
+            q = str(item.get("email_quadrant") or item.get("side") or "").strip()
+            if q in ("out_in", "in_out"):
+                source.append(item)
+    else:
+        samples = (consent.get("mismatch_samples") or {}).get("email_out_in") or []
+        samples += (consent.get("mismatch_samples") or {}).get("email_in_out") or []
+        source = [s for s in samples if isinstance(s, dict)]
+
+    out: list[dict[str, Any]] = []
+    for s in source:
+        side = str(s.get("email_quadrant") or s.get("side") or "").strip()
+        if side not in ("out_in", "in_out"):
+            continue
+        proposed, gate = _cc01_propose_action(s)
+        opted = s.get("optedOut")
+        out.append(
+            {
+                "side": side,
+                "person.email": s.get("person.email"),
+                "shopify_customer_id": s.get("shopify_customer_id"),
+                "manago_contact_id": s.get("manago_contact_id"),
+                "channel": "email",
+                "shopify_email_opt_in_level": s.get("shopify_email_opt_in_level"),
+                "shopify_email_consent_updated_at": s.get(
+                    "shopify_email_consent_updated_at"
+                ),
+                "manago_modified_on": s.get("manago_modified_on")
+                or s.get("modified_on"),
+                "provenance_ok": s.get("provenance_ok"),
+                "provenance_weak": s.get("provenance_weak"),
+                "provenance_note": s.get("provenance_note"),
+                "optedOut": opted,
+                "prior_optedOut": s.get("prior_optedOut", opted),
+                "manago_email_in": s.get("manago_email_in"),
+                "shopify_email_in": s.get("shopify_email_in"),
+                "link_kind": s.get("link_kind"),
+                "proposed_action": proposed,
+                "evidence_gate": gate,
+            }
+        )
+    return out
+
+
 def evaluate_cc_01(ctx: FoundationGateContext) -> CheckResult:
     """Email opt-in parity — four-quadrant matrix (Excel CC-01)."""
     loaded = _require_consent_inputs(check_id="CC-01", ctx=ctx, need_both=True)
     if isinstance(loaded, CheckResult):
         return loaded
-    _snapshot_data, consent, observed = loaded
+    snapshot_data, consent, observed = loaded
     matrix = consent.get("email_quadrant_matrix") or {}
     linked = int(consent.get("linked_identities") or 0)
     compliance = int(consent.get("compliance_exposure_email") or 0)
     lost = int(consent.get("lost_reach_email") or 0)
     mismatches = int(consent.get("email_mismatches") or 0)
-    samples = (consent.get("mismatch_samples") or {}).get("email_out_in") or []
-    samples += (consent.get("mismatch_samples") or {}).get("email_in_out") or []
     field_cov = (
         consent.get("email_field_coverage")
         if isinstance(consent.get("email_field_coverage"), dict)
         else {}
     )
+    provenance_mismatches = _cc01_provenance_mismatches(snapshot_data, consent)
     value = {
         "linked_identities": linked,
         "email_quadrant_matrix": matrix,
@@ -202,6 +279,9 @@ def evaluate_cc_01(ctx: FoundationGateContext) -> CheckResult:
         "opt_in_level_distribution": field_cov.get("opt_in_level_distribution") or {},
         "consent_updated_at_present": field_cov.get("consent_updated_at_present"),
         "consent_updated_at_share": field_cov.get("consent_updated_at_share"),
+        # PRD-WB-17 §3.4 Download honesty
+        "consent_mismatch_email_count": len(provenance_mismatches),
+        "preview_sample_cap": CC_SAMPLE,
     }
     evidence = [
         _evidence(
@@ -213,21 +293,7 @@ def evaluate_cc_01(ctx: FoundationGateContext) -> CheckResult:
     ]
     provenance = {
         "matches": [],
-        "mismatches": [
-            {
-                "side": s.get("email_quadrant"),
-                "person.email": s.get("person.email"),
-                "shopify_customer_id": s.get("shopify_customer_id"),
-                "manago_contact_id": s.get("manago_contact_id"),
-                "channel": "email",
-                "shopify_email_opt_in_level": s.get("shopify_email_opt_in_level"),
-                "shopify_email_consent_updated_at": s.get(
-                    "shopify_email_consent_updated_at"
-                ),
-                "manago_modified_on": s.get("manago_modified_on"),
-            }
-            for s in samples[:CC_SAMPLE]
-        ],
+        "mismatches": provenance_mismatches,
     }
     if linked == 0:
         return _result(
@@ -277,19 +343,90 @@ def evaluate_cc_01(ctx: FoundationGateContext) -> CheckResult:
     )
 
 
+def _cc02_propose_action(row: dict[str, Any]) -> tuple[str, str]:
+    """PRD-WB-18 §2 — score-time proposed_action (SMS gate fields only)."""
+    side = str(row.get("sms_quadrant") or row.get("side") or "").strip()
+    if side == "out_in":
+        return "FORCE_PHONE_OPT_OUT", "opt_out_wins"
+    if row.get("provenance_ok") is True:
+        return "FORCE_PHONE_OPT_IN", "provenance_ok"
+    evidence = str(row.get("klints_consent_evidence") or "").strip()
+    if evidence == "shopify_verified":
+        return "FORCE_PHONE_OPT_IN", "klints_consent_evidence"
+    level = str(row.get("shopify_sms_opt_in_level") or "").strip()
+    ts = row.get("shopify_sms_consent_updated_at")
+    if level and level.lower() not in ("", "unknown") and ts:
+        return "FORCE_PHONE_OPT_IN", "shopify_sms_opt_in_level+ts"
+    return "SKIP_UNEVIDENCED", "fail"
+
+
+def _cc02_provenance_mismatches(
+    snapshot: dict[str, Any],
+    consent: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Uncapped SMS out_in/in_out plan rows for FE-12 Download (PRD-WB-18 §3.4)."""
+    raw = snapshot.get("consent_mismatch_sms")
+    source: list[dict[str, Any]] = []
+    if isinstance(raw, list) and raw:
+        for item in raw:
+            if not isinstance(item, dict):
+                continue
+            q = str(item.get("sms_quadrant") or item.get("side") or "").strip()
+            if q in ("out_in", "in_out"):
+                source.append(item)
+    else:
+        samples = (consent.get("mismatch_samples") or {}).get("sms_out_in") or []
+        samples += (consent.get("mismatch_samples") or {}).get("sms_in_out") or []
+        source = [s for s in samples if isinstance(s, dict)]
+
+    out: list[dict[str, Any]] = []
+    for s in source:
+        side = str(s.get("sms_quadrant") or s.get("side") or "").strip()
+        if side not in ("out_in", "in_out"):
+            continue
+        proposed, gate = _cc02_propose_action(s)
+        opted_phone = s.get("optedOutPhone")
+        out.append(
+            {
+                "side": side,
+                "person.email": s.get("person.email"),
+                "person.phone": s.get("person.phone"),
+                "phone_valid": s.get("phone_valid"),
+                "shopify_customer_id": s.get("shopify_customer_id"),
+                "manago_contact_id": s.get("manago_contact_id"),
+                "channel": "sms",
+                "shopify_sms_opt_in_level": s.get("shopify_sms_opt_in_level"),
+                "shopify_sms_consent_updated_at": s.get(
+                    "shopify_sms_consent_updated_at"
+                ),
+                "manago_modified_on": s.get("manago_modified_on")
+                or s.get("modified_on"),
+                "provenance_ok": s.get("provenance_ok"),
+                "provenance_weak": s.get("provenance_weak"),
+                "provenance_note": s.get("provenance_note"),
+                "optedOutPhone": opted_phone,
+                "prior_optedOutPhone": s.get("prior_optedOutPhone", opted_phone),
+                "manago_sms_in": s.get("manago_sms_in"),
+                "shopify_sms_in": s.get("shopify_sms_in"),
+                "link_kind": s.get("link_kind"),
+                "proposed_action": proposed,
+                "evidence_gate": gate,
+            }
+        )
+    return out
+
+
 def evaluate_cc_02(ctx: FoundationGateContext) -> CheckResult:
     """SMS / mobile consent parity — four-quadrant (Excel CC-02)."""
     loaded = _require_consent_inputs(check_id="CC-02", ctx=ctx, need_both=True)
     if isinstance(loaded, CheckResult):
         return loaded
-    _snapshot_data, consent, observed = loaded
+    snapshot_data, consent, observed = loaded
     matrix = consent.get("sms_quadrant_matrix") or {}
     linked = int(consent.get("linked_identities") or 0)
     compliance = int(consent.get("compliance_exposure_sms") or 0)
     lost = int(consent.get("lost_reach_sms") or 0)
     mismatches = int(consent.get("sms_mismatches") or 0)
-    samples = (consent.get("mismatch_samples") or {}).get("sms_out_in") or []
-    samples += (consent.get("mismatch_samples") or {}).get("sms_in_out") or []
     reach = (
         consent.get("sms_phone_reachability")
         if isinstance(consent.get("sms_phone_reachability"), dict)
@@ -299,6 +436,7 @@ def evaluate_cc_02(ctx: FoundationGateContext) -> CheckResult:
     unreachable_samples = (consent.get("mismatch_samples") or {}).get(
         "consented_unreachable_sms"
     ) or []
+    plan_mismatches = _cc02_provenance_mismatches(snapshot_data, consent)
     value = {
         "linked_identities": linked,
         "sms_quadrant_matrix": matrix,
@@ -307,6 +445,9 @@ def evaluate_cc_02(ctx: FoundationGateContext) -> CheckResult:
         "mismatches": mismatches,
         # Excel CC-02: phone validity (CI-09) checked jointly — soft surface only.
         "sms_phone_reachability": reach,
+        # PRD-WB-18 §3.4 Download honesty
+        "consent_mismatch_sms_count": len(plan_mismatches),
+        "preview_sample_cap": CC_SAMPLE,
     }
     evidence = [
         _evidence(
@@ -316,31 +457,23 @@ def evaluate_cc_02(ctx: FoundationGateContext) -> CheckResult:
             observed_at=observed,
         )
     ]
+    unreachable_rows = [
+        {
+            "side": "consented_but_unreachable",
+            "person.email": s.get("person.email"),
+            "person.phone": s.get("person.phone"),
+            "shopify_customer_id": s.get("shopify_customer_id"),
+            "manago_contact_id": s.get("manago_contact_id"),
+            "channel": "sms",
+            "phone_valid": s.get("phone_valid"),
+            "note": "CI-09-lite joint surface (not a scored CI-09 result)",
+        }
+        for s in unreachable_samples[:CC_SAMPLE]
+        if isinstance(s, dict)
+    ]
     provenance = {
         "matches": [],
-        "mismatches": [
-            {
-                "side": s.get("sms_quadrant"),
-                "person.email": s.get("person.email"),
-                "shopify_customer_id": s.get("shopify_customer_id"),
-                "manago_contact_id": s.get("manago_contact_id"),
-                "channel": "sms",
-            }
-            for s in samples[:CC_SAMPLE]
-        ]
-        + [
-            {
-                "side": "consented_but_unreachable",
-                "person.email": s.get("person.email"),
-                "person.phone": s.get("person.phone"),
-                "shopify_customer_id": s.get("shopify_customer_id"),
-                "manago_contact_id": s.get("manago_contact_id"),
-                "channel": "sms",
-                "phone_valid": s.get("phone_valid"),
-                "note": "CI-09-lite joint surface (not a scored CI-09 result)",
-            }
-            for s in unreachable_samples[:CC_SAMPLE]
-        ],
+        "mismatches": plan_mismatches + unreachable_rows,
     }
     if linked == 0:
         return _result(

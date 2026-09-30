@@ -73,8 +73,15 @@ class WritebackSummary:
 
 @dataclass
 class ExecuteEligibility:
-    sandbox: bool = False
+    """company execute gate (Allow writebacks). ``sandbox`` is the legacy field name."""
+
+    sandbox: bool = False  # legacy == writeback_execute_enabled / Allow writebacks
     production: bool = False
+
+    @property
+    def company(self) -> bool:
+        """PRD-WB-21 Phase D SoT name for Allow writebacks."""
+        return self.sandbox
 
 
 @dataclass

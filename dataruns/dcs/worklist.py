@@ -25,6 +25,29 @@ INCLUDE_STATUSES = frozenset({"FAIL", "WARN"})
 EXCLUDE_STATUSES = frozenset(
     {"PASS", "UNKNOWN", "NOT_CONNECTED", "NOT_APPLICABLE"}
 )
+# PRD-WB-15: cold estate CI-05 (no link keys yet) stays UNKNOWN for scoring
+# but must surface on Fix so operators can Approve missing_link_key backfills.
+CI05_COLD_ESTATE_REASON = "MISSING_INPUT:person.external_key"
+
+
+def is_ci05_cold_estate_unknown(result: dict[str, Any] | None) -> bool:
+    """True when CI-05 is UNKNOWN(with_link=0) and writeback-eligible."""
+    if not isinstance(result, dict):
+        return False
+    return (
+        str(result.get("check_id") or "").upper() == "CI-05"
+        and str(result.get("status") or "").upper() == "UNKNOWN"
+        and str(result.get("reason_code") or "") == CI05_COLD_ESTATE_REASON
+    )
+
+
+def is_worklist_actionable_status(
+    status: str | None, result: dict[str, Any] | None = None
+) -> bool:
+    normalized = str(status or "").upper()
+    if normalized in INCLUDE_STATUSES:
+        return True
+    return is_ci05_cold_estate_unknown(result)
 
 SEVERITY_ORDER = {
     "critical": 0,
@@ -161,6 +184,9 @@ def should_include_check_result(result: dict[str, Any]) -> bool:
         return False
     if _is_executor_stub(result):
         return False
+    # PRD-WB-15: CI-05 UNKNOWN(with_link=0) is Fix-actionable (scoring unchanged).
+    if is_ci05_cold_estate_unknown(result):
+        return True
     status = str(result.get("status") or "").upper()
     if status in EXCLUDE_STATUSES:
         return False
@@ -1262,10 +1288,11 @@ def build_worklist_detail(
         )
         candidate = str(details.get("status") or "").upper()
         # INCLUDE_STATUSES is FAIL/WARN only; stubs are already excluded.
+        # CI-05 cold UNKNOWN is allowed via should_include on check_results only.
         if candidate in INCLUDE_STATUSES:
             status = candidate
 
-    if status not in INCLUDE_STATUSES:
+    if not is_worklist_actionable_status(status, result if isinstance(result, dict) else None):
         raise WorklistDetailNotFound(check_id)
 
     master = check_master_by_id.get(check_id)

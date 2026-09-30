@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0.0",
+  "check_id": "CI-05",
+  "template_id": "T2",
+  "title": "Identity key repair (Manago externalId backfill)",
+  "enabled": true,
+  "approval_tier": "batch",
+  "requires_consent_namespace_clean": false,
+  "irreversible": false,
+  "operator_disclosure": "Sets Manago contact.externalId to the matched Shopify customers.id via contact upsert (native identity key — T2). Approved batch of clean 1:1 email matches with no existing link_key and no bijection conflict. Does not merge duplicate contacts (use CI-03 for reused externalId clusters) and does not rewrite dangling keys. Ambiguous email matches are skipped. Prior externalId (usually empty) is restorable via writeback rollback. Prefer clear CI-01 Shopify-only gaps first when both FAIL. Re-run DCS after Approve.",
+  "rollback": {
+    "strategy": "restore_prior_field"
+  },
+  "operations": [
+    {
+      "operation_id": "manago.contact_upsert.external_id_ci05",
+      "op_kind": "contact_upsert",
+      "target": "manago",
+      "namespace": "native",
+      "capability_id": "RESTV2.CONTACT.UPSERT",
+      "entity_type": "contact",
+      "from_evidence": {
+        "match": { "path": "side", "const": "missing_link_key" },
+        "entity_key": { "path": "manago_contact_id" },
+        "fields": {
+          "email": { "path": "person.email" },
+          "contact_id": { "path": "manago_contact_id" },
+          "link_key": { "path": "shopify_customer_id" },
+          "prior_external_id": { "path": "prior_external_id" }
+        }
+      },
+      "guards": ["entity_key_required", "email_format"],
+      "mark_klints_backfill": true
+    }
+  ]
+}
