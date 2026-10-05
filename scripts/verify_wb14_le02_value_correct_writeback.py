@@ -211,12 +211,12 @@ def main() -> int:
     print("Possible sheet LE-02: OK")
 
     docs_sheet = (
-        Path(ROOT) / "docs" / "maheep" / "WRITEBACK_POSSIBLE_NOT_SHEET.csv"
+        Path(ROOT) / "docs" / "writebacks" / "WRITEBACK_POSSIBLE_NOT_SHEET.csv"
     ).read_text(encoding="utf-8")
     if "LE-02.value_correct.v1.json" not in docs_sheet:
         return _fail("docs possible sheet missing LE-02 row")
     surface = (
-        Path(ROOT) / "docs" / "maheep" / "WRITEBACK_SURFACE_MATRIX.md"
+        Path(ROOT) / "docs" / "writebacks" / "WRITEBACK_SURFACE_MATRIX.md"
     ).read_text(encoding="utf-8")
     if "LE-02" not in surface or "event_correct" not in surface:
         return _fail("SURFACE matrix missing LE-02 event_correct")

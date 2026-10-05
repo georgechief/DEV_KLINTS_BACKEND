@@ -83,8 +83,8 @@ def main() -> int:
 
     print("\nDCS-10 Step 4 — BE v1 acceptance (slices A+B+C)\n", flush=True)
 
-    gaps = read("docs/sahil/DCS_10_WORKING_GAPS.md")
-    prd = read("docs/sahil/PRD_DCS_10_FRESH_IMPORT_BEFORE_SCORE.md")
+    gaps = read("docs/dcs_scoring/DCS_10_WORKING_GAPS.md")
+    prd = read("docs/dcs_scoring/PRD_DCS_10_FRESH_IMPORT_BEFORE_SCORE.md")
     verify_self = ROOT / "scripts/verify_dcs10_fresh_import_backend.py"
     assert_true(verify_self.is_file(), "verify_dcs10_fresh_import_backend.py present")
     assert_true(bool(gaps), "DCS_10_WORKING_GAPS exists")

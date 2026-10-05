@@ -349,7 +349,7 @@ def main() -> None:
         },
     )
     pdf = render_assessment_pdf(report.payload)
-    path = ROOT / "docs/sahil/klints-assessment-lumera-skin-13-2026-08-13-AFTER-RPT01B.pdf"
+    path = ROOT / "docs/reports/klints-assessment-lumera-skin-13-2026-08-13-AFTER-RPT01B.pdf"
     path.write_bytes(pdf)
 
     rem = report.payload["content"]["remediation"]["items"][0]

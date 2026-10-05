@@ -81,8 +81,8 @@ def main() -> int:
 
     print("\nHO-02 — BE acceptance (Phases 1–5)\n")
 
-    gaps = read("docs/sahil/HO_02_WORKING_GAPS.md")
-    prd = read("docs/sahil/PRD_HO_02_HANDOFF_SEND_HUMAN_ACTIVATION.md")
+    gaps = read("docs/handoff/HO_02_WORKING_GAPS.md")
+    prd = read("docs/handoff/PRD_HO_02_HANDOFF_SEND_HUMAN_ACTIVATION.md")
     assert_true(bool(gaps), "HO_02_WORKING_GAPS doc exists")
     assert_true("Phase 5" in gaps, "Phase 5 documented in WORKING_GAPS")
     assert_true("workflow.handoff_approved_for_activation" in gaps, "audit actions documented")

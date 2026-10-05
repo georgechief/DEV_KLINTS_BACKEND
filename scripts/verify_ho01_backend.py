@@ -67,8 +67,8 @@ def main() -> int:
 
     print("\nHO-01 Step 11 — BE §9 acceptance\n")
 
-    gaps = read("docs/sahil/HO_01_WORKING_GAPS.md")
-    prd = read("docs/sahil/PRD_HO_01_HANDOFF_PACKAGE_BIND.md")
+    gaps = read("docs/handoff/HO_01_WORKING_GAPS.md")
+    prd = read("docs/handoff/PRD_HO_01_HANDOFF_PACKAGE_BIND.md")
     assert_true(bool(gaps), "HO_01_WORKING_GAPS doc exists")
     assert_true("Demo path — UC-02" in gaps, "demo path documents UC-02")
     assert_true("workflow.handoff_staged" in gaps, "audit action documented")

@@ -10,14 +10,14 @@ from typing import Any
 SHEET_SCHEMA_VERSION = 1
 PACKAGE_CSV_FILENAME = "WRITEBACK_POSSIBLE_NOT_SHEET.csv"
 # Docs path is optional in production because `.dockerignore` excludes `docs/`.
-DOCS_RELATIVE_PATH = Path("docs") / "maheep" / PACKAGE_CSV_FILENAME
+DOCS_RELATIVE_PATH = Path("docs") / "writebacks" / PACKAGE_CSV_FILENAME
 PACKAGE_SOURCE_RELATIVE = "dataruns/writebacks/WRITEBACK_POSSIBLE_NOT_SHEET.csv"
-DOCS_SOURCE_RELATIVE = "docs/maheep/WRITEBACK_POSSIBLE_NOT_SHEET.csv"
+DOCS_SOURCE_RELATIVE = "docs/writebacks/WRITEBACK_POSSIBLE_NOT_SHEET.csv"
 SHEET_GENERATED_FROM = [
     "pack:02 Check Catalogue",
     "pack:Manago Capability Matrix",
     "dataruns/writebacks/mappings/",
-    "docs/maheep/WRITEBACK_SURFACE_MATRIX.md",
+    "docs/writebacks/WRITEBACK_SURFACE_MATRIX.md",
 ]
 
 SHEET_COLUMNS = (

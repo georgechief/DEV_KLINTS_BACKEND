@@ -1,7 +1,7 @@
 # PRD-DCS-09 — Pilot supplemental preflight gates (archive / long appendix)
 
 > **Implementation SoT (M2):**  
-> **[`docs/sahil/PRD_DCS_09_PILOT_SUPPLEMENTAL_GATES.md`](../sahil/PRD_DCS_09_PILOT_SUPPLEMENTAL_GATES.md)**  
+> **[`docs/dcs_scoring/PRD_DCS_09_PILOT_SUPPLEMENTAL_GATES.md`](../dcs_scoring/PRD_DCS_09_PILOT_SUPPLEMENTAL_GATES.md)**  
 > Owner: **Sahil**. Use that file for Cursor briefs, acceptance, and PRs.
 
 This file is retained as a **long-form appendix** (per-check detection notes, historical API sketches). Prefer the Sahil PRD for scope locks against **current** code (`recommend.py` provisional policy, 42-only CheckMaster, CAP-01/HO-01 already shipped).

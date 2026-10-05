@@ -340,7 +340,7 @@ def main() -> int:
     else:
         bad("Phase 4: Errors dashboard title should be Errors only")
 
-    phase4_notes = read("docs/sahil/M3_OBS_01_PHASE_4.md")
+    phase4_notes = read("docs/ops/M3_OBS_01_PHASE_4.md")
     if phase4_notes and "Silences" in phase4_notes and "m3_obs=01" in phase4_notes:
         ok("Phase 4: silence/mute during deploy documented")
     else:
@@ -406,7 +406,7 @@ def main() -> int:
         else:
             bad("Phase 5: OBS smoke must run after /health/ smoke step")
 
-    runbook = read("docs/sahil/M3_OBS_01_RUNBOOK.md")
+    runbook = read("docs/ops/M3_OBS_01_RUNBOOK.md")
     if runbook and "apis.klints.io/grafana/" in runbook:
         ok("Phase 5: runbook has Grafana URL")
     else:
@@ -441,7 +441,7 @@ def main() -> int:
     else:
         bad("Phase 5: runbook must say no product UI link")
 
-    readme = read("docs/sahil/README.md")
+    readme = read("docs/ops/README.md")
     if (
         readme
         and "PRD_M3_OBS_01" in readme
@@ -450,9 +450,9 @@ def main() -> int:
     ):
         ok("Phase 5: README build-order links runbook + Phase 5")
     else:
-        bad("Phase 5: docs/sahil/README.md must link RUNBOOK and PHASE_5")
+        bad("Phase 5: docs/ops/README.md must link RUNBOOK and PHASE_5")
 
-    phase5_notes = read("docs/sahil/M3_OBS_01_PHASE_5.md")
+    phase5_notes = read("docs/ops/M3_OBS_01_PHASE_5.md")
     if phase5_notes and "grafana/api/health" in phase5_notes and "Explore" in phase5_notes:
         ok("Phase 5: phase notes present")
     else:
@@ -515,7 +515,7 @@ def main() -> int:
     else:
         bad("Phase 6: .env.example must document M3_OBS_INDUCE_*")
 
-    phase6 = read("docs/sahil/M3_OBS_01_PHASE_6.md")
+    phase6 = read("docs/ops/M3_OBS_01_PHASE_6.md")
     if phase6 and "M3-OBS-01-INDUCE-WEB" in phase6:
         ok("Phase 6: phase notes document induce marker")
     else:
@@ -542,7 +542,7 @@ def main() -> int:
     if readme and "PHASE_6" in readme:
         ok("Phase 6: README links PHASE_6")
     else:
-        bad("Phase 6: docs/sahil/README.md must link PHASE_6")
+        bad("Phase 6: docs/ops/README.md must link PHASE_6")
 
     print()
     if FAILED:
@@ -553,7 +553,7 @@ def main() -> int:
     print("M3-OBS-01 Phase 1-6 static checks: PASS")
     print(
         "NOTE: Phase 6 live deploy/observe/sign-off happens after PR merge "
-        "(see docs/sahil/M3_OBS_01_PHASE_6.md)."
+        "(see docs/ops/M3_OBS_01_PHASE_6.md)."
     )
     return 0
 

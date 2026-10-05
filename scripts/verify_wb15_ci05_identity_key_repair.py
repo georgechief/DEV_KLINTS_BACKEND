@@ -208,17 +208,17 @@ def main() -> int:
     print("Possible sheet CI-05: OK")
 
     docs_sheet = (
-        Path(ROOT) / "docs" / "maheep" / "WRITEBACK_POSSIBLE_NOT_SHEET.csv"
+        Path(ROOT) / "docs" / "writebacks" / "WRITEBACK_POSSIBLE_NOT_SHEET.csv"
     ).read_text(encoding="utf-8")
     if "CI-05.identity_key_repair.v1.json" not in docs_sheet:
         return _fail("docs possible sheet missing CI-05 row")
     surface = (
-        Path(ROOT) / "docs" / "maheep" / "WRITEBACK_SURFACE_MATRIX.md"
+        Path(ROOT) / "docs" / "writebacks" / "WRITEBACK_SURFACE_MATRIX.md"
     ).read_text(encoding="utf-8")
     if "CI-05" not in surface or "missing_link_key" not in surface:
         return _fail("SURFACE matrix missing CI-05 missing_link_key note")
     wb02 = (
-        Path(ROOT) / "docs" / "maheep" / "PRD_WB_02_FIX_APPROVE_WRITEBACK_EXECUTE.md"
+        Path(ROOT) / "docs" / "writebacks" / "PRD_WB_02_FIX_APPROVE_WRITEBACK_EXECUTE.md"
     ).read_text(encoding="utf-8")
     # CI-05 must not remain on the Approve-OFF list.
     off_line = None

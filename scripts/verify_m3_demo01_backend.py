@@ -37,13 +37,13 @@ DEMO01_TEST_MODULES = [
 ]
 
 PHASE_DOCS = [
-    "docs/sahil/M3_DEMO_01_PHASE_0.md",
-    "docs/sahil/M3_DEMO_01_PHASE_1.md",
-    "docs/sahil/M3_DEMO_01_PHASE_2.md",
-    "docs/sahil/M3_DEMO_01_PHASE_3.md",
-    "docs/sahil/M3_DEMO_01_PHASE_4.md",
-    "docs/sahil/M3_DEMO_01_PHASE_5.md",
-    "docs/sahil/M3_DEMO_01_PHASE_6.md",
+    "docs/ops/M3_DEMO_01_PHASE_0.md",
+    "docs/ops/M3_DEMO_01_PHASE_1.md",
+    "docs/ops/M3_DEMO_01_PHASE_2.md",
+    "docs/ops/M3_DEMO_01_PHASE_3.md",
+    "docs/ops/M3_DEMO_01_PHASE_4.md",
+    "docs/ops/M3_DEMO_01_PHASE_5.md",
+    "docs/ops/M3_DEMO_01_PHASE_6.md",
 ]
 
 
@@ -94,12 +94,12 @@ def main() -> int:
     print("\nM3-DEMO-01 — Live Shopify demo path verify (Phase 5)\n", flush=True)
 
     print("  Docs + phase chain", flush=True)
-    prd = read("docs/sahil/PRD_M3_DEMO_01_DEMO_ENV_AND_DP1.md")
-    gaps = read("docs/sahil/M3_DEMO_01_WORKING_GAPS.md")
-    shopify_path = read("docs/sahil/M3_DEMO_01_SHOPIFY_PATH.md")
-    gap01f = read("docs/sahil/GAP_01F_DEMO_PATH.md")
-    readme = read("docs/sahil/README.md")
-    phase0 = read("docs/sahil/M3_DEMO_01_PHASE_0.md")
+    prd = read("docs/ops/PRD_M3_DEMO_01_DEMO_ENV_AND_DP1.md")
+    gaps = read("docs/ops/M3_DEMO_01_WORKING_GAPS.md")
+    shopify_path = read("docs/ops/M3_DEMO_01_SHOPIFY_PATH.md")
+    gap01f = read("docs/ops/GAP_01F_DEMO_PATH.md")
+    readme = read("docs/ops/README.md")
+    phase0 = read("docs/ops/M3_DEMO_01_PHASE_0.md")
     verify_self = ROOT / "scripts/verify_m3_demo01_backend.py"
     assert_true(verify_self.is_file(), "verify_m3_demo01_backend.py present")
     assert_true(bool(prd), "PRD_M3_DEMO_01 exists")
@@ -129,7 +129,7 @@ def main() -> int:
         "M3_DEMO_01_PHASE_6.md" in prd,
         "PRD progress links PHASE_6",
     )
-    phase5 = read("docs/sahil/M3_DEMO_01_PHASE_5.md")
+    phase5 = read("docs/ops/M3_DEMO_01_PHASE_5.md")
     assert_true(bool(phase5), "M3_DEMO_01_PHASE_5.md exists")
     assert_true(
         "verify_m3_demo01_backend.py" in phase5,
@@ -315,7 +315,7 @@ def main() -> int:
     )
 
     print("\n  Full path + DP1 (Phase 4 docs)", flush=True)
-    phase4 = read("docs/sahil/M3_DEMO_01_PHASE_4.md")
+    phase4 = read("docs/ops/M3_DEMO_01_PHASE_4.md")
     assert_true(bool(phase4), "M3_DEMO_01_PHASE_4.md exists")
     assert_true(
         "blocked_dcs_score" in phase4,
@@ -359,7 +359,7 @@ def main() -> int:
     )
 
     print("\n  Phase 3 smoke evidence documented", flush=True)
-    phase3 = read("docs/sahil/M3_DEMO_01_PHASE_3.md")
+    phase3 = read("docs/ops/M3_DEMO_01_PHASE_3.md")
     assert_true(bool(phase3), "M3_DEMO_01_PHASE_3.md exists")
     assert_true(
         "Simple Sample Data" in phase3,
@@ -392,7 +392,7 @@ def main() -> int:
         "verify_m3_demo01_backend.py" in prd and "**A5**" in prd,
         "§11 A5 tied to verify script",
     )
-    phase6 = read("docs/sahil/M3_DEMO_01_PHASE_6.md")
+    phase6 = read("docs/ops/M3_DEMO_01_PHASE_6.md")
     assert_true(bool(phase6), "M3_DEMO_01_PHASE_6.md exists")
     assert_true(
         "employer acceptance" in phase6.lower() or "§11" in phase6,
@@ -421,7 +421,7 @@ def main() -> int:
     print("M3-DEMO-01 static checks: PASS", flush=True)
     print(
         "NOTE: Sahil ship complete (local-only A3). Staging A2/A10 = residual ops "
-        "(see docs/sahil/M3_DEMO_01_PHASE_6.md).",
+        "(see docs/ops/M3_DEMO_01_PHASE_6.md).",
         flush=True,
     )
 

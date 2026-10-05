@@ -118,7 +118,7 @@ def main() -> None:
             body=window,
         )
 
-    out_dir = ROOT / "docs" / "sahil"
+    out_dir = ROOT / "docs" / "reports"
     out_dir.mkdir(parents=True, exist_ok=True)
     overview_path = out_dir / "klints-overview-brief-proof.pdf"
     legacy_path = out_dir / "klints-dcs-legacy-unchanged-proof.pdf"

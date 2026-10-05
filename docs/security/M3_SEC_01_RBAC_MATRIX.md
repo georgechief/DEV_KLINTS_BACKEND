@@ -1,6 +1,6 @@
 # M3-SEC-01 — RBAC Matrix (product roles)
 
-**PRD:** [PRD_M3_SEC_01_RBAC_ISOLATION_SECURITY_PACKET.md](../sahil/PRD_M3_SEC_01_RBAC_ISOLATION_SECURITY_PACKET.md)  
+**PRD:** [PRD_M3_SEC_01_RBAC_ISOLATION_SECURITY_PACKET.md](../security/PRD_M3_SEC_01_RBAC_ISOLATION_SECURITY_PACKET.md)  
 **Date:** 2026-09-11  
 **Roles:** `User.Role` = `admin` / `analyst` / `viewer` (`tenants/models.py`) — **not** Django `IsAdminUser`  
 **Default API auth:** `IsAuthenticated` (`core/settings/base.py` `REST_FRAMEWORK`)  

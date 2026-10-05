@@ -2,7 +2,7 @@
 
 Viewer (or wrong role) → 403; unauthenticated → 401.
 
-Gates proven in older modules are listed in docs/sahil/M3_SEC_01_PHASE_4.md
+Gates proven in older modules are listed in docs/security/M3_SEC_01_PHASE_4.md
 (cite inventory). This module covers money/connect/score mutates plus team /
 workspace / connectors / writeback /run/ and approval approve/reject.
 """

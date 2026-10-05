@@ -42,7 +42,7 @@ class Command(BaseCommand):
         if not options["yes"]:
             raise CommandError(
                 "Refusing to run without --yes "
-                "(staging acceptance only; see docs/sahil/M3_OBS_01_PHASE_6.md)."
+                "(staging acceptance only; see docs/ops/M3_OBS_01_PHASE_6.md)."
             )
         if not getattr(settings, "M3_OBS_INDUCE_ENABLED", False):
             raise CommandError(

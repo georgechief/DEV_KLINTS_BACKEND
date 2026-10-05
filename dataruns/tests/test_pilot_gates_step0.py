@@ -27,9 +27,9 @@ _ARCHIVE = (
     / "PRD_DCS_09_PILOT_SUPPLEMENTAL_GATES-FUTURE-PRD.md"
 )
 _SAHIL_PRD = (
-    _REPO_ROOT / "docs" / "sahil" / "PRD_DCS_09_PILOT_SUPPLEMENTAL_GATES.md"
+    _REPO_ROOT / "docs" / "dcs_scoring" / "PRD_DCS_09_PILOT_SUPPLEMENTAL_GATES.md"
 )
-_WORKING_GAPS = _REPO_ROOT / "docs" / "sahil" / "DCS_09_WORKING_GAPS.md"
+_WORKING_GAPS = _REPO_ROOT / "docs" / "dcs_scoring" / "DCS_09_WORKING_GAPS.md"
 
 # PRD §3.1 + sheet 11 (locked for Step 1 mapping)
 _PRD_UC_SUPPLEMENTAL: dict[str, list[str]] = {
@@ -210,7 +210,7 @@ class PilotGatesStep0PreconditionsTests(SimpleTestCase):
             msg="evaluate.py required after Step 5",
         )
 
-    def test_sahil_prd_and_working_gaps_present(self):
+    def test_prd_and_working_gaps_present(self):
         self.assertTrue(_SAHIL_PRD.is_file(), msg=str(_SAHIL_PRD))
         self.assertTrue(_WORKING_GAPS.is_file(), msg=str(_WORKING_GAPS))
         self.assertTrue(_ARCHIVE.is_file(), msg=str(_ARCHIVE))

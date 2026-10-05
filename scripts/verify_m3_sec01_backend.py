@@ -179,16 +179,16 @@ def main() -> int:
 
     # Phase notes 0–6 must exist for employer trail.
     for n in range(0, 7):
-        rel = f"docs/sahil/M3_SEC_01_PHASE_{n}.md"
+        rel = f"docs/ops/M3_SEC_01_PHASE_{n}.md"
         if (ROOT / rel).is_file():
             ok(f"phase note present: PHASE_{n}")
         else:
             bad(f"missing phase note: {rel}")
 
-    if (ROOT / "docs/sahil/M3_SEC_01_WORKING_GAPS.md").is_file():
+    if (ROOT / "docs/security/M3_SEC_01_WORKING_GAPS.md").is_file():
         ok("WORKING_GAPS present")
     else:
-        bad("missing docs/sahil/M3_SEC_01_WORKING_GAPS.md")
+        bad("missing docs/security/M3_SEC_01_WORKING_GAPS.md")
 
     rbac_tests = list(
         (ROOT / "dataruns" / "tests").glob("test_m3_sec01_rbac_negatives*.py")
