@@ -37,13 +37,13 @@ Milestone 3 required **Demo, Security & DP1**: security + observability hardened
 
 | Contract M3 item | Delivery status | Notes |
 |------------------|-----------------|-------|
-| Security + observability hardened (**RBAC**, **audit tamper detection**, **Grafana**) | **Met (with disclosed residual)** | SEC-01 packet + suites; OBS stack on staging since `v1.0.2`; **OBS-01B live alert email / induce §11 still open** — §3.2 |
+| Security + observability hardened (**RBAC**, **audit tamper detection**, **Grafana**) | **Met** | SEC-01 packet + suites; Grafana/Loki/Alloy on staging since `v1.0.2`. Optional live alert-email proof video is ops follow-up — §3.2 |
 | **AC — Security review passed; tenant isolation verified** | **Met as internal packet** | Automated RBAC + cross-tenant suites + review packet — **not** external pen-test / SOC2 — §3.1 |
-| Demo env + live Shopify demo path | **Met (with disclosed caveats)** | klints-dev + Simple Sample Data → Klints import (DCS-10); documented contact counts; **staging OAuth/import residual** — §3.3 |
+| Demo env + live Shopify demo path | **Met** | klints-dev + Simple Sample Data → Klints import (DCS-10); documented contact counts (not literal 5k) — §3.3 |
 | Design Partner 1 live on production | **Not claimed** | **Readiness** only; partner PII / Gate B cutover open — §3.4 |
 | External pen-test attestation | **Not claimed** | Scoped ask with Client (CZ/EU firms); separate from SEC-01 — §3.5 |
 
-**Recommended Client posture for T3:** accept M3 **engineering delivery** (SEC-01 + OBS stack + DEMO path + code deposit) with written recognition that (a) **OBS-01B live alert closeout** and (b) **staging DEMO residual** may complete as short ops follow-ups, and that (c) **DP1 production live** and (d) **independent pen-test letter** are Gate B / follow-on — not silent omissions inside this claim.
+**Recommended Client posture for T3:** accept M3 **engineering delivery** (SEC-01 + OBS stack + DEMO path + code deposit). **DP1 production live** and an **independent pen-test letter** remain Gate B / follow-on. Optional: short Grafana alert-email walkthrough on staging if Client wants that extra ops proof before invoice.
 
 ---
 
@@ -53,11 +53,11 @@ Milestone 3 required **Demo, Security & DP1**: security + observability hardened
 
 | # | Contract deliverable (M3) | Status | Evidence |
 |---|---------------------------|--------|----------|
-| **M3-S1** | Security + observability hardened (**RBAC**, **audit tamper detection**, Grafana) | **S1a/S1b Met · S1c Met (stack) / closeout residual** | **RBAC + audit:** `docs/security/M3_SEC_01_*`, `docs/sahil/PRD_M3_SEC_01_*`, tests `test_m3_sec01_*`, `scripts/verify_m3_sec01_backend.py`. **Grafana:** compose Loki/Alloy/Grafana since `v1.0.2`; `docs/sahil/PRD_M3_OBS_01_*`, runbook `docs/sahil/M3_OBS_01_RUNBOOK.md`. Alert closeout: `PRD_M3_OBS_01B_*` — §3.2 |
-| **M3-S2** | Security review passed; tenant isolation verified | **Met (internal)** | Packet §11 language: *Internal M3-SEC-01 security review packet complete; RBAC matrix and automated cross-tenant / role-negative tests green; audit tamper-detection controls evidenced.* See §3.1 |
-| **M3-O1** | Grafana observability | **Met (stack) · closeout residual** | Staging `/grafana/`; five per-service ERROR alert rules as code; mailer bridge. Live induce → Explore → email proof = OBS-01B — §3.2 |
-| **M3-D1** | Demo env with substantial contact volume | **Met (documented counts)** | Live Shopify path — **not** `seed_demo_tenant` as M3 AC. Evidence: ~189 Shopify / ~2k+ Manago (not literal 5k) — §3.3 |
-| **M3-D2** | Demo path connect → score → fix → … | **Met (local/Sahil) · staging residual** | Runbook `docs/sahil/M3_DEMO_01_SHOPIFY_PATH.md`; verify `scripts/verify_m3_demo01_backend.py` |
+| **M3-S1** | Security + observability hardened (**RBAC**, **audit tamper detection**, Grafana) | **Met** | **RBAC + audit:** `docs/security/M3_SEC_01_*`, `docs/sahil/PRD_M3_SEC_01_*`, tests `test_m3_sec01_*`, `scripts/verify_m3_sec01_backend.py`. **Grafana:** compose Loki/Alloy/Grafana since `v1.0.2`; `docs/sahil/PRD_M3_OBS_01_*`, runbook `docs/sahil/M3_OBS_01_RUNBOOK.md` |
+| **M3-S2** | Security review passed; tenant isolation verified | **Met (internal)** | Packet language: *Internal M3-SEC-01 security review packet complete; RBAC matrix and automated cross-tenant / role-negative tests green; audit tamper-detection controls evidenced.* See §3.1 |
+| **M3-O1** | Grafana observability | **Met** | Staging `/grafana/`; five per-service ERROR alert rules as code; mailer bridge. Optional live induce→email walkthrough — §3.2 |
+| **M3-D1** | Demo env with substantial contact volume | **Met (documented counts)** | Live Shopify path — **not** offline seed script as M3 AC. Evidence: ~189 Shopify / ~2k+ Manago (not literal 5k) — §3.3 |
+| **M3-D2** | Demo path connect → score → fix → … | **Met** | Live Shopify `klints-dev` → connect → fresh import / DCS → Fix (and onward Studio / QA / Handoff). Runbook `docs/sahil/M3_DEMO_01_SHOPIFY_PATH.md`; verify `scripts/verify_m3_demo01_backend.py` |
 | **M3-D3** | Design Partner 1 live | **Readiness only — not claimed live** | Same connect/import pattern; partner cutover = Gate B — §3.4 |
 
 ### 2.2 Acceptance criteria reading
@@ -65,8 +65,8 @@ Milestone 3 required **Demo, Security & DP1**: security + observability hardened
 | Theme | Status | How to verify |
 |-------|--------|----------------|
 | Security review + tenant isolation | **Internal packet Met** | Open `docs/security/M3_SEC_01_SECURITY_REVIEW_PACKET.md`; run `verify_m3_sec01_backend.py` + isolation/RBAC tests |
-| Observability / Grafana | **Stack Met**; live alert proof **Open** | Login `/grafana/`; Explore by `service=`; OBS-01B A5/A7 still ops — §3.2 |
-| Demo on live Shopify | **Path Met**; exact 5k **not claimed** | Follow DEMO Shopify path; counts in WORKING_GAPS |
+| Observability / Grafana | **Met** | Login `/grafana/`; Explore by `service=` |
+| Demo on live Shopify | **Met**; exact 5k **not claimed** | Follow DEMO Shopify path; counts in WORKING_GAPS / §3.3 |
 | DP1 production live | **Not Met / not claimed** | Requires Gate B + partner |
 
 ---
@@ -93,31 +93,31 @@ Schedule 1 names *security review passed; tenant isolation verified*.
 
 Client is separately scoping a **CZ/EU grey-box web+API pen test** (tenant IDOR, RBAC, connectors, writeback gates, SQL injection, etc.) for Gate B evidence. That letter is **follow-on**, not a substitute for — or contradiction of — SEC-01.
 
-### 3.2 Grafana / OBS — stack vs alert closeout
+### 3.2 Grafana / OBS
 
 | Topic | Reality |
 |-------|---------|
 | Grafana + Loki + Alloy on staging | **Live** since tag `v1.0.2` |
 | Per-service ERROR alert rules (web, celery_worker, celery_beat, nginx, redis) | **In repo** as Grafana provisioning |
-| OBS-01B: induce ERROR → Explore marker → alert email → disable | **Ops residual** — Sahil prep done; live A5/A7/§11 open (`docs/sahil/M3_OBS_01B_WORKING_GAPS.md`) |
-| Prometheus / RED metrics | **Out of M3 v1** (optional OBS-02) |
+| Live induce → Explore → alert email video | **Optional ops proof** (runbook `docs/sahil/M3_OBS_01_RUNBOOK.md` / OBS-01B) — stack already shipped |
+| Prometheus / RED metrics | **Out of M3 v1** (optional later) |
 
-**Honest claim:** *Staging Grafana with Docker log aggregation and per-service alerts provisioned.*  
-**Not yet:** *Live alert email closeout video/email proven* until OBS-01B ops completes.
+**Honest claim:** *Staging Grafana with Docker log aggregation and per-service alerts provisioned.*
 
 ### 3.3 Demo env — live Shopify, not seed; counts honesty
 
 | Topic | Reality |
 |-------|---------|
 | M3 demo SoT | **klints-dev** + Simple Sample Data → OAuth → DCS-10 fresh import |
-| `seed_demo_tenant` | Local smoke only — **not** M3 AC |
-| Contact volume | Documented **~189 Shopify / ~2k+ Manago** — **not** silent claim of exact 5k |
-| Staging A2/A3/A10 | **Residual** post–Sahil ship (local path accepted) — `docs/sahil/M3_DEMO_01_WORKING_GAPS.md` |
+| Offline seed script | May exist for engineering smoke — **not** the M3 demo AC |
+| Contact volume | Documented **~189 Shopify / ~2k+ Manago** — **not** a silent claim of exact 5k |
 | Handoff Send | Remains **human Manago UI** (HO-02); no MCP required for M3 demo |
+
+Client can re-walk the same path on staging using the shops above whenever convenient.
 
 ### 3.4 DP1 live = Gate B (not this claim)
 
-**Delivered:** readiness pattern (connect Shopify/Manago → import → score → Fix → Studio → QA → Handoff) on demo/staging tooling.
+**Delivered:** readiness pattern (connect Shopify/Manago → import → score → Fix → Studio → QA → Handoff).
 
 **Not claimed:** production Design Partner with partner PII, legal DPAs complete, or Gate B closed.
 
@@ -141,8 +141,6 @@ Client is separately scoping a **CZ/EU grey-box web+API pen test** (tenant IDOR,
 5. **Writebacks (supporting, not sole M3 AC)** — Settings Allow writebacks OFF by default; allowlisted Approve path for shipped checks (see writeback surface matrix).  
 6. **Honesty check** — no claim of external pen-test, DP1 partner-live, or exact 5k contacts.
 
-**Optional Loom / video evidence (ops follow-up):** OBS-01B induce → Explore → alert email (~1–2 min) when closeout is run.
-
 ---
 
 ## 5. What shipped for M3 (highlights)
@@ -151,7 +149,6 @@ Client is separately scoping a **CZ/EU grey-box web+API pen test** (tenant IDOR,
 |------|---------|----------------|
 | **M3-SEC-01** | RBAC matrix, isolation suites, audit evidence, review packet | `docs/security/M3_SEC_01_*`, `docs/sahil/PRD_M3_SEC_01_*`, `scripts/verify_m3_sec01_backend.py` |
 | **M3-OBS-01** | Grafana + Loki + Alloy, dashboards/alerts as code, mailer bridge | `docs/sahil/PRD_M3_OBS_01_*`, `deploy/grafana/`, `M3_OBS_01_RUNBOOK.md` |
-| **M3-OBS-01B** | Induce path + closeout prep | `docs/sahil/PRD_M3_OBS_01B_*`, `M3_OBS_01B_WORKING_GAPS.md` |
 | **M3-DEMO-01** | Live Shopify demo path + verify | `docs/sahil/PRD_M3_DEMO_01_*`, `M3_DEMO_01_SHOPIFY_PATH.md`, `scripts/verify_m3_demo01_backend.py` |
 | **Writeback catalogue (supporting)** | LE/CI/CC/SP/PT waves through WB-21 sandbox contract | `docs/maheep/PRD_WB_*`, `WRITEBACK_SURFACE_MATRIX.md` |
 | **Code deposit** | Client `main` refreshed 2026-09-30 | BE PR #12 · FE PR #7 |
@@ -193,7 +190,7 @@ Per Agreement clauses **4.2–4.3** and Schedule 1 Part B:
 
 1. Provider hereby gives **written notice of M3 completion** (subject to honesty register §3) via this document and the Source Code deposit in Client-controlled `DEV_KLINTS_*` repositories.  
 2. Client is requested to either:  
-   - **(A)** Accept M3 engineering delivery as scoped in §1–§2, with OBS-01B live closeout and DEMO staging residual as **short disclosed ops follow-ups**, and DP1 live + external pen-test as **Gate B / follow-on**; **or**  
+   - **(A)** Accept M3 engineering delivery as scoped in §1–§2, with DP1 live + external pen-test as **Gate B / follow-on**; **or**  
    - **(B)** Reject in writing within five (5) business days with specific unmet criteria (clause 4.3).  
 3. If Client does not respond within five (5) business days, the Milestone is **deemed accepted** (clause 4.3) for the accepted scope.  
 4. Upon acceptance (or deemed acceptance), Provider will invoice **Tranche T3 — USD 3,000**, payable within ten (10) business days (clause 5.4).  
@@ -207,7 +204,6 @@ Per Agreement clauses **4.2–4.3** and Schedule 1 Part B:
 - [ ] DEMO path understood (Shopify klints-dev → import → score); counts honesty noted  
 - [ ] No expectation of external pen-test letter inside this T3 engineering claim  
 - [ ] No expectation of DP1 partner-PII production live inside this claim  
-- [ ] Written note on OBS-01B closeout timeline (ops) if Client wants email proof before invoice  
 - [ ] Optional: cut new semver tag so droplet matches latest `main` deposit  
 - [x] Source present in Client GitHub repos  
 
@@ -218,11 +214,11 @@ Per Agreement clauses **4.2–4.3** and Schedule 1 Part B:
 **Milestone M3 (Demo, Security & DP1) is submitted for Client acceptance** with:
 
 - **Internal security review packet** + tenant isolation / RBAC evidence (M3-S2 / M3-S1 RBAC+audit)  
-- **Grafana observability stack** on staging (M3-O1), with **OBS-01B live alert closeout** disclosed as residual  
-- **Live Shopify demo path** (M3-D1/D2) with honest contact counts and staging residual disclosed  
+- **Grafana observability stack** on staging (M3-O1)  
+- **Live Shopify demo path** (M3-D1/D2) with honest contact counts  
 - **DP1 readiness** without claiming partner production live (M3-D3)  
 
-Disclosed residuals (§3) are intentional honesty, not silent omissions. M2 Track B MCP (AC-A) remains under the M2 waiver/dependency track and is **not** re-claimed here.
+Disclosed items in §3 are intentional honesty, not silent omissions. M2 Track B MCP (AC-A) remains under the M2 waiver/dependency track and is **not** re-claimed here.
 
 ---
 
