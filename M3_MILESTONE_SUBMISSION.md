@@ -98,11 +98,11 @@ Client is separately scoping a **CZ/EU grey-box web+API pen test** (tenant IDOR,
 | Topic | Reality |
 |-------|---------|
 | Grafana + Loki + Alloy on staging | **Live** since tag `v1.0.2` |
-| Per-service ERROR alert rules (web, celery_worker, celery_beat, nginx, redis) | **In repo** as Grafana provisioning |
-| Live induce → Explore → alert email video | **Optional ops proof** (runbook `docs/sahil/M3_OBS_01_RUNBOOK.md` / OBS-01B) — stack already shipped |
-| Prometheus / RED metrics | **Out of M3 v1** (optional later) |
+| Per-service alerts | **Five separate ERROR-log rules** (web, celery_worker, celery_beat, nginx, redis) — fire when ERROR-like lines appear in that service’s logs. **Not** “container/service down” / uptime probes |
+| Live induce → Explore → alert email walkthrough | Optional Client proof on staging (runbook `docs/sahil/M3_OBS_01_RUNBOOK.md`) — stack + rules already shipped |
+| Prometheus / RED metrics / downtime monitors | **Out of M3 v1** (optional later) |
 
-**Honest claim:** *Staging Grafana with Docker log aggregation and per-service alerts provisioned.*
+**Honest claim:** *Staging Grafana with Docker log aggregation and per-service ERROR-log alerts provisioned.*
 
 ### 3.3 Demo env — live Shopify, not seed; counts honesty
 
