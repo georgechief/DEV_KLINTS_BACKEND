@@ -102,8 +102,8 @@ def main() -> int:
 
     print("\nDCS-09 Step 12 — BE §10 acceptance\n", flush=True)
 
-    gaps = read("docs/sahil/DCS_09_WORKING_GAPS.md")
-    prd = read("docs/sahil/PRD_DCS_09_PILOT_SUPPLEMENTAL_GATES.md")
+    gaps = read("docs/dcs_scoring/DCS_09_WORKING_GAPS.md")
+    prd = read("docs/dcs_scoring/PRD_DCS_09_PILOT_SUPPLEMENTAL_GATES.md")
     assert_true(bool(gaps), "DCS_09_WORKING_GAPS exists")
     assert_true(bool(prd), "PRD_DCS_09 exists")
     assert_true(

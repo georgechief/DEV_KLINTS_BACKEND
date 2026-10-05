@@ -46,7 +46,7 @@ def read(rel: str) -> str:
 def main() -> int:
     print("\nQA-01 Step 9 — BE §12 acceptance\n")
 
-    gaps = read("docs/sahil/QA_01_WORKING_GAPS.md")
+    gaps = read("docs/workflow/QA_01_WORKING_GAPS.md")
     assert_true(bool(gaps), "WORKING_GAPS doc exists")
     assert_true("UC-02" in gaps, "demo path documents UC-02")
     assert_true("workflow.qa_run_completed" in gaps, "audit action documented")

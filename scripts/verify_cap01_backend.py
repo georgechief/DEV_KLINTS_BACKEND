@@ -70,8 +70,8 @@ def main() -> int:
 
     print("\nCAP-01 Step 11 — BE §9 acceptance\n")
 
-    gaps = read("docs/sahil/CAP_01_WORKING_GAPS.md")
-    prd = read("docs/sahil/PRD_CAP_01_CAPABILITY_MATRIX_RESOLVER.md")
+    gaps = read("docs/workflow/CAP_01_WORKING_GAPS.md")
+    prd = read("docs/workflow/PRD_CAP_01_CAPABILITY_MATRIX_RESOLVER.md")
     assert_true(bool(gaps), "CAP_01_WORKING_GAPS doc exists")
     assert_true("**Right:**" in gaps or "Right:" in gaps, "PR right note present")
     assert_true("**Gap:**" in gaps or "Gap:" in gaps, "PR gap note present")

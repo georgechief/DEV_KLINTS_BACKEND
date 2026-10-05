@@ -125,7 +125,7 @@ def main() -> int:
     print("Possible sheet LE-05 yes/limited: OK")
 
     docs_sheet = (
-        Path(ROOT) / "docs" / "maheep" / "WRITEBACK_POSSIBLE_NOT_SHEET.csv"
+        Path(ROOT) / "docs" / "writebacks" / "WRITEBACK_POSSIBLE_NOT_SHEET.csv"
     )
     runtime_sheet = (
         Path(ROOT) / "dataruns" / "writebacks" / "WRITEBACK_POSSIBLE_NOT_SHEET.csv"
@@ -182,7 +182,7 @@ def main() -> int:
         return _fail("LE-05 must not use event_correct")
     print("Mapping file: OK")
 
-    wb02 = Path(ROOT) / "docs" / "maheep" / "PRD_WB_02_FIX_APPROVE_WRITEBACK_EXECUTE.md"
+    wb02 = Path(ROOT) / "docs" / "writebacks" / "PRD_WB_02_FIX_APPROVE_WRITEBACK_EXECUTE.md"
     if wb02.exists():
         text = wb02.read_text(encoding="utf-8")
         # OFF list line should not include LE-05 any more

@@ -1,6 +1,6 @@
 # M3-SEC-01 — Security review packet
 
-**PRD:** [PRD_M3_SEC_01_RBAC_ISOLATION_SECURITY_PACKET.md](../sahil/PRD_M3_SEC_01_RBAC_ISOLATION_SECURITY_PACKET.md)  
+**PRD:** [PRD_M3_SEC_01_RBAC_ISOLATION_SECURITY_PACKET.md](../security/PRD_M3_SEC_01_RBAC_ISOLATION_SECURITY_PACKET.md)  
 **Date:** 2026-09-11  
 **Branch:** `feature/m3-sec-01-rbac-isolation-packet`  
 **Scope:** Internal evidence pack + targeted harden for product RBAC, tenant isolation, and audit tamper-detection packaging.
@@ -52,7 +52,7 @@ Full Admin / Analyst / Viewer × surface matrix:
 
 → **[M3_SEC_01_RBAC_MATRIX.md](./M3_SEC_01_RBAC_MATRIX.md)**
 
-Phase notes: [M3_SEC_01_PHASE_1.md](../sahil/M3_SEC_01_PHASE_1.md), [M3_SEC_01_PHASE_4.md](../sahil/M3_SEC_01_PHASE_4.md).
+Phase notes: [M3_SEC_01_PHASE_1.md](../security/M3_SEC_01_PHASE_1.md), [M3_SEC_01_PHASE_4.md](../security/M3_SEC_01_PHASE_4.md).
 
 **Negatives command:**
 
@@ -71,7 +71,7 @@ Cross-company (Company A vs Company B) suites:
 | `dataruns/tests/test_m3_sec01_tenant_isolation.py` | Writebacks, DCS, architecture, AI |
 | `tenants/tests/test_m3_sec01_tenant_isolation.py` | Team, connectors, Tenant/DataRun ViewSets |
 
-Additional families cited (not rebuilt): orch, handoff, QA/build-packages, audit, reports, search, pilot-gates — see [WORKING_GAPS](../sahil/M3_SEC_01_WORKING_GAPS.md) “Covered elsewhere”.
+Additional families cited (not rebuilt): orch, handoff, QA/build-packages, audit, reports, search, pilot-gates — see [WORKING_GAPS](../security/M3_SEC_01_WORKING_GAPS.md) “Covered elsewhere”.
 
 **Isolation command:**
 
@@ -156,7 +156,7 @@ Out of scope for this packet / PR / M3 claim language. Do **not** claim:
 
 ### M3-SEC-01 employer acceptance (§11)
 
-Evidence captured in [M3_SEC_01_PHASE_6.md](../sahil/M3_SEC_01_PHASE_6.md): verify **PASS**; SEC-01 suites **83 OK** (2026-09-12 deep recheck). A2 = new isolation suites + cited orch/handoff/audit modules (see PHASE_6 A2 map).
+Evidence captured in [M3_SEC_01_PHASE_6.md](../security/M3_SEC_01_PHASE_6.md): verify **PASS**; SEC-01 suites **83 OK** (2026-09-12 deep recheck). A2 = new isolation suites + cited orch/handoff/audit modules (see PHASE_6 A2 map).
 
 - [x] **A1** — `M3_SEC_01_RBAC_MATRIX.md` covers every `/api/v1/*` family from `core/urls.py`
 - [x] **A2** — Cross-tenant suite green (writebacks + DCS + connectors + team + audit + orch + handoff minimum)

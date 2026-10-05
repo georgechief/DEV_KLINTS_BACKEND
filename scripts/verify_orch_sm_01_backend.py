@@ -84,8 +84,8 @@ def main() -> int:
 
     print("\nGAP-01A — OrchestrationTask 8-state SM (Phases 1–4)\n")
 
-    gaps = read("docs/sahil/GAP_01_WORKING_GAPS.md")
-    prd = read("docs/sahil/PRD_GAP_01_M2_CODE_GAPS_WEEKS_5_9.md")
+    gaps = read("docs/ops/GAP_01_WORKING_GAPS.md")
+    prd = read("docs/ops/PRD_GAP_01_M2_CODE_GAPS_WEEKS_5_9.md")
     assert_true(bool(gaps), "GAP_01_WORKING_GAPS doc exists")
     assert_true("Slice A1" in gaps, "Slice A1 documented in WORKING_GAPS")
     assert_true("verify_orch_sm_01_backend.py" in gaps, "verify script documented in WORKING_GAPS")

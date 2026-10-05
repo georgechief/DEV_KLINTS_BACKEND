@@ -2,12 +2,12 @@
 
 
 
-## Deposit 2026-09-30 — product `main` sync (code only; no tag deploy)
+## Deposit 2026-09-30 — product `main` sync → tag `v1.0.3`
 
 - Source: `klints_backend` `main` @ `6cafd10` (WB-13–21 + REAL-01 + prior AI/SEC stack).
 - Method: rsync deposit onto `deposit/product-main-2026-09-30` → PR → `main`.
 - Preserved client-only: `RELEASES.md`, tag deploy workflow, claim/security docs, `production.env`.
-- **Deploy:** not auto-deployed. Cut a new `v1.0.x` / `v0.1.x` tag when ready to ship FRA.
+- **Deploy:** tag [`v1.0.3`](https://github.com/georgechief/DEV_KLINTS_BACKEND/releases/tag/v1.0.3) — Actions success 30 Sep 2026. **Current staging.**
 
 ## Deposit 2026-09-22 — product `main` sync (code only; no tag deploy)
 
@@ -69,7 +69,8 @@ Smoke: `GET https://apis.klints.io/health/` → `{"status":"ok"}`.
 |-----|-----------|--------|-------|
 | [`v1.0.0`](https://github.com/georgechief/DEV_KLINTS_BACKEND/releases/tag/v1.0.0) | 10 Sep 2026 | **Failed health** | First tag-based deploy of the M2 deposit. `web` crash-looped: MVP1 Build Pack was missing from the deposit, so `load_use_case_pilots` failed before gunicorn → nginx **502**. |
 | [`v1.0.1`](https://github.com/georgechief/DEV_KLINTS_BACKEND/releases/tag/v1.0.1) | 10 Sep 2026 | **Live** (superseded by next tag) | Build Pack restored ([PR #1](https://github.com/georgechief/DEV_KLINTS_BACKEND/pull/1)); `/health/` **200**. |
-| [`v1.0.2`](https://github.com/georgechief/DEV_KLINTS_BACKEND/releases/tag/v1.0.2) | 10 Sep 2026 | **Live** | M2 claim amend + M3 OBS (Grafana/Loki/Alloy). `/health/` + `/grafana/login` **200**. **Current staging.** |
+| [`v1.0.2`](https://github.com/georgechief/DEV_KLINTS_BACKEND/releases/tag/v1.0.2) | 10 Sep 2026 | **Live** (superseded by next tag) | M2 claim amend + M3 OBS (Grafana/Loki/Alloy). `/health/` + `/grafana/login` **200**. |
+| [`v1.0.3`](https://github.com/georgechief/DEV_KLINTS_BACKEND/releases/tag/v1.0.3) | 30 Sep 2026 | **Live** | Deposit 2026-09-30 (WB-13–21 + REAL-01 @ `6cafd10`). Deploy Actions success. **Current staging.** |
 
 GitHub Releases: https://github.com/georgechief/DEV_KLINTS_BACKEND/releases  
 

@@ -1,6 +1,6 @@
 # M3-SEC-01 — Audit evidence (Phase 4)
 
-**PRD:** [PRD_M3_SEC_01_RBAC_ISOLATION_SECURITY_PACKET.md](../sahil/PRD_M3_SEC_01_RBAC_ISOLATION_SECURITY_PACKET.md)  
+**PRD:** [PRD_M3_SEC_01_RBAC_ISOLATION_SECURITY_PACKET.md](../security/PRD_M3_SEC_01_RBAC_ISOLATION_SECURITY_PACKET.md)  
 **Audience:** Security review packet §5 (Phase 5 embeds / links this)  
 **Claim level:** Runtime hash-chain + DB immutability triggers evidenced by tests — **not** pen-test / SOC2 / DP1.
 

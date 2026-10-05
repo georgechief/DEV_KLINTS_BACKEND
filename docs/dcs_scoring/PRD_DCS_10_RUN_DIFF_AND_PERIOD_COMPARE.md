@@ -539,9 +539,9 @@ Ship **BE-A + BE-B** before FE-A so Overview is not double-mocked.
 ## 12. Related docs
 
 - `docs/dcs_scoring/PRD_DCS_06_API_RESPONSES.md` — status/history contracts  
-- `docs/sahil/PRD_DCS_08_REVENUE_IMPACT.md` — `business_impact.estimate`  
-- `docs/maheep/PRD_FE_06_GUIDED_DCS_WORKLIST.md` — Overview live shell  
-- `docs/maheep/PRD_AUDIT_01_GOVERNANCE_ACTIVITY.md` — Activity / audit  
+- `docs/dcs_scoring/PRD_DCS_08_REVENUE_IMPACT.md` — `business_impact.estimate`  
+- `docs/frontend/PRD_FE_06_GUIDED_DCS_WORKLIST.md` — Overview live shell  
+- `docs/audit/PRD_AUDIT_01_GOVERNANCE_ACTIVITY.md` — Activity / audit  
 - `klints_frontend/src/lib/overview-period.ts` — period windows  
 
 ---

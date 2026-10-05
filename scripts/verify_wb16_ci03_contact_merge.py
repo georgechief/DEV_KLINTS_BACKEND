@@ -223,12 +223,12 @@ def main() -> int:
     print("Possible sheet CI-03: OK")
 
     docs_sheet = (
-        Path(ROOT) / "docs" / "maheep" / "WRITEBACK_POSSIBLE_NOT_SHEET.csv"
+        Path(ROOT) / "docs" / "writebacks" / "WRITEBACK_POSSIBLE_NOT_SHEET.csv"
     ).read_text(encoding="utf-8")
     if "CI-03.contact_merge.v1.json" not in docs_sheet or "preview_only" not in docs_sheet:
         return _fail("docs possible sheet missing CI-03 preview_only row")
     surface = (
-        Path(ROOT) / "docs" / "maheep" / "WRITEBACK_SURFACE_MATRIX.md"
+        Path(ROOT) / "docs" / "writebacks" / "WRITEBACK_SURFACE_MATRIX.md"
     ).read_text(encoding="utf-8")
     if "CI-03" not in surface or "plan-only" not in surface.lower() and "plan only" not in surface.lower():
         if "plan_only" not in surface and "Plan live" not in surface and "plan live" not in surface.lower():

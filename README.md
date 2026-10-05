@@ -196,4 +196,4 @@ python scripts/verify_wb21_sandbox_contract.py
 python manage.py test dataruns.tests.test_writeback_sandbox_contract dataruns.tests.test_writeback_sandbox_integration --keepdb
 ```
 
-See `docs/maheep/PRD_WB_21_SANDBOX_TEST_ALL_WRITEBACKS.md`.
+See `docs/writebacks/PRD_WB_21_SANDBOX_TEST_ALL_WRITEBACKS.md`.

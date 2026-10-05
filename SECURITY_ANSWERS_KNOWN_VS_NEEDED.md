@@ -114,7 +114,7 @@ Answers are short. Evidence is the proof.
 **Evidence**
 - `dataruns/ai/providers/mistral.py`, `dataruns/ai/privacy_gate.py`, `dataruns/ai/allowlist.py`  
 - `core/settings/base.py` / `dataruns/ai/constants.py` — `mistral-small-latest`  
-- `docs/sahil/PRD_AI_01_…` (allows pinning `mistral-small-2603` via env)  
+- `docs/ops/PRD_AI_01_…` (allows pinning `mistral-small-2603` via env)  
 - Security doc still describes **LiteLLM** as target — **not** what compose runs today  
 
 **Answered by you (11 Sep 2026)**
@@ -167,7 +167,7 @@ Answers are short. Evidence is the proof.
 **Evidence**
 - `docker-compose.yml` (grafana/loki/alloy)  
 - Workflow M3-OBS smoke steps  
-- `docs/sahil/M3_OBS_01_RUNBOOK.md`  
+- `docs/ops/M3_OBS_01_RUNBOOK.md`  
 - Client claim notes credentials under M2 writeup Staging access  
 
 **Need from you**

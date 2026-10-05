@@ -94,14 +94,14 @@ def main() -> int:
     print("\nGAP-01F — Demo seed acceptance (Phases 1–4 / F0.10)\n", flush=True)
 
     print("  Docs + F0 locks", flush=True)
-    gaps = read("docs/sahil/GAP_01_WORKING_GAPS.md")
-    prd = read("docs/sahil/PRD_GAP_01_M2_CODE_GAPS_WEEKS_5_9.md")
-    demo_path = read("docs/sahil/GAP_01F_DEMO_PATH.md")
-    readme = read("docs/sahil/README.md")
+    gaps = read("docs/ops/GAP_01_WORKING_GAPS.md")
+    prd = read("docs/ops/PRD_GAP_01_M2_CODE_GAPS_WEEKS_5_9.md")
+    demo_path = read("docs/ops/GAP_01F_DEMO_PATH.md")
+    readme = read("docs/ops/README.md")
     assert_true(bool(gaps), "GAP_01_WORKING_GAPS exists")
     assert_true(bool(prd), "PRD_GAP_01 exists")
     assert_true(bool(demo_path), "GAP_01F_DEMO_PATH.md exists (W9-04)")
-    assert_true("GAP_01F_DEMO_PATH.md" in readme, "demo path linked from sahil README")
+    assert_true("GAP_01F_DEMO_PATH.md" in readme, "demo path linked from docs/README.md")
     assert_true(
         "verify_gap01f_backend.py" in prd,
         "verify script referenced in PRD Slice F",

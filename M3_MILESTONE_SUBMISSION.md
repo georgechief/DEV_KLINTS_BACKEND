@@ -13,7 +13,11 @@
 
 **Staging backend:** `https://apis.klints.io` — tag-based CD ([`RELEASES.md`](./RELEASES.md)). Health: `GET /health/` → `{"status":"ok"}`.  
 **Code deposit:** product sync on Client `main` via deposit PR [#12](https://github.com/georgechief/DEV_KLINTS_BACKEND/pull/12) / FE [#7](https://github.com/georgechief/DEV_KLINTS_FRONTEND/pull/7) (2026-09-30) — includes M3 SEC/OBS/DEMO docs + writeback wave through WB-21.  
-**Live deploy tag:** still **`v1.0.2`** unless Client cuts a newer semver after this claim; `main` may be ahead of the running droplet until a new tag is published.
+**Live deploy tag:** **`v1.0.3`** (30 Sep 2026 — deposit WB-13–21 + REAL-01). Later `main` commits are claim/docs only and do not require a new tag to claim T3.
+
+**M3 demo walkthrough** — click the image to open the Loom recording:
+
+[![M3 Demo, Security & DP1 walkthrough](./M3_WALKTHROUGH_LOOM_THUMBNAIL.gif)](https://www.loom.com/share/dbd4247235fd4e218894a044f6dda8ed)
 
 ### Staging access (Client review)
 
@@ -25,7 +29,7 @@
 | Shopify demo shop | [klints-dev · Simple Sample Data](https://admin.shopify.com/store/klints-dev/apps/simple-sample-data) | Live sample path for DEMO-01 |
 
 > This file is identical in both Client repositories so reviewers have one authoritative M3 writeup.  
-> **M3 claim SoT:** this document. Specs live under `docs/sahil/` (SEC / OBS / DEMO PRDs) and `docs/security/` (SEC packet).
+> **M3 claim SoT:** this document. Specs live under module folders — `docs/security/` (SEC-01), `docs/ops/` (OBS / DEMO), `docs/writebacks/` (WB catalogue). See [`docs/README.md`](./docs/README.md).
 
 ---
 
@@ -53,11 +57,11 @@ Milestone 3 required **Demo, Security & DP1**: security + observability hardened
 
 | # | Contract deliverable (M3) | Status | Evidence |
 |---|---------------------------|--------|----------|
-| **M3-S1** | Security + observability hardened (**RBAC**, **audit tamper detection**, Grafana) | **Met** | **RBAC + audit:** `docs/security/M3_SEC_01_*`, `docs/sahil/PRD_M3_SEC_01_*`, tests `test_m3_sec01_*`, `scripts/verify_m3_sec01_backend.py`. **Grafana:** compose Loki/Alloy/Grafana since `v1.0.2`; `docs/sahil/PRD_M3_OBS_01_*`, runbook `docs/sahil/M3_OBS_01_RUNBOOK.md` |
+| **M3-S1** | Security + observability hardened (**RBAC**, **audit tamper detection**, Grafana) | **Met** | **RBAC + audit:** `docs/security/M3_SEC_01_*`, `docs/security/PRD_M3_SEC_01_*`, tests `test_m3_sec01_*`, `scripts/verify_m3_sec01_backend.py`. **Grafana:** compose Loki/Alloy/Grafana since `v1.0.2`; `docs/ops/PRD_M3_OBS_01_*`, runbook `docs/ops/M3_OBS_01_RUNBOOK.md` |
 | **M3-S2** | Security review passed; tenant isolation verified | **Met (internal)** | Packet language: *Internal M3-SEC-01 security review packet complete; RBAC matrix and automated cross-tenant / role-negative tests green; audit tamper-detection controls evidenced.* See §3.1 |
 | **M3-O1** | Grafana observability | **Met** | Staging `/grafana/`; five per-service ERROR alert rules as code; mailer bridge. Optional live induce→email walkthrough — §3.2 |
 | **M3-D1** | Demo env with substantial contact volume | **Met (documented counts)** | Live Shopify path — **not** offline seed script as M3 AC. Evidence: ~189 Shopify / ~2k+ Manago (not literal 5k) — §3.3 |
-| **M3-D2** | Demo path connect → score → fix → … | **Met** | Live Shopify `klints-dev` → connect → fresh import / DCS → Fix (and onward Studio / QA / Handoff). Runbook `docs/sahil/M3_DEMO_01_SHOPIFY_PATH.md`; verify `scripts/verify_m3_demo01_backend.py` |
+| **M3-D2** | Demo path connect → score → fix → … | **Met** | Live Shopify `klints-dev` → connect → fresh import / DCS → Fix (and onward Studio / QA / Handoff). Runbook `docs/ops/M3_DEMO_01_SHOPIFY_PATH.md`; verify `scripts/verify_m3_demo01_backend.py` |
 | **M3-D3** | Design Partner 1 live | **Readiness only — not claimed live** | Same connect/import pattern; partner cutover = Gate B — §3.4 |
 
 ### 2.2 Acceptance criteria reading
@@ -99,7 +103,7 @@ Client is separately scoping a **CZ/EU grey-box web+API pen test** (tenant IDOR,
 |-------|---------|
 | Grafana + Loki + Alloy on staging | **Live** since tag `v1.0.2` |
 | Per-service alerts | **Five separate ERROR-log rules** (web, celery_worker, celery_beat, nginx, redis) — fire when ERROR-like lines appear in that service’s logs. **Not** “container/service down” / uptime probes |
-| Live induce → Explore → alert email walkthrough | Optional Client proof on staging (runbook `docs/sahil/M3_OBS_01_RUNBOOK.md`) — stack + rules already shipped |
+| Live induce → Explore → alert email walkthrough | Optional Client proof on staging (runbook `docs/ops/M3_OBS_01_RUNBOOK.md`) — stack + rules already shipped |
 | Prometheus / RED metrics / downtime monitors | **Out of M3 v1** (optional later) |
 
 **Honest claim:** *Staging Grafana with Docker log aggregation and per-service ERROR-log alerts provisioned.*
@@ -126,9 +130,8 @@ Client can re-walk the same path on staging using the shops above whenever conve
 | Item | Notes |
 |------|--------|
 | M2 AC-A live Manago MCP E2E | Remains M2 Client dependency / waiver — not re-opened as M3 AC |
-| Writeback Phase B (CI-03/CC-01/CC-02 execute; PT-03 PRODUCT.IMPORT Loom) | Product follow-on; Phase A plan-only / Preview shipped |
+| Writeback Phase B (CI-03/CC-01/CC-02 **execute**; PT-03 PRODUCT.IMPORT Loom) | **Not done.** Phase A (plan-only / Preview / DISCOVERY_REQUIRED) shipped in deposit + `v1.0.3`. Execute/Loom is product follow-on — separate from “deposit merged” |
 | External pen-test certificate | Client-procured; §3.1 |
-| New deploy tag beyond `v1.0.2` | Recommended so droplet matches 2026-09-30 deposit; not required to *read* the claim on GitHub |
 
 ---
 
@@ -147,10 +150,10 @@ Client can re-walk the same path on staging using the shops above whenever conve
 
 | Area | Summary | Key references |
 |------|---------|----------------|
-| **M3-SEC-01** | RBAC matrix, isolation suites, audit evidence, review packet | `docs/security/M3_SEC_01_*`, `docs/sahil/PRD_M3_SEC_01_*`, `scripts/verify_m3_sec01_backend.py` |
-| **M3-OBS-01** | Grafana + Loki + Alloy, dashboards/alerts as code, mailer bridge | `docs/sahil/PRD_M3_OBS_01_*`, `deploy/grafana/`, `M3_OBS_01_RUNBOOK.md` |
-| **M3-DEMO-01** | Live Shopify demo path + verify | `docs/sahil/PRD_M3_DEMO_01_*`, `M3_DEMO_01_SHOPIFY_PATH.md`, `scripts/verify_m3_demo01_backend.py` |
-| **Writeback catalogue (supporting)** | LE/CI/CC/SP/PT waves through WB-21 sandbox contract | `docs/maheep/PRD_WB_*`, `WRITEBACK_SURFACE_MATRIX.md` |
+| **M3-SEC-01** | RBAC matrix, isolation suites, audit evidence, review packet | `docs/security/M3_SEC_01_*`, `docs/security/PRD_M3_SEC_01_*`, `scripts/verify_m3_sec01_backend.py` |
+| **M3-OBS-01** | Grafana + Loki + Alloy, dashboards/alerts as code, mailer bridge | `docs/ops/PRD_M3_OBS_01_*`, `docs/ops/M3_OBS_01_RUNBOOK.md`, `deploy/grafana/` |
+| **M3-DEMO-01** | Live Shopify demo path + verify | `docs/ops/PRD_M3_DEMO_01_*`, `docs/ops/M3_DEMO_01_SHOPIFY_PATH.md`, `scripts/verify_m3_demo01_backend.py` |
+| **Writeback catalogue (supporting)** | LE/CI/CC/SP/PT waves through WB-21 sandbox contract | `docs/writebacks/PRD_WB_*`, `docs/writebacks/WRITEBACK_SURFACE_MATRIX.md` |
 | **Code deposit** | Client `main` refreshed 2026-09-30 | BE PR #12 · FE PR #7 |
 
 ---
@@ -160,14 +163,14 @@ Client can re-walk the same path on staging using the shops above whenever conve
 ### Backend (`DEV_KLINTS_BACKEND`)
 
 ```
-docs/sahil/           M3 SEC / OBS / DEMO PRDs + phase notes + WORKING_GAPS
-docs/security/        M3_SEC_01 packet, RBAC matrix, audit evidence
-docs/maheep/          Writeback PRDs (WB-01…WB-21), surface matrix
+docs/README.md        Module index (no contributor folders)
+docs/security/        M3-SEC-01 PRD + packet, RBAC matrix, audit evidence
+docs/ops/             M3-OBS / M3-DEMO PRDs, runbooks, phase notes
+docs/writebacks/      Writeback PRDs (WB-01…WB-21), surface matrix
 dataruns/tests/       test_m3_sec01_*, writeback_wb*, sandbox_contract
 scripts/              verify_m3_sec01_backend.py, verify_m3_demo01_backend.py, verify_m3_obs01_backend.py
 deploy/grafana/       Alerting / datasources / dashboards provisioning
 RELEASES.md           Tag-based staging deploy SoT
-M2_MILESTONE_SUBMISSION.md
 M3_MILESTONE_SUBMISSION.md   ← this claim
 ```
 
