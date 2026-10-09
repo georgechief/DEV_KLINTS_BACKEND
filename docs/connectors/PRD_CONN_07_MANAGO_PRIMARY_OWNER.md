@@ -1,7 +1,7 @@
 # PRD-CONN-07 — Manago primary owner picker (FD-06)
 
 **Status:** Backend done — **frontend implementation only**  
-**Owner track:** Maheep (`docs/writebacks/`)  
+**Owner track:** Writebacks (`docs/writebacks/`)  
 **Depends on:** Manago connect on `/integrations`; connector list API; DCS foundation gate FD-06  
 **Surface:** `/integrations` (Manago card) + optional post-connect onboarding step  
 **Scope:** When Manago has **2+ users**, let the operator **pick the primary owner**. Persist via backend. Unblocks FD-06 / RC-11 multi-account ambiguity.
@@ -330,7 +330,7 @@ Match CONN-06 Manago v3 key permissions.
 
 ---
 
-## 12. Handoff note for Maheep → Cursor
+## 12. Handoff note for writebacks track → Cursor
 
 **Backend is complete.** This PRD is **frontend-only**.
 

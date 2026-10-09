@@ -1,11 +1,11 @@
 # PRD-OPS-UC-01 — Seed MVP1 pilots on every environment
 
 **Status:** Implemented (Option A — Dockerfile + verify script)  
-**Owner track:** Sahil (`docs/ops/` / `docs/security/` / module folders) — **BE / deploy** (tiny FE only if empty-state copy)  
+**Owner track:** Engineering (module folders) — **BE / deploy** (tiny FE only if empty-state copy)  
 **Surfaces:** Staging/prod DB · `load_use_case_pilots` · Workflow Studio / recommendations  
 **Depends on:** UC-01 (`UseCasePilot` / blueprint models + command already exist)  
 **Milestone:** M2 — unblocks `/workflow?uc=UC-02` and Fix → Studio eligibility  
-**Out of scope:** New pilots · CAP-01 Matrix · Handoff · Maheep writebacks · changing blueprint JSON  
+**Out of scope:** New pilots · CAP-01 Matrix · Handoff · writebacks · changing blueprint JSON  
 
 ---
 

@@ -1,7 +1,7 @@
 # PRD-WB-02 — Fix Approve writeback → sandbox execute (live)
 
 **Status:** Ready for implementation  
-**Owner track:** Maheep (`docs/writebacks/`) — **PR 1 of 2** (ship before FE-12)  
+**Owner track:** Writebacks (`docs/writebacks/`) — **PR 1 of 2** (ship before FE-12)  
 **Surfaces:** `/fix` (Phase 2) · Activity / notifications (audit) · Postman sandbox collection  
 **Depends on (already shipped):**  
 - WB-01 / WB-01B / WB-01C — adapters, mappings, `GET …/possible/`, `POST …/run/`  
@@ -9,7 +9,7 @@
 - FE-08 / FE-09 / FE-11B — live Fix bridge, evidence, Elements  
 **Design SoT:** frontend branch **`original-designs`** → `src/routes/fix.tsx` (Approve writeback on Fix, **not** Handoff)  
 **Pack SoT:** `Klints_Spec_InitialDataConsistencyCheck_v1.4.1` sheets **02 Check Catalogue** + **09 MVP1 Check Scope** (Build Phase **MVP1-A**)  
-**Out of scope:** Prod `WRITEBACKS_ENABLED=True` · new check mappings · LE-04 · contact merge · Order/Transaction writers · MCP · Handoff Send · evidence Excel download (**FE-12**, PR 2) · Workflow Studio live bind · Sahil AI box changes  
+**Out of scope:** Prod `WRITEBACKS_ENABLED=True` · new check mappings · LE-04 · contact merge · Order/Transaction writers · MCP · Handoff Send · evidence Excel download (**FE-12**, PR 2) · Workflow Studio live bind · AI box changes  
 
 ---
 
@@ -382,7 +382,7 @@ Update Postman collection notes: “FE Approve path = preview → approvals → 
 - Enabling remaining Excel automated-writeback checks without new mappings  
 - Evidence CSV/XLSX download (→ **PRD-FE-12**)  
 - Handoff “Send to instances”  
-- Workflow Studio blueprint generation (Sahil)  
+- Workflow Studio blueprint generation (Engineering)  
 - Changing DCS pass/fail  
 
 ---

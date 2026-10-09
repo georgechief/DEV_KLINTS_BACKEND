@@ -1,7 +1,7 @@
 # PRD-WF-02 — Fix-flow stages, check→UC routing, honest CTAs & redirects
 
 **Status:** Ready for implementation  
-**Owner track:** Sahil (`docs/ops/` / `docs/security/` / module folders) — FE primary · BE only if journey cursor API needed  
+**Owner track:** Engineering (module folders) — FE primary · BE only if journey cursor API needed  
 **Surfaces:** FlowStepper · `/data-consistency` · `/fix` · `/workflow` · `/qa` · `/handoff` · Opportunities  
 **Depends on:**  
 - **WF-01 / BL-016** Studio live bind (`?uc=`) + build package  
@@ -9,7 +9,7 @@
 - **FE-08** Fix live issue bridge  
 - Pack pilots + blueprints (authoritative gates)  
 **Design SoT:** `original-designs` FlowStepper + Diagnose→Handoff chrome  
-**Out of scope:** Full BL-017 8-state orchestration machine · BL-018 QA engine · Handoff Send live · Maheep writeback execute rules (WB-02/03) · inventing pilots outside the 16  
+**Out of scope:** Full BL-017 8-state orchestration machine · BL-018 QA engine · Handoff Send live · writeback execute rules (WB-02/03) · inventing pilots outside the 16  
 
 ---
 
@@ -73,11 +73,11 @@ Pack + WF-01 already define the truth: **checks gate pilots; Fix repairs data; B
 | **Gates a pilot** | `check_id ∈ pilot.gates.gating_check_ids` (pack) |
 | **Studio-eligible check** | Gates ≥1 of the 16 MVP1 pilots |
 | **Buildable pilot** | Recommendation `status ∈ {ready, ready_provisional}` |
-| **Writeback-eligible check** | Maheep allowlist (CI-01, CC-03, WB-SHOP-01, …) — **independent** of Studio |
+| **Writeback-eligible check** | writeback allowlist (CI-01, CC-03, WB-SHOP-01, …) — **independent** of Studio |
 
 **Critical:** Writeback eligibility ≠ Studio eligibility.
 
-| Check | Writeback (Maheep) | Gates a UC? | Show “Proceed to Workflow Studio”? |
+| Check | Writeback (Writebacks) | Gates a UC? | Show “Proceed to Workflow Studio”? |
 |-------|--------------------|-------------|--------------------------------------|
 | **CC-03** | Yes (sandbox/execute) | Yes → UC-02, UC-04, UC-05 | **Yes** |
 | **CI-01** | Yes | **No** | **No** |
@@ -183,7 +183,7 @@ BE journey table = **out of scope** unless product later needs cross-device resu
 
 | Control | When visible | Action |
 |---------|--------------|--------|
-| **Approve writeback** | Writeback-eligible + sheet/mapping allow (Maheep rules) | Execute writeback only — **never** navigates to Studio |
+| **Approve writeback** | Writeback-eligible + sheet/mapping allow (Writebacks rules) | Execute writeback only — **never** navigates to Studio |
 | **Download evidence** | Live issue with exportable evidence (FE-12) | CSV download |
 | **Proceed to Workflow Studio** | **Studio-eligible only** (`pilotsGatedByCheck(issue).length ≥ 1`) | Navigate `/workflow?uc=<primary>&issue=<check_id>` |
 | Primary footer CTA label | Studio-eligible | **“Proceed to Workflow Studio”** only — **remove** “Approve fix →” wording |
@@ -326,7 +326,7 @@ Optional: `GET …/journey/?check_id=` returning `{ studio_eligible, primary_uc,
 - Showing Build on DCS FAIL rows  
 - Persisting 8-state ORCH task machine (BL-017)  
 - Inventing UC links for CI-01 / WB-SHOP-01  
-- Changing Maheep writeback allowlist  
+- Changing writeback allowlist  
 
 ---
 
@@ -357,4 +357,4 @@ Optional: `GET …/journey/?check_id=` returning `{ studio_eligible, primary_uc,
 | Parent | WF-01 Studio · UC-01 gates · FE-08 Fix |
 | Pack | Pilot blueprints `gating_check_ids` |
 | Bug triggers | Misleading Approve→Studio CTA; Studio button on CI-01; stepper not redirecting logically |
-| Maheep | Writeback buttons unchanged; Studio eligibility independent |
+| Writebacks | Writeback buttons unchanged; Studio eligibility independent |

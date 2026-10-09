@@ -1,7 +1,7 @@
 # PRD-CONN-06 — Manago API v3 key on Connected stack
 
 **Status:** Ready for implementation  
-**Owner track:** Maheep (`docs/writebacks/`)  
+**Owner track:** Writebacks (`docs/writebacks/`)  
 **Depends on:** Manago connect (API v2 client id + api secret) already on `/integrations`; connector encrypt/mask helpers; DCS catalog ingest that reads `api_v3_key`  
 **Surface:** **Connected stack only** (`/integrations`) — Manago.ai card, when connector is linked (`connected` / `degraded`)  
 **Scope:** Let the operator paste a Manago **API v3** key (created in Manago → API access details → API v3), store it encrypted, and show it **masked** with a show/hide control after save
@@ -281,7 +281,7 @@ After key is saved, next DCS fresh-import / bootstrap that pulls catalog can use
 
 ---
 
-## 12. Handoff note for Maheep
+## 12. Handoff note for writebacks track
 
 1. Surface is **Connected stack / Manago only** — not Settings, not Shopify.  
 2. Key comes from Manago’s **API v3** tab (screenshot reference); name may look like `SHOPIFY_…` — still a Manago key.  

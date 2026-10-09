@@ -7,7 +7,7 @@
 
 | Slice | Status |
 |-------|--------|
-| **Local smoke (Sahil)** | **DONE** (2026-09-15) — evidence below |
+| **Local smoke (Engineering)** | **DONE** (2026-09-15) — evidence below |
 | **Staging smoke (Rohan)** | **PENDING** — same runbook on `apis.klints.io` |
 | **PRD Phase 3 full (A3 staging)** | **Local-only accept** in §11 — staging residual Rohan |
 
@@ -102,12 +102,12 @@ Screenshot still optional for §11; API + Celery + DB counts satisfy local A3 pa
 | Item | Owner |
 |------|--------|
 | Staging smoke + screenshot | Rohan residual post-merge |
-| §11 Sahil ship | **Done** — [PHASE_6](./M3_DEMO_01_PHASE_6.md) local-only A3 |
+| §11 Engineering ship | **Done** — [PHASE_6](./M3_DEMO_01_PHASE_6.md) local-only A3 |
 
 ## Exit
 
 Phase 3 **local smoke done** (incl. API evidence + stale-degraded fix); staging = residual.  
-**Next:** [Phase 6](./M3_DEMO_01_PHASE_6.md) Sahil ship closed.
+**Next:** [Phase 6](./M3_DEMO_01_PHASE_6.md) Engineering ship closed.
 
 ## Do not
 

@@ -1,11 +1,11 @@
 # PRD-WB-08 — Catalogue writeback wave 2 (SP-01 + LE-01)
 
 **Status:** Ready for implementation — **P0 (M2 contract — Writeback + Lifecycle depth)**  
-**Owner track:** Maheep (`docs/writebacks/`) — **BE primary · FE only if irreversible disclosure / Fix copy needs wire**  
+**Owner track:** Writebacks (`docs/writebacks/`) — **BE primary · FE only if irreversible disclosure / Fix copy needs wire**  
 **Surfaces:** Fix `/fix` Approve · Settings Allow writebacks (unchanged) · `WritebackAllowedCheck` · registry / mappings · possible sheet · Activity/audit  
 **Milestone:** M2 Activation & Blueprint (T2) — contract bundle **“Writeback + Lifecycle live (SM REST writeback, rollback, audit hash chain)”**  
 **Depends on:** WB-03…WB-07 · FE-08/09 · POLISH-01 (audit immutable)  
-**Parallel with:** Sahil **HO-02** (Handoff Send) — **no shared files / no dependency**  
+**Parallel with:** Engineering **HO-02** (Handoff Send) — **no shared files / no dependency**  
 **Contract SoT:** Schedule 1 M2 deliverable — *Writeback + Lifecycle live*  
 **Pack SoT:**  
 - Check Catalogue Suggested Fix for **SP-01** / **LE-01** (Automated writeback approved)  
@@ -13,7 +13,7 @@
 - `dataruns/writebacks/mappings/registry.json`  
 - `docs/writebacks/WRITEBACK_SURFACE_MATRIX.md`  
 **Out of scope:**  
-- Sahil HO-02 / `/handoff` / Send / Studio / QA / CAP / Track B / 8-state ORCH  
+- HO-02 / `/handoff` / Send / Studio / QA / CAP / Track B / 8-state ORCH  
 - **CI-03** contact merge (empty ops · irreversible · separate PRD)  
 - **LE-04** (pack Fix Type = Integration + Manual — stay disabled)  
 - Shopify Order/Transaction writers  
@@ -61,7 +61,7 @@ Acceptance: §12.
 |-------|-----------------|
 | Writeback **pipeline** live for **3** checks (CI-01, CC-03, WB-SHOP-01) | Contract says Writeback + Lifecycle **live** — still thin catalogue coverage |
 | Adapters already implement `tag_add` + `event_ingest` | SP-01 / LE-01 mappings disabled or empty |
-| Sahil ships HO-02 Send in parallel | Maheep must deepen **Fix writebacks**, not Handoff |
+| Engineering ships HO-02 Send in parallel | Writebacks track must deepen **Fix writebacks**, not Handoff |
 
 **WB-08** turns on the next two **Catalogue “Automated writeback (approved)”** checks that adapters already support, without colliding with Send.
 
@@ -89,8 +89,8 @@ Settings Allow writebacks ON (existing)
 **Lane wall (do not cross):**
 
 ```text
-Maheep WB-08  =  dataruns/writebacks/**  + Fix copy for irreversible
-Sahil HO-02   =  dataruns/use_cases/handoff*  + /handoff FE
+WB-08  =  dataruns/writebacks/**  + Fix copy for irreversible
+HO-02   =  dataruns/use_cases/handoff*  + /handoff FE
 ```
 
 ---
@@ -100,7 +100,7 @@ Sahil HO-02   =  dataruns/use_cases/handoff*  + /handoff FE
 **Contract line (M2 bundle):**  
 *Writeback + Lifecycle live (SM REST writeback, rollback, audit hash chain)*
 
-In this PRD, **Lifecycle** means the writeback job lifecycle — not Sahil `/lifecycle` Architecture AF:
+In this PRD, **Lifecycle** means the writeback job lifecycle — not Engineering `/lifecycle` Architecture AF:
 
 ```text
 preview → approval → execute → (optional) rollback → audit events
@@ -181,7 +181,7 @@ Fill `operations` (do not leave empty). Minimum viable:
 ### 5.3 Evidence bind
 
 Mapping already expects paths like `side=missing_purchase_event`, `order.id`, `person.email`, etc.  
-**Verify** against a real LE-01 FAIL evidence blob from DCS. If paths drifted, fix mapping paths in this PR — do not change the DCS executor (Sahil) unless blocked; prefer mapping-only fix. If executor change is unavoidable, stop and escalate — do not silently reshape scores.
+**Verify** against a real LE-01 FAIL evidence blob from DCS. If paths drifted, fix mapping paths in this PR — do not change the DCS executor (Engineering) unless blocked; prefer mapping-only fix. If executor change is unavoidable, stop and escalate — do not silently reshape scores.
 
 ### 5.4 Fix UI — irreversible
 
@@ -358,13 +358,13 @@ Optional manual smoke (not a PR deliverable): Settings ON → LE-01 Fix disclosu
 
 | Do not | Owner / later |
 |--------|----------------|
-| Handoff Send / approve / ACTIVATED | Sahil HO-02 |
-| MCP workflow publish / Track B | Sahil CAP-01B |
-| 8-state ORCH SM | Negotiate / Sahil |
+| Handoff Send / approve / ACTIVATED | HO-02 |
+| MCP workflow publish / Track B | CAP-01B |
+| 8-state ORCH SM | Negotiate / Engineering |
 | CI-03 merge execute | Future WB-10+ |
 | LE-04 enable | Pack forbids automated |
-| `/lifecycle` AF changes | Sahil AF-01 |
-| Catalogue score / DCS-09/10 | Sahil (done) |
+| `/lifecycle` AF changes | AF-01 |
+| Catalogue score / DCS-09/10 | done |
 
 ---
 
@@ -435,7 +435,7 @@ Unchanged envelope; LE-01 appears as:
 | `dataruns/migrations/0036_writeback_disallow_sp01_not_in_mvp1_42.py` | drop SP-01 allowlist |
 | `docs/writebacks/WRITEBACK_SURFACE_MATRIX.md` | docs SoT |
 | FE `src/routes/fix.tsx` / `src/lib/writebacks.ts` | irreversible disclosure + allowlist |
-| **Forbidden:** `dataruns/use_cases/handoff*` · `src/routes/handoff.tsx` | Sahil |
+| **Forbidden:** `dataruns/use_cases/handoff*` · `src/routes/handoff.tsx` | Engineering |
 
 ---
 
@@ -456,6 +456,6 @@ Unchanged envelope; LE-01 appears as:
 | Milestone | M2 — Writeback + Lifecycle depth (T2) |
 | Contract | Schedule 1 M2 bundle: Writeback + Lifecycle live |
 | Parents | WB-03…07 · FE-08/09 · POLISH-01 |
-| Parallel | Sahil HO-02 (no dependency) |
+| Parallel | HO-02 (no dependency) |
 | Next | Optional WB-09 Shopify metafield · or WB-10 CI-03 (separate) |
 | Independent of | Handoff Send · Track B · 8-state SM · DCS-09/10 |

@@ -1,8 +1,8 @@
 # PRD-WB-16 — CI-03 contact merge (merge plan + gated safe-delete)
 
-**Status:** **Phase A shipped** — P0 M2 Catalogue · Sahil  
+**Status:** **Phase A shipped** — P0 M2 Catalogue · Engineering  
 
-**Owner track:** Sahil — **BE primary · FE Preview/Download + honesty** (pack Fix Owner = **CRM manager** — not Klints automated)  
+**Owner track:** Engineering — **BE primary · FE Preview/Download + honesty** (pack Fix Owner = **CRM manager** — not Klints automated)  
 **Surfaces:** Fix `/fix` Preview · FE-12 Download · Settings Allow writebacks · registry / mapping · possible sheet · Activity/audit · **DCS identity mismatches (new)** · Manago `batchDelete` (**CONTACT_ID only**, Phase B)  
 **Milestone:** M2 Activation & Blueprint — Customer Identity uniqueness  
 **Depends on:** WB-03…WB-15 · FE-08/09/12 · live `evaluate_ci_03` + `identity_join` · CI-05 shipped (reused → this PR)  
@@ -134,7 +134,7 @@ DCS **486** / localhost-style estates:
 |---|----------|------|
 | 1 | Catalogue Suggested Fix = **propose merge plan — not auto-merged** | **Yes** — Phase A is the MVP1 deliverable |
 | 2 | Pack Fix Owner = **CRM manager** | **Yes** — CheckMaster SoT (`seed_dcs_master` from Excel). Mapping `fix_owner` is documentary only. **Hard execute stops in Phase A:** `execute_mode=plan_only` (new pipeline wire) + FE allowlist off + no WritebackAllowedCheck. Do **not** rely on `fix_owner_not_klints_automated` alone — sandbox ON bypasses that gate (`pipeline.py` `preview_only_owner` requires `not is_writeback_execute_enabled`) |
-| 3 | Eng owner = **Sahil**; automated mutate owner stays CRM unless product explicitly flips Fix Owner | **Yes** |
+| 3 | Eng owner = **Engineering**; automated mutate owner stays CRM unless product explicitly flips Fix Owner | **Yes** |
 | 4 | Manago has **no** merge API | **Yes** — compose plan + optional `batchDelete` |
 | 5 | Delete transport = **`api/contact/batchDelete`** with `addresseeType=CONTACT_ID` | **Yes** — Phase B only |
 | 6 | Forbidden = `api/contact/delete` by **email** for CI-03 | **Yes** — hard ban |
@@ -171,8 +171,8 @@ DCS **486** / localhost-style estates:
 ### 2.2 Lane wall
 
 ```text
-Sahil WB-16 Phase A  =  DCS merge_candidate + plan Preview/Download + honesty
-Sahil WB-16 Phase B  =  CONTACT_ID batchDelete SAFE only + Contact tombstone + FE Approve
+WB-16 Phase A  =  DCS merge_candidate + plan Preview/Download + honesty
+WB-16 Phase B  =  CONTACT_ID batchDelete SAFE only + Contact tombstone + FE Approve
 Do not regress        =  CI-05 / CI-01 / LE-* / PT-04 live writebacks
 Out of this PR        =  email-delete · invented merge API · phone auto-merge · estate wipe playbooks
 ```

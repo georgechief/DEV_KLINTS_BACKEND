@@ -7,13 +7,13 @@
 
 | Slice | Status |
 |-------|--------|
-| **Sahil ship (repo + local AC)** | **DONE** (2026-09-15) — §11 local-only accept · PR ready |
+| **Engineering ship (repo + local AC)** | **DONE** (2026-09-15) — §11 local-only accept · PR ready |
 | **Staging residual (Rohan)** | **Post-merge handoff** — A2 staging OAuth · staging A3 screenshot · A10 |
-| **PRD Sahil close** | **DONE** — employer §11 paste with explicit local-only A3 |
+| **PRD Engineering close** | **DONE** — employer §11 paste with explicit local-only A3 |
 
 ## Goal
 
-1. Close Sahil AC: docs + code + local smoke + verify  
+1. Close Engineering AC: docs + code + local smoke + verify  
 2. Honest §11 with **local-only A3** (staging residual tracked)  
 3. PR draft ready · **user commits manually**  
 
@@ -21,10 +21,10 @@
 
 | Owner | Scope |
 |-------|--------|
-| **Sahil** | Phases 0–6 ship, verify PASS, §11 local accept, PR body |
+| **Engineering** | Phases 0–6 ship, verify PASS, §11 local accept, PR body |
 | **Rohan / ops (post-merge)** | Staging A2/A3 evidence · A10 review · scopes on droplet |
 
-## Sahil checklist
+## Engineering checklist
 
 | # | Task | Done |
 |---|------|------|
@@ -32,11 +32,11 @@
 | S2 | PR title + body draft | [x] |
 | S3 | Local evidence refs (Phase 3–4) | [x] |
 | S4 | Staging residual checklist for Rohan | [x] |
-| S5 | WORKING_GAPS Phase 6 Sahil close | [x] |
+| S5 | WORKING_GAPS Phase 6 Engineering close | [x] |
 | S6 | Manual commit (user) — no agent commit | [x] noted |
 | S7 | Full deep-check all phases + list status-order bugfix | [x] |
 
-## Residual ops (post-merge — does not block Sahil ship)
+## Residual ops (post-merge — does not block Engineering ship)
 
 | # | Task | Done |
 |---|------|------|
@@ -62,7 +62,7 @@ Follow [M3_DEMO_01_SHOPIFY_PATH.md](./M3_DEMO_01_SHOPIFY_PATH.md) on `apis.klint
 
 **Local proven (2026-09-15):** [PHASE_3](./M3_DEMO_01_PHASE_3.md) · [PHASE_4](./M3_DEMO_01_PHASE_4.md) — 189 contacts · 250 orders · score 43.549 · 0 ready pilots.
 
-## §11 paste block (Sahil ship — local-only A3)
+## §11 paste block (Engineering ship — local-only A3)
 
 ```markdown
 ### M3-DEMO-01 employer acceptance (§11)
@@ -72,7 +72,7 @@ Follow [M3_DEMO_01_SHOPIFY_PATH.md](./M3_DEMO_01_SHOPIFY_PATH.md) on `apis.klint
 - [x] **A1** — Runbook uses Simple Sample Data on klints-dev — [M3_DEMO_01_SHOPIFY_PATH.md](./M3_DEMO_01_SHOPIFY_PATH.md)
 - [ ] **A2** — Staging Klints connected to klints-dev via OAuth — **residual ops / Rohan** (local OAuth proven)
 - [x] **A3** — Fresh import / DCS pulls Shopify sample contacts — **local-only accept** 2026-09-15: 189 contacts · 250 orders · API `latest_bootstrap` · [PHASE_3](./M3_DEMO_01_PHASE_3.md)  
-  - Staging repeat = residual handoff (not blocking Sahil ship)
+  - Staging repeat = residual handoff (not blocking Engineering ship)
 - [x] **A4** — Demo path documented; seed cited **not** M3 AC — PHASE_4 + SHOPIFY_PATH theater
 - [x] **A5** — `python scripts/verify_m3_demo01_backend.py` (+ `--run-tests`) **PASS**
 - [x] **A6** — Grafana not mixed; points to OBS-01B
@@ -88,7 +88,7 @@ Follow [M3_DEMO_01_SHOPIFY_PATH.md](./M3_DEMO_01_SHOPIFY_PATH.md) on `apis.klint
 **Allowed claim:**  
 M3 demo path uses live Shopify shop **klints-dev** with Simple Sample Data; Klints imports contacts via normal connect + fresh import.
 
-Signed off (Sahil ship): Sahil / 2026-09-15  
+Signed off (Engineering ship): Engineering / 2026-09-15  
 Ops residual: _Rohan / date_
 ```
 
@@ -102,7 +102,7 @@ Ops residual: _Rohan / date_
 | 3 Smoke | Pass — local A3 evidence |
 | 4 Full path + DP1 | Pass — honest Studio block |
 | 5 Verify | Pass — static + 21 tests |
-| 6 §11 | Pass — Sahil ship with local-only A3 |
+| 6 §11 | Pass — Engineering ship with local-only A3 |
 
 ### Bug fixed this closeout
 
@@ -123,7 +123,7 @@ Ops residual: _Rohan / date_
 - Runbook + Phase 0–6 notes + WORKING_GAPS
 - Connect/import fixes: full `SHOPIFY_SCOPES` (+ `read_locations`), remove false PARTIAL_FETCH %250, recompute stale health; connector list returns reconciled `status`
 - `scripts/verify_m3_demo01_backend.py` static + bootstrap_health / connector-list tests
-- §11 Sahil ship with **local-only A3**; staging A2/A3 + A10 = post-merge Rohan residual
+- §11 Engineering ship with **local-only A3**; staging A2/A3 + A10 = post-merge Rohan residual
 
 ## Test plan
 - [x] `python scripts/verify_m3_demo01_backend.py` → PASS
@@ -149,7 +149,7 @@ python scripts/verify_m3_demo01_backend.py --run-tests
 
 | Exit | Status |
 |------|--------|
-| Sahil Phase 6 ship | **Met** |
+| Engineering Phase 6 ship | **Met** |
 | Staging residual | Tracked for Rohan post-merge |
 
 ## Do not

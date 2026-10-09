@@ -1,7 +1,7 @@
 # PRD-FE-07 — Onboarding Manago API v3 key + Settings honesty
 
 **Status:** Ready for implementation  
-**Owner track:** Maheep (`docs/writebacks/`)  
+**Owner track:** Writebacks (`docs/writebacks/`)  
 **Depends on:** CONN-06 APIs + `ManagoApiV3KeySection` (already on `/integrations`); Settings Account / Workspace / Team already live  
 **Surfaces:** `/onboarding` · `/settings`  
 **Out of scope:** CONN-07 primary owner · Data Center Re-run (FE #17) · Lifecycle / Architecture · building real Klints API-key or Billing backends  
@@ -238,4 +238,4 @@ Leave field read-only with current string **or** change label to make non-live o
 | Reuse? | CONN-06 APIs + existing Settings APIs |
 | Not this PRD? | Owner picker, Re-run, Billing product, API keys product |
 
-**PRD:** FE-07 · **Track:** Maheep · **After:** CONN-06 on Integrations (done)
+**PRD:** FE-07 · **Track:** Writebacks · **After:** CONN-06 on Integrations (done)

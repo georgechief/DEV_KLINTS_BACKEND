@@ -1,7 +1,7 @@
 # PRD-WB-20 — PT-03 Catalog completeness reconcile (T7 product_upsert)
 
-**Status:** **Preview live 2026-09-26** · execute gated on PRODUCT.IMPORT Loom · P0 M2 Catalogue · Sahil  
-**Owner track:** Sahil — **BE primary · FE Approve allowlist + Fix honesty** (pack Fix Owner = **Klints (automated)**)  
+**Status:** **Preview live 2026-09-26** · execute gated on PRODUCT.IMPORT Loom · P0 M2 Catalogue · Engineering  
+**Owner track:** Engineering — **BE primary · FE Approve allowlist + Fix honesty** (pack Fix Owner = **Klints (automated)**)  
 **Surfaces:** Fix `/fix` Preview · Approve · FE-12 Download · Settings Allow writebacks · `WritebackAllowedCheck` · registry / mapping · possible sheet · Activity/audit · **DCS catalog join** · Manago **`product_upsert`** / `RESTV2.PRODUCT.IMPORT`  
 **Milestone:** M2 Activation & Blueprint — Product & Transaction  
 **Depends on:** WB-01…WB-19 · FE-08/09/12 · live `evaluate_pt_03` + `catalog_join` · **sandbox Loom** for product upsert (+ archive field)  

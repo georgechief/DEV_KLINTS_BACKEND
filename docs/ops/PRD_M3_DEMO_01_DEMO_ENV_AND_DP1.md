@@ -1,7 +1,7 @@
 # PRD-M3-DEMO-01 — Live Shopify Demo Contacts (klints-dev)
 
-**Status:** **Sahil ship DONE** (2026-09-15) — **P0 (M3)** · staging A2/A10 residual · **Separate from Grafana**  
-**Owner track:** Sahil (`docs/ops/` / `docs/security/` / module folders) — **live Shopify connect + import + demo path evidence**  
+**Status:** **Engineering ship DONE** (2026-09-15) — **P0 (M3)** · staging A2/A10 residual · **Separate from Grafana**  
+**Owner track:** Engineering (module folders) — **live Shopify connect + import + demo path evidence**  
 **Surfaces:** Shopify OAuth · DCS fresh import (DCS-10) · Integrations UI · demo walkthrough  
 **Milestone:** **M3 Demo & DP1** — contacts come from **real Shopify**, not `seed_demo_tenant` script  
 **Shopify demo shop:** [klints-dev · Simple Sample Data](https://admin.shopify.com/store/klints-dev/apps/simple-sample-data)  
@@ -26,7 +26,7 @@
 
 **Out of scope:** Grafana alerts · SEC-01 rebuild · offline 5k script as primary demo · inventing MCP · Gate B legal · pen-test  
 
-**Progress:** [WORKING_GAPS](./M3_DEMO_01_WORKING_GAPS.md) · [PHASE_0](./M3_DEMO_01_PHASE_0.md)–[PHASE_6](./M3_DEMO_01_PHASE_6.md) · [SHOPIFY_PATH](./M3_DEMO_01_SHOPIFY_PATH.md) · **Sahil ship ready for PR** · staging residual → Rohan
+**Progress:** [WORKING_GAPS](./M3_DEMO_01_WORKING_GAPS.md) · [PHASE_0](./M3_DEMO_01_PHASE_0.md)–[PHASE_6](./M3_DEMO_01_PHASE_6.md) · [SHOPIFY_PATH](./M3_DEMO_01_SHOPIFY_PATH.md) · **Engineering ship ready for PR** · staging residual → Rohan
 
 ---
 
@@ -115,7 +115,7 @@ Grafana alerts are **another** PRD (OBS-01B).
 | G6 `verify_m3_demo01_backend.py` | **Done** — [PHASE_5](./M3_DEMO_01_PHASE_5.md) |
 | G7 Full path + DP1 readiness | **Done** — [PHASE_4](./M3_DEMO_01_PHASE_4.md) |
 | G8 FE honesty if import/score copy wrong | Optional |
-| G9 §11 Sahil ship | **Done** — [PHASE_6](./M3_DEMO_01_PHASE_6.md) local-only A3 |
+| G9 §11 Engineering ship | **Done** — [PHASE_6](./M3_DEMO_01_PHASE_6.md) local-only A3 |
 | G9b staging A2 + A10 | Residual post-merge |
 
 ---

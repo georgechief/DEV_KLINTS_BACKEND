@@ -8,7 +8,7 @@
 
 | Slice | Status |
 |-------|--------|
-| **Sahil (repo / prep)** | **DONE** (2026-09-14) |
+| **Engineering (repo / prep)** | **DONE** (2026-09-14) |
 | **Ops live (Rohan)** | **PENDING** — mailer env + inbox proof or stop-and-flag |
 | **PRD Phase 3 / A7 full close** | **NOT done** until email proven or flagged with evidence |
 
@@ -21,7 +21,7 @@ If mailer fails: **stop-and-flag** with bridge logs (Explore still counts from P
 
 | Owner | Scope |
 |-------|--------|
-| **Sahil** | Contact/rules/bridge on `main`, verify PASS, runbook path documented, Phase 3 checklist + evidence blanks |
+| **Engineering** | Contact/rules/bridge on `main`, verify PASS, runbook path documented, Phase 3 checklist + evidence blanks |
 | **Rohan / ops** | `MAILER_API_*` + `ALERT_EMAIL_TO` in `DEV_ENV_FILE`, inbox access, bridge logs on failure |
 | **Either** | Confirm email received (or file stop-and-flag) after Phase 2 induce |
 
@@ -44,7 +44,7 @@ staging-logs-error-web (pending/firing ~2m)
 | Bridge | `deploy/grafana/alert-mailer-bridge/server.py` |
 | Compose | `obs_alert_mailer` |
 
-## Sahil checklist (prep)
+## Engineering checklist (prep)
 
 | # | Task | Done |
 |---|------|------|
@@ -62,7 +62,7 @@ staging-logs-error-web (pending/firing ~2m)
 | 3.2 | After Phase 2 induce: `staging-logs-error-web` fires | [ ] |
 | 3.3a | Email arrives at `noreplyklints@gmail.com` | [ ] **or** |
 | 3.3b | Stop-and-flag: `docker compose logs obs_alert_mailer` + bridge `/health` | [ ] |
-| 3.4 | Paste evidence below (or send Sahil) | [ ] |
+| 3.4 | Paste evidence below (or send Engineering) | [ ] |
 | 3.5 | WORKING_GAPS → Phase 3 full `[x]` when A7 met | [ ] |
 
 ### Stop-and-flag (if mailer blocked)
@@ -88,7 +88,7 @@ Document: unset/rejecting mailer, HTTP status from bridge, no second mail produc
 
 | Exit | When |
 |------|------|
-| Sahil Phase 3 prep | **Met** — path + docs ready; waiting on ops |
+| Engineering Phase 3 prep | **Met** — path + docs ready; waiting on ops |
 | PRD Phase 3 / A7 | Email proven **or** stop-and-flag with evidence |
 
 **Next after full Phase 3:** Phase 4 — disable induce + §11 + PR notes.

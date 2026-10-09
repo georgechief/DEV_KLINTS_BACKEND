@@ -1,8 +1,8 @@
 # PRD-WB-19 — SP-03 Standard detail schema consistency (format contract + normalise)
 
-**Status:** **MVP shipped 2026-09-26** · Phase B (semantic key merge) optional · P0 M2 Catalogue · Sahil  
+**Status:** **MVP shipped 2026-09-26** · Phase B (semantic key merge) optional · P0 M2 Catalogue · Engineering  
 
-**Owner track:** Sahil — **BE primary · FE Approve allowlist + Fix honesty** (pack Fix Owner = **Klints (automated)**)  
+**Owner track:** Engineering — **BE primary · FE Approve allowlist + Fix honesty** (pack Fix Owner = **Klints (automated)**)  
 **Surfaces:** Fix `/fix` Preview · Approve · FE-12 Download · Settings Allow writebacks · `WritebackAllowedCheck` · registry / mapping · possible sheet · Activity/audit · **DCS segment detail schema** · Manago `detail_set` / upsert **properties**  
 **Milestone:** M2 Activation & Blueprint — Segment & Property  
 **Depends on:** WB-09 (SP-07 gate) · WB-03…WB-18 · FE-08/09/12 · live `evaluate_sp_03` + `segment_join`  

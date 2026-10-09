@@ -1,10 +1,10 @@
 # PRD-POLISH-01 — Fix / shell / notifications harden + audit DB immutability
 
 **Status:** Ready for implementation — **P0 polish after WB-04/06**  
-**Owner track:** Maheep (`docs/writebacks/`) — **BE + FE**  
+**Owner track:** Writebacks (`docs/writebacks/`) — **BE + FE**  
 **Surfaces:** Fix · Settings writebacks · Notifications bell · Spotlight · Activity · `audit_logs` (Postgres) · possible sheet honesty  
 **Depends on:** AUDIT-01 · AUDIT-02 · WB-03 · WB-04 · WB-06 · FE-13  
-**Out of scope:** Sahil HO-01 / CAP-01 / Studio · new Catalogue writeback mappings (CI-03/SP-01/LE-01…) · MCP discovery evidence · Shopify metafield execute · full `capability_record` Matrix import · email prefs product · blockchain / external audit anchor  
+**Out of scope:** HO-01 / CAP-01 / Studio · new Catalogue writeback mappings (CI-03/SP-01/LE-01…) · MCP discovery evidence · Shopify metafield execute · full `capability_record` Matrix import · email prefs product · blockchain / external audit anchor  
 
 ---
 
@@ -150,7 +150,7 @@ Team invite admin-gate · revoke confirm · themed `<select>` · silent mark-rea
 
 ---
 
-## 4. Pack honesty (Maheep slice only)
+## 4. Pack honesty (Writebacks slice only)
 
 | Item | Action |
 |------|--------|
@@ -201,8 +201,8 @@ Team invite admin-gate · revoke confirm · themed `<select>` · silent mark-rea
 |-------|-----|
 | Atomic WB-04 claim-before-adapter-write | Race hardening — larger than polish |
 | Mask `entity_key` PII in writeback serialize | WB-01 residual |
-| CAP-01 / Matrix resolver | Sahil (+ shared) |
-| HO-01 FE live `/handoff` | Sahil |
+| CAP-01 / Matrix resolver | Engineering (+ shared) |
+| HO-01 FE live `/handoff` | Engineering |
 | Celery periodic `verify_audit_chain` | AUDIT-01 v1.1 detect (optional after triggers) |
 | New writeback mappings wave | Pack Catalogue coverage |
 
@@ -222,4 +222,4 @@ Team invite admin-gate · revoke confirm · themed `<select>` · silent mark-rea
 | Parents | AUDIT-01 §8 · AUDIT-02 · WB-03/04/06 · FE-13 |
 | Pack | Append-only governance; stop-and-flag honesty; Settings gate ≠ invent Matrix |
 | Milestone | M2 polish / demo honesty — not a new feature track |
-| Independent of | Sahil HO-01 FE · CAP-01 |
+| Independent of | Engineering HO-01 FE · CAP-01 |

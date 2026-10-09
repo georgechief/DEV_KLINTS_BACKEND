@@ -1,13 +1,13 @@
 # PRD-WB-11 — PT-04 `klints_net_ltv` writeback
 
-**Status:** **Shipped (WB-11)** — P0 M2 Catalogue Automated writeback · Sahil  
+**Status:** **Shipped (WB-11)** — P0 M2 Catalogue Automated writeback · Engineering  
 
-**Owner track:** Sahil — **BE primary · FE Approve allowlist only**  
+**Owner track:** Engineering — **BE primary · FE Approve allowlist only**  
 **Surfaces:** Fix `/fix` Approve · Settings Allow writebacks · `WritebackAllowedCheck` · registry / mapping · possible sheet · SP-07 owned-key allowlist · Activity/audit  
 **Milestone:** M2 Activation & Blueprint (T2) — Product & Transaction depth after WB-10  
 **Depends on:** WB-03…WB-10 · FE-08/09 · POLISH-01 · DCS `evaluate_pt_04` + `product_truth` live · SP-07 gate for `klints_*` writes  
-**PRD path:** `docs/writebacks/` (writeback series numbering only — **owner is Sahil**)  
-**Parallel with:** Maheep WB-08/09/10 stack if unmerged — shares `dataruns/writebacks/**`; coordinate branch base  
+**PRD path:** `docs/writebacks/` (writeback series numbering only — **owner is Engineering**)  
+**Parallel with:** Writebacks WB-08/09/10 stack if unmerged — shares `dataruns/writebacks/**`; coordinate branch base  
 **Contract SoT:** Catalogue Automated writeback for PT-04; Writeback + Lifecycle live  
 **Pack SoT:**  
 - `Klints_Spec_InitialDataConsistencyCheck_v1.4.1` sheet **02 Check Catalogue** row **PT-04**  
@@ -97,14 +97,14 @@ If PT-04 still FAIL (platform cannot net refunds in Manago totals):
 | 8 | Enabling PT-04 makes `klints_net_ltv` **owned** for SP-07 | **Yes** — update WB-09 tests/verify that asserted it foreign |
 | 9 | FE = allowlist `PT-04` only | **Yes** |
 | 10 | Approval tier = **batch** | **Yes** (multi-contact FAIL sample) |
-| 11 | Owner = **Sahil** | **Yes** |
+| 11 | Owner = **Engineering** | **Yes** |
 | 12 | Writeback does **not** make PT-04 PASS by itself | **Yes** — executor compares PURCHASE totals ↔ Shopify net; it does **not** read `klints_net_ltv`. Success = stamp + point workflows at it (Excel wording) |
 | 13 | Provenance must expose actionable rows for refund_blind-only FAIL | **Yes** — minimal `evaluate_pt_04` mismatch union allowed (§3.4); scores unchanged |
 
 **Lane wall:**
 
 ```text
-Sahil WB-11   =  PT-04 mapping + transform + allowlist + FE Approve list
+WB-11   =  PT-04 mapping + transform + allowlist + FE Approve list
 Do not regress =  live writebacks (CI-01 / CC-03 / LE-01 / SP-07 / LE-09 / WB-SHOP-01)
 Out of this PR =  Studio / HO / QA / CAP unless required for PT-04 Fix path
 ```

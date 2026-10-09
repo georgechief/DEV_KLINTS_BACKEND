@@ -1,10 +1,10 @@
 # PRD-WB-06 — Fix writeback provenance (persist run · restore Written UI)
 
 **Status:** Ready for implementation — **P0 companion to WB-04**  
-**Owner track:** Maheep (`docs/writebacks/`) — **BE + FE**  
+**Owner track:** Writebacks (`docs/writebacks/`) — **BE + FE**  
 **Surfaces:** Fix `/fix` · `GET` writeback status API · Activity deep-link  
 **Depends on:** WB-02 · WB-03 · **WB-04** (gate + `dcs_data_run_id` on execute — may land as one combined PR if preferred)  
-**Out of scope:** Sahil Studio / QA / Handoff · new mappings · LE-04 · inventing banked revenue · full BL-017 ORCH SM  
+**Out of scope:** Studio / QA / Handoff · new mappings · LE-04 · inventing banked revenue · full BL-017 ORCH SM  
 
 ---
 
@@ -202,5 +202,5 @@ On successful rollback mutation:
 |------|------|
 | Milestone | M2 — Fix writeback honesty |
 | Parents | WB-02 · WB-03 · WB-04 |
-| Independent of | Sahil HO-01 · CAP-01 · QA |
+| Independent of | Engineering HO-01 · CAP-01 · QA |
 | Related FE | FE-13 Activity deep-links (reuse, don’t redesign) |

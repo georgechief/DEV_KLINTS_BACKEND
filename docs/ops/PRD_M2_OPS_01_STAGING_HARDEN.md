@@ -1,18 +1,18 @@
 # PRD-M2-OPS-01 — Staging harden + Fix support (parallel with DCS-09)
 
 **Status:** Ready for execution — **P0 (M2 ops)** · no new product feature  
-**Owner track:** Maheep (`docs/writebacks/`) — **staging / Fix / writeback smoke · bugfix only**  
+**Owner track:** Writebacks (`docs/writebacks/`) — **staging / Fix / writeback smoke · bugfix only**  
 **Surfaces:** Staging deploy · Settings writebacks · Fix (CI-01 / CC-03 / WB-SHOP-01) · Activity/bell · shell honesty  
 **Depends on:** WB-03…WB-07 · POLISH-01 · OPS-UC-01 seed · FE-13  
-**Parallel:** Sahil **DCS-09** (`docs/dcs_scoring/PRD_DCS_09_PILOT_SUPPLEMENTAL_GATES.md`)  
-**Out of scope:** New Catalogue writeback mappings · HO-02 MCP Send · CAP-01B discovery · CAP registry unify · Studio / QA / Handoff features · inventing Ready without Sahil gates · BL-017  
+**Parallel:** Engineering **DCS-09** (`docs/dcs_scoring/PRD_DCS_09_PILOT_SUPPLEMENTAL_GATES.md`)  
+**Out of scope:** New Catalogue writeback mappings · HO-02 MCP Send · CAP-01B discovery · CAP registry unify · Studio / QA / Handoff features · inventing Ready without Engineering gates · BL-017  
 
 ---
 
 ## 0. Cursor agent brief (paste this)
 
 ```text
-Execute PRD-M2-OPS-01 — staging harden + Fix support while Sahil ships DCS-09.
+Execute PRD-M2-OPS-01 — staging harden + Fix support while Engineering ships DCS-09.
 
 Read:
 - docs/ops/PRD_M2_OPS_01_STAGING_HARDEN.md (this file)
@@ -24,7 +24,7 @@ Ship:
 1. Run §3 staging readiness checklist on Lumera (or named demo tenant).
 2. Fix smoke: Settings Allow writebacks ON → Approve one allowlisted check → Written + 409 re-Approve → optional rollback (§4).
 3. Fix only blockers found (copy, deep-link, gate, deploy) — tiny PRs under this PRD.
-4. When Sahil merges DCS-09: re-smoke Fix + shell; confirm UC-02 Ready path does not break writebacks/worklist (§5).
+4. When Engineering merges DCS-09: re-smoke Fix + shell; confirm UC-02 Ready path does not break writebacks/worklist (§5).
 5. Fill §6 checklist; attach notes for E2E-01 (next).
 
 Acceptance: §7. No new mappings. No Studio/QA/Handoff feature work.
@@ -34,8 +34,8 @@ Acceptance: §7. No new mappings. No Studio/QA/Handoff feature work.
 
 ## 1. Why
 
-Sahil owns the last **structural** Build gap (**DCS-09** → UC-02 hard-green Ready).  
-Maheep’s writeback harden track (**WB-07**) is done. Claim still needs **staging that actually works** before E2E Loom.
+Engineering owns the last **structural** Build gap (**DCS-09** → UC-02 hard-green Ready).  
+Writebacks’s writeback harden track (**WB-07**) is done. Claim still needs **staging that actually works** before E2E Loom.
 
 Without this PRD:
 
@@ -56,7 +56,7 @@ Without this PRD:
 1. No new product surface — verify, smoke, bugfix only.
 2. Demo tenant stays honest: writebacks Settings-gated; LE-04 stays blocked.
 3. Do not “help” DCS-09 by faking supplemental PASS or changing 42 assemble.
-4. Bugfixes that touch Studio/QA/Handoff only if they block staging smoke — prefer Sahil for those.
+4. Bugfixes that touch Studio/QA/Handoff only if they block staging smoke — prefer Engineering for those.
 5. After checklist green → stop. E2E-01 is a separate PRD.
 ```
 
@@ -84,7 +84,7 @@ Without this PRD:
 | 7 | Terminal DCS score exists | Overview / Data Center live; worklist not empty-or-stuck forever |
 | 8 | Fix deep-link works | `/fix?issue=CC-03` (or live FAIL id) binds real issue |
 
-### 3.3 Writeback gate (Maheep SoT)
+### 3.3 Writeback gate (Writebacks SoT)
 
 | # | Check | Pass when |
 |---|--------|-----------|
@@ -114,16 +114,16 @@ Cross-ref script detail: [PRD_WB_05](./PRD_WB_05_FIX_WRITEBACK_LOOM_STAGING_PROO
 
 ---
 
-## 5. Support Sahil DCS-09 (do not implement)
+## 5. Support Engineering DCS-09 (do not implement)
 
-| Maheep does | Maheep does **not** |
+| Writebacks does | Writebacks does **not** |
 |-------------|---------------------|
 | Re-run Fix smoke after DCS-09 merge | Implement supplemental evaluators |
 | Confirm worklist still **42** headline issues | Add CI-08/CC-06 to `assemble_dcs_score` |
 | Confirm Fix download / Approve unchanged for allowlisted 3 | Map writebacks for the 12 supplementals |
 | Report if Studio Ready unlock breaks Fix CTAs | Change recommend / pilot gate labels |
 
-If DCS-09 needs a Fix surface (e.g. “Evaluate pilot gates” button lives near Fix): **Sahil owns FE**; Maheep only unblocks collisions (shared components, shell lock).
+If DCS-09 needs a Fix surface (e.g. “Evaluate pilot gates” button lives near Fix): **Engineering owns FE**; Writebacks only unblocks collisions (shared components, shell lock).
 
 ---
 
@@ -162,10 +162,10 @@ M2-OPS-01 staging notes
 
 | Later | Owner |
 |-------|--------|
-| **DCS-09** implement | Sahil |
-| **E2E-01** full journey Loom + T2 submission | Sahil lead · Maheep Fix segment |
+| **DCS-09** implement | Engineering |
+| **E2E-01** full journey Loom + T2 submission | Engineering lead · Writebacks Fix segment |
 | **CAP-UNIFY-01** Matrix ↔ writeback JSON | Optional post-claim |
-| Catalogue writeback wave | Maheep post-M2 |
+| Catalogue writeback wave | Writebacks post-M2 |
 | **HO-02** / CAP-01B | Post-claim |
 
 ---
@@ -185,5 +185,5 @@ M2-OPS-01 staging notes
 |------|------|
 | Milestone | M2 — staging green before T2 claim Loom |
 | Parents | WB-05 · WB-07 · OPS-UC-01 · POLISH-01 · FE-13 |
-| Parallel | Sahil DCS-09 |
+| Parallel | Engineering DCS-09 |
 | Next | E2E-01 |

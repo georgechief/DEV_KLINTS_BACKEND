@@ -1,7 +1,7 @@
 # PRD-M3-OBS-01 — Staging Grafana + Loki + Alloy (Docker logs & alerts)
 
-**Status:** Ready for Sahil — **P0 (M3 observability · first M3 engineering slice)**  
-**Owner track:** Sahil (`docs/ops/` / `docs/security/` / module folders) — **BE / deploy / ops** (no Klints product FE)  
+**Status:** Ready for engineering — **P0 (M3 observability · first M3 engineering slice)**  
+**Owner track:** Engineering (module folders) — **BE / deploy / ops** (no Klints product FE)  
 **Surfaces:** DigitalOcean **staging** Docker stack · GitHub Actions deploy · Grafana Explore + Alerting  
 **Milestone:** **M3 Demo, Security & DP1 (T3)** — contract deliverable *Security + observability hardened (… Grafana)*  
 **SoT layers (priority when they conflict):**  
@@ -17,7 +17,7 @@
 | D1 | **Staging only** — no requirement to run this stack on every laptop |
 | D2 | **Free OSS only** — Grafana OSS + Loki OSS + **Grafana Alloy** (not paid Grafana Cloud; not Prometheus for v1) |
 | D3 | **Docker Compose only** — no Kubernetes |
-| D4 | **Deploy / test via GitHub workflow** — Sahil learns from and extends `deploy-development.yml` + deploy scripts |
+| D4 | **Deploy / test via GitHub workflow** — Engineering learns from and extends `deploy-development.yml` + deploy scripts |
 | D5 | **Per-container logs** in Grafana with service filter / dropdown; **ERROR** (and equivalent) visible and attributed correctly |
 | D6 | **Separate alerts per Docker service** → email **`noreplyklints@gmail.com`** (sheet / LangSmith account) |
 | D7 | **Ops URL only** — **no** Klints app nav / merchant-facing “Open Grafana” link in v1 |
@@ -68,7 +68,7 @@ Acceptance: §11.
 | Promtail is EOL | New work must use **Alloy** |
 | Must stay **$0 software** and **Docker-only** | Self-host OSS on existing DigitalOcean droplet |
 
-This PRD is the **first M3 engineering slice** for Sahil after GAP-01 (Track B MCP remains parked / client-blocked).
+This PRD is the **first M3 engineering slice** for engineering after GAP-01 (Track B MCP remains parked / client-blocked).
 
 ---
 
@@ -140,7 +140,7 @@ Every log line shipped to Loki **must** carry stable labels so Grafana Explore c
 | Loki retention | **7–14 days** | Enough for staging; protect disk |
 | Loki storage | Local volume on droplet | No S3 required for v1 |
 | Alloy | Single instance | Docker socket read (document security note) |
-| Grafana users | Admin = `noreplyklints@gmail.com` | Invite Rohan / Sahil as editors/viewers |
+| Grafana users | Admin = `noreplyklints@gmail.com` | Invite Rohan / Astrapse secondary as editors/viewers |
 
 **Stop-and-flag** if droplet free disk &lt; ~5 GB or RAM cannot add ~512 MB–1 GB for obs services — propose: shorter retention, single-binary Loki monorepo config, or move Grafana-only to a tiny sibling droplet **before** inventing Cloud.
 
@@ -154,7 +154,7 @@ Every log line shipped to Loki **must** carry stable labels so Grafana Explore c
 | Klints product UI link | **Out of scope** |
 | URL | Prefer `https://apis.klints.io/grafana/` (nginx path) **or** `grafana.apis.klints.io` if DNS/TLS easy — pick one in Phase 1 and document |
 | Auth | Grafana native admin + password **or** Google OAuth if cheap to wire with `noreplyklints@gmail.com`; minimum = strong admin password in GitHub Secret / `.env` |
-| Who | Ops / engineering team only (Rohan, Sahil, employer) |
+| Who | Ops / engineering team only (Rohan, Engineering, employer) |
 | Merchants / tenants | **No access** |
 
 Nginx must **not** expose Grafana without auth. Do not publish `:3000` on the public host firewall.
@@ -175,7 +175,7 @@ Nginx must **not** expose Grafana without auth. Do not publish `:3000` on the pu
 
 ## 6. Deploy / workflow integration (D4) — primary delivery path
 
-Sahil must treat **GitHub Actions as the SoT for “it works on staging.”**
+Engineering must treat **GitHub Actions as the SoT for “it works on staging.”**
 
 ### 6.1 Existing path (do not break)
 
@@ -204,7 +204,7 @@ Sahil must treat **GitHub Actions as the SoT for “it works on staging.”**
 | Gate | How |
 |------|-----|
 | PR | Static verify script green; compose config validated (`docker compose config`) where CI can run Docker |
-| Merge to `main` | Deploy workflow runs; Sahil watches Actions |
+| Merge to `main` | Deploy workflow runs; Engineering watches Actions |
 | Manual | `workflow_dispatch` redeploy after secret/config tweaks |
 | Proof | Screenshot or export: Explore filtered by `service=web` + one alert rule list |
 
@@ -296,7 +296,7 @@ Phase 6  Staging induce ERROR + employer demo checklist
 |---|------|------|
 | 0.1 | Read this PRD + `deploy-development.yml` + `deploy.sh` + current `docker-compose.yml` | [x] |
 | 0.2 | SSH or ask Rohan: free disk / RAM on staging droplet; note numbers in PR | [x] **Deploy SSH on `main` workflow**; disk/RAM paste optional |
-| 0.3 | Confirm admin email **`noreplyklints@gmail.com`** access for password reset / inbox alerts | [x] Target locked; **mailer API** in Sahil env (`MAILER_API_*`) — Phase 4 wires Grafana |
+| 0.3 | Confirm admin email **`noreplyklints@gmail.com`** access for password reset / inbox alerts | [x] Target locked; **mailer API** in Engineering env (`MAILER_API_*`) — Phase 4 wires Grafana |
 | 0.4 | Choose URL mode: path `/grafana/` **vs** subdomain (document choice) | [x] **LOCKED:** `https://apis.klints.io/grafana/` |
 | 0.5 | Branch `feature/m3-obs-01-grafana-loki-alloy` | [x] |
 
@@ -444,7 +444,7 @@ Must include:
 | Contract | Schedule 1 **M3** — Security + observability hardened (RBAC, audit tamper detection, **Grafana**) |
 | Milestone payment | T3 USD 3,000 (M3 acceptance — OBS-01 is **necessary but not sufficient** alone) |
 | Parent | M2 GAP-01 mostly closed; MCP parked |
-| Owner | Sahil |
+| Owner | Engineering |
 | Gmail SoT | `noreplyklints@gmail.com` (AI-01 / sheet) |
 | Deploy SoT | `.github/workflows/deploy-development.yml` |
 

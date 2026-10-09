@@ -1,7 +1,7 @@
 # PRD-ORCH-01 — Canonical orchestration priority (BL-011)
 
 **Status:** Ready for implementation (pre-build locks in §15)  
-**Owner track:** Sahil (`docs/ops/` / `docs/security/` / module folders) — **BE + FE in this PRD**  
+**Owner track:** Engineering (module folders) — **BE + FE in this PRD**  
 **Backlog:** `BL-011` (P0, MVP1-B) — four-factor priority formula (0–3)  
 **Milestone:** MVP1-B (after AF-01 + UC-01 + UC-01B)  
 **Depends on:** Live DCS worklist enrichment · AF-01 latest · UC-01 recommendations (optional source) · FE-08 Fix `?issue=` · UC-01B tracker chrome (Plan queue sits with tracker)  
@@ -169,7 +169,7 @@ sequenceDiagram
 | **Opportunity tracker** | UC-01B tracker + pilots | Add **Plan queue** band (live FIX from plan) — placement §9.4 |
 | **Lifecycle** | AF primary | Unchanged (optional ASSESS tasks link here later) |
 
-**This PRD ships BE + FE.** Sahil owns both unless FE is explicitly split mid-PR — acceptance includes §9 + §13.
+**This PRD ships BE + FE.** Engineering owns both unless FE is explicitly split mid-PR — acceptance includes §9 + §13.
 
 ---
 
@@ -599,7 +599,7 @@ Do **not** delete revenue sort helpers.
 | Next? | BL-012 waves |
 | Locks? | §15 pre-build decisions |
 
-**PRD:** ORCH-01 · **Backlog:** BL-011 · **Track:** Sahil (BE + FE) · **Pack:** Onboarding Orchestration Blueprint v1.4.1
+**PRD:** ORCH-01 · **Backlog:** BL-011 · **Track:** Engineering (BE + FE) · **Pack:** Onboarding Orchestration Blueprint v1.4.1
 
 ---
 

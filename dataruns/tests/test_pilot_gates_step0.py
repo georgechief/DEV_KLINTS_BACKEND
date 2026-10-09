@@ -26,7 +26,7 @@ _ARCHIVE = (
     / "dcs_scoring"
     / "PRD_DCS_09_PILOT_SUPPLEMENTAL_GATES-FUTURE-PRD.md"
 )
-_SAHIL_PRD = (
+_MODULE_PRD = (
     _REPO_ROOT / "docs" / "dcs_scoring" / "PRD_DCS_09_PILOT_SUPPLEMENTAL_GATES.md"
 )
 _WORKING_GAPS = _REPO_ROOT / "docs" / "dcs_scoring" / "DCS_09_WORKING_GAPS.md"
@@ -211,7 +211,7 @@ class PilotGatesStep0PreconditionsTests(SimpleTestCase):
         )
 
     def test_prd_and_working_gaps_present(self):
-        self.assertTrue(_SAHIL_PRD.is_file(), msg=str(_SAHIL_PRD))
+        self.assertTrue(_MODULE_PRD.is_file(), msg=str(_MODULE_PRD))
         self.assertTrue(_WORKING_GAPS.is_file(), msg=str(_WORKING_GAPS))
         self.assertTrue(_ARCHIVE.is_file(), msg=str(_ARCHIVE))
         gaps = _WORKING_GAPS.read_text(encoding="utf-8")

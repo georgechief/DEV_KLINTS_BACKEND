@@ -2,7 +2,7 @@
 
 **Status:** Locked 2026-09-19  
 **PRD:** `PRD_WB_08_CATALOGUE_WAVE2_SP01_LE01.md` §4.2 / §5.3  
-**Rule:** Prefer mapping / transform fixes. Do **not** reshape DCS executors unless blocked — then escalate to Sahil.
+**Rule:** Prefer mapping / transform fixes. Do **not** reshape DCS executors unless blocked — then escalate to engineering lead.
 
 ---
 
@@ -71,11 +71,11 @@ Reconciliation then stores **ID-only** lists in `lifecycle.shopify_only` / `mana
    - Keep `entity_key` / `order_id` → `order.id`  
    - Drop or stop requiring `representative_value` as SoT from evidence
 
-2. **Transform enrichment (required for execute, Maheep lane):**  
+2. **Transform enrichment (required for execute, writebacks lane):**  
    Mirror CC-03 pattern: for each `shopify_only` row, resolve from company Order/Contact (or snapshot) → `person.email`, optional Manago `contact_id`, order amount → event value.  
    If unresolved → intent `error` / skip with honest `error_reason` (no silent Written).
 
-3. **Escalate to Sahil only if** enrichment is rejected product-wise and executor must emit richer mismatches. Prefer not changing score shape.
+3. **Escalate to engineering lead only if** enrichment is rejected product-wise and executor must emit richer mismatches. Prefer not changing score shape.
 
 4. **Do not** treat writeback unit-test fixtures with `missing_purchase_event` as production SoT — update those tests when mapping changes.
 
@@ -102,7 +102,7 @@ Cannot invent `from_evidence` paths from a non-existent FAIL payload (PRD §4.2)
 
 | Option | Approach | Notes |
 |--------|----------|--------|
-| **A — Block / escalate** | Defer SP-01 enable until Sahil ships SP-01 executor + FAIL rows with contact key | Cleanest vs PRD “inspect real FAIL” |
+| **A — Block / escalate** | Defer SP-01 enable until Engineering ships SP-01 executor + FAIL rows with contact key | Cleanest vs PRD “inspect real FAIL” |
 | **B — Sandbox transform** | Like `WB-SHOP-01` / CC-03 fallback: synthetic rows from Manago contacts when Settings sandbox / execute enabled | Demo path only; not Catalogue FAIL-driven |
 | **C — Narrow MVP** | `tag_add` + const `klints:consolidated` + entity from explicit fixture / allowlist smoke only | Tests pass; Fix worklist still empty until check exists |
 

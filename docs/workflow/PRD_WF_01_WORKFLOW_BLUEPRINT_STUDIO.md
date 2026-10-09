@@ -1,7 +1,7 @@
 # PRD-WF-01 — Workflow Blueprint Studio (BL-016)
 
 **Status:** Ready for implementation  
-**Owner track:** Sahil (`docs/ops/` / `docs/security/` / module folders)  
+**Owner track:** Engineering (module folders)  
 **Backlog:** **BL-016** — Generate Manago build package from blueprint JSON (MCP route **or** human fallback resolved)  
 **Surfaces:** `/workflow` · `/workflow/$id` · Data Consistency Build CTA (rules below) · Opportunities ready pilots · Fix “Proceed to Workflow Studio”  
 **Depends on:** UC-01 pilots seeded + recommendations · AF-01 latest mode · live DCS check results · pack `04_MVP1_Pilot_Blueprints/*`  
@@ -13,7 +13,7 @@
 - `06_Implementation/Klints_MVP1_Rohan_Implementation_Blueprint_v1.2` — Milestone C build packages; acceptance mentions **UC-02 and UC-06B**  
 - `02_Execution_Capabilities/Klints_Manago_ExecutionCapabilityMatrix_v1.1_20260718.xlsx` — resolve MCP vs `HUMAN.WORKFLOW.BUILD`  
 - Related PRDs: `PRD_UC_01_*` (gates/status) · `PRD_AF_01_*` (mode) · `PRD_ORCH_01_*` (plan queue → Fix/Build later)  
-**Out of scope:** MCP live upsert (BL-019) · QA score engine full BL-018 · Handoff Send live · Maheep writebacks (WB-02) · BL-012 waves · inventing pilots outside the 16 · enabling LE-04 writeback · UC-06A / UC-41 (excluded in manifest)  
+**Out of scope:** MCP live upsert (BL-019) · QA score engine full BL-018 · Handoff Send live · writebacks (WB-02) · BL-012 waves · inventing pilots outside the 16 · enabling LE-04 writeback · UC-06A / UC-41 (excluded in manifest)  
 
 ---
 
@@ -162,7 +162,7 @@ Headline DCS only runs the **42** checks. These gating IDs are **not** in the 42
 | SP-08 | Yes (B) | UC-16 |
 | SP-10 | Supplemental | UC-06B |
 
-**Maheep note:** Fixing **CC-03** via writeback unlocks welcome pilots (UC-02/04/05) for Build once headline gates clear (supplementals may still be provisional).
+**Note:** Fixing **CC-03** via writeback unlocks welcome pilots (UC-02/04/05) for Build once headline gates clear (supplementals may still be provisional).
 
 ### 3.4 Pilots whose gates are all inside the 42 (no supplemental dependency)
 
@@ -262,7 +262,7 @@ Same as A with UC-06B gates (LE-01, LE-05, PT-04, CC-01, CC-02 hard; SP-10 may b
 
 ```text
 1. CC-03 FAIL → UC-02 blocked_checks (hard)
-2. Data Consistency / Fix: Fix CC-03 (Maheep writeback if eligible)
+2. Data Consistency / Fix: Fix CC-03 (writeback if eligible)
 3. Re-score / refresh recommendations
 4. When 42-scoped gates PASS → Flow A (possibly provisional on CC-06/CI-08)
 ```
@@ -393,7 +393,7 @@ Map in v1 to Klints **ADMIN** (and optionally ANALYST for generate-but-not-appro
 | Handoff Send all instances | BL-018+ handoff PRD |
 | QA ≥80 hard-test runner | BL-018 |
 | Wave floors / DAG | BL-012 |
-| Writeback Approve | Maheep WB-02 |
+| Writeback Approve | WB-02 |
 | DCS-09 full supplemental engine | DCS-09 future PRD (missing=blocked OK) |
 | UC-41 / excluded pilots | Never in MVP1 |
 | Prod activation | Human in Manago; package stays staged |
@@ -435,9 +435,9 @@ flowchart TD
 
 ---
 
-## 10. Collaboration with Maheep
+## 10. Collaboration notes
 
-| Maheep | Sahil |
+| Writebacks | Engineering |
 |--------|-------|
 | CC-03 (and CI-01) writeback on Fix | UC-02/04/05 unlock when CC-03 PASS |
 | Evidence download for non-writable gates | Studio shows those check_ids as blockers with Fix links |
@@ -503,4 +503,4 @@ Ship 1–3 for first demo; 4 can be same PR if cheap.
 | Connected instances | From Integrations in package/FE |
 | QA hard_tests list | Copied into package for BL-018 |
 
-**Still intentionally deferred (not misses):** MCP write, BL-018 runner, BL-012 waves, Handoff Send, Maheep writebacks, full DCS-09 executors.
+**Still intentionally deferred (not misses):** MCP write, BL-018 runner, BL-012 waves, Handoff Send, writebacks, full DCS-09 executors.

@@ -1,7 +1,7 @@
 # PRD-M3-SEC-01 — RBAC Matrix, Tenant Isolation Evidence & Security Review Packet
 
 **Status:** Implementation complete (Phases 0–6 evidence) — pending operator commit / PR / Rohan review  
-**Owner track:** Sahil (`docs/ops/` / `docs/security/` / module folders) — **BE / tests / verify / docs packet** (no Klints product FE required)  
+**Owner track:** Engineering (`docs/security/`) — **BE / tests / verify / docs packet** (no Klints product FE required)  
 **Surfaces:** Django/DRF API · pytest · `scripts/verify_m3_sec01_backend.py` · `docs/security/` packet  
 **Milestone:** **M3 Demo, Security & DP1 (T3)** — contract AC *Security review passed; tenant isolation verified* + deliverable *Security + observability hardened (**RBAC**, **audit tamper detection**, Grafana)*  
 **SoT layers (priority when they conflict):**  
@@ -469,4 +469,4 @@ SEC-01 alone does **not** complete all of M3 — it closes the **security AC / M
 
 ---
 
-*PRD-M3-SEC-01 · Employer SoT for Sahil M3 security slice · 2026-09-11*
+*PRD-M3-SEC-01 · Employer SoT for engineering M3 security slice · 2026-09-11*

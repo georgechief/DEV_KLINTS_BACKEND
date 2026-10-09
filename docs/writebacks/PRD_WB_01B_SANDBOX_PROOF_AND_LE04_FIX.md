@@ -1,7 +1,7 @@
 # PRD-WB-01B — Sandbox proof (Shopify + Manago), LE-04 fix, Loom + write-surface matrix
 
 **Status:** Backend implemented (Loom evidence still required for PR acceptance)
-**Owner track:** Maheep (`docs/writebacks/`)
+**Owner track:** Writebacks (`docs/writebacks/`)
 **Depends on:** WB-01 ([PR #37](https://github.com/Rohan070/klints_backend/pull/37)) — merge after LE-04 fix or land WB-01B on same branch
 **FE:** If [FE #25](https://github.com/Rohan070/klints_frontend/pull/25) hardcodes LE-04, drop it when BE disables LE-04
 **Out of scope:** Prod `WRITEBACKS_ENABLED=True` · FE Approve live · MCP · catalog/product write · contact merge · claiming order/transaction writes that are not implemented
@@ -218,4 +218,4 @@ Collection tip: save a Postman collection in the PR or attach export (`writeback
 | Shopify writeables? | Customer (sandbox); metafield if implemented; **not** orders/transactions |
 | Evidence? | **Loom required** |
 
-**PRD:** WB-01B · **Track:** Maheep · **Bar:** sandbox pass + Loom + honest matrix
+**PRD:** WB-01B · **Track:** Writebacks · **Bar:** sandbox pass + Loom + honest matrix

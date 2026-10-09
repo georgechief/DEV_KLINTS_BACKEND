@@ -1,8 +1,8 @@
 # PRD-WB-13 — LE-05 order-level PURCHASE gap writeback
 
-**Status:** **Shipped (impl landed)** — P0 M2 Catalogue Automated writeback · Sahil  
+**Status:** **Shipped (impl landed)** — P0 M2 Catalogue Automated writeback · Engineering  
 
-**Owner track:** Sahil — **BE primary · FE Approve allowlist only**  
+**Owner track:** Engineering — **BE primary · FE Approve allowlist only**  
 **Surfaces:** Fix `/fix` Approve · Settings Allow writebacks · `WritebackAllowedCheck` · registry / mapping · possible sheet · Activity/audit  
 **Milestone:** M2 Activation & Blueprint (T2) — Lifecycle event depth  
 **Depends on:** WB-03…WB-12 · FE-08/09 · live `evaluate_le_05` + `lifecycle_join` · Manago `RESTV2.EVENT.INGEST` (CONFIRMED_LIVE via LE-01 / LE-09)  
@@ -96,7 +96,7 @@ LE-05 FAIL (shopify_only > 0)
 | 8 | Keep **LE-01 enabled**; prefer Fix **LE-05** for order gaps; **do not dual-Approve** same `shopify_only` ids before re-score | **Yes** — see §2.1 |
 | 9 | FE allowlist add **LE-05** only (no new Fix chrome) | **Yes** |
 | 10 | Approval tier = **batch** | **Yes** |
-| 11 | Owner = **Sahil** | **Yes** |
+| 11 | Owner = **Engineering** | **Yes** |
 | 12 | Approve **can** clear LE-05 PASS on re-score when **both** gap counts = 0 | **Yes** — executor counts gaps (not a stamp trap) |
 | 13 | Pipeline ceiling = **`RESTV2.EVENT.INGEST` batch_max** (LE-09 style), **not** `WRITEBACK_SANDBOX_MAX_ROWS` | **Yes** — LE-01 still uses sandbox default 10; LE-05 must not |
 | 14 | Omit event `date` / `currency` on wire (LE-01 parity); enrich may keep currency on evidence only | **Yes** |
@@ -120,7 +120,7 @@ LE-05 FAIL (shopify_only > 0)
 ### 2.2 Lane wall
 
 ```text
-Sahil WB-13   =  LE-05 mapping + transform + pipeline ceiling + allowlist + FE Approve list
+WB-13   =  LE-05 mapping + transform + pipeline ceiling + allowlist + FE Approve list
 Do not regress =  LE-01 / LE-09 / PT-04 / SP-07 / CI-01 / CC-03 live writebacks
 Out of this PR =  LE-02 event_correct · CI-05 · Handoff / Studio product · raising LE_GAP_SAMPLE
 ```

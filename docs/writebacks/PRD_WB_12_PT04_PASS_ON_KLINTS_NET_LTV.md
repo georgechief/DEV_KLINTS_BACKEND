@@ -1,9 +1,9 @@
 # PRD-WB-12 — PT-04 PASS when `klints_net_ltv` matches net
 
-**Status:** **Shipped (WB-12)** — P0 M2 close gap · Sahil  
+**Status:** **Shipped (WB-12)** — P0 M2 close gap · Engineering  
 **Draft review:** Re-checked vs WB-11 / `product_truth` / verify scripts (2026-09-22) — gaps folded into §2–§3 / §7–§8.  
 
-**Owner track:** Sahil — **BE primary (DCS `product_truth` + `evaluate_pt_04`)** · FE disclosure / Fix copy only  
+**Owner track:** Engineering — **BE primary (DCS `product_truth` + `evaluate_pt_04`)** · FE disclosure / Fix copy only  
 **Surfaces:** DCS re-score · Fix `/fix` disclosure · worklist (PT-04 clears when eligible) · pilot/Handoff gates that require PT-04 PASS  
 **Milestone:** M2 Activation & Blueprint (T2) — complete Automated writeback **treating process** for PT-04  
 **Depends on:** WB-11 shipped (`detail_set` `klints_net_ltv`) · live `evaluate_pt_04` + `product_truth` · Manago contact properties on raw snapshot  
@@ -87,7 +87,7 @@ WB-12:  re-score → product_truth reads stamp → PASS when governed matches ne
 | 7 | No hard dependency on LE-09 status for PASS (prefer LE-09 still in disclosure) | **Yes** |
 | 8 | No new mapping file; update **disclosure copy** only on existing PT-04 mapping | **Yes** |
 | 9 | FE: stop implying “may not PASS”; say re-score can clear PT-04 when stamp matches | **Yes** |
-| 10 | Owner = **Sahil** | **Yes** |
+| 10 | Owner = **Engineering** | **Yes** |
 | 11 | Read stamp from Manago **contact raw** while building `manago_by_id` (today meta drops properties) | **Yes** |
 | 12 | **No** `from dataruns.writebacks…` inside `product_truth` — reuse DCS bag-iteration pattern (`segment_join` / local helper) + `_float_or_none` | **Yes** |
 | 13 | When `governed`, contact is exempt from FAIL counts **regardless of purchase over/under** (stamp is SoT for that contact) | **Yes** |
@@ -96,7 +96,7 @@ WB-12:  re-score → product_truth reads stamp → PASS when governed matches ne
 **Lane wall:**
 
 ```text
-Sahil WB-12   =  product_truth + evaluate_pt_04 + disclosure/FE honesty + assert flips
+WB-12   =  product_truth + evaluate_pt_04 + disclosure/FE honesty + assert flips
 Do not regress =  WB-11 writeback path / SP-07 owned key / once-per-run gate
 Out of this PR =  new adapters · LE-09 auto-chain · Handoff product redesign
 ```

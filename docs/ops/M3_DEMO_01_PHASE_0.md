@@ -79,10 +79,10 @@ Do **not** commit secrets (`SHOPIFY_API_KEY` / `SECRET`).
 | Gap | Owner | Phase |
 |-----|--------|-------|
 | Staging OAuth + scopes confirmed | Rohan | residual post-merge |
-| Connect/import code holes | Sahil | **2–6 done** |
-| Local smoke evidence | Sahil | **3 done** |
-| verify_m3_demo01_backend.py | Sahil | **5 done** |
-| §11 Sahil ship | Sahil | **6 done** (local-only A3) |
+| Connect/import code holes | Engineering | **2–6 done** |
+| Local smoke evidence | Engineering | **3 done** |
+| verify_m3_demo01_backend.py | Engineering | **5 done** |
+| §11 Engineering ship | Engineering | **6 done** (local-only A3) |
 
 ## Deep-check (2026-09-15)
 

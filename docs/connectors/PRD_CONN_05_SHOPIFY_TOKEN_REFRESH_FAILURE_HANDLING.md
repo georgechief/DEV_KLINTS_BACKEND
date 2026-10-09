@@ -1,7 +1,7 @@
 # PRD-CONN-05 — Patch: Shopify offline token refresh failure handling
 
 **Status:** Ready for implementation  
-**Owner track:** Maheep (`docs/writebacks/`)  
+**Owner track:** Writebacks (`docs/writebacks/`)  
 **Depends on:** [PRD-CONN-03](./PRD_CONN_03_SHOPIFY_OFFLINE_TOKEN_REFRESH.md) (shipped: `ensure_fresh_shopify_token`, `refresh_offline_access_token`, OAuth `expiring=1`)  
 **Related:** CONN-01 bootstrap `AUTH_FAILED`; DCS-07 daily beat eligibility; AUDIT-01 `connector.*` events; CONN-04 Integrations card status  
 **Scope:** improve **existing** refresh helpers — do **not** rebuild OAuth or the happy-path refresh algorithm  

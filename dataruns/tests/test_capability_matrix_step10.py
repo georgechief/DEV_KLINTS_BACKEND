@@ -1,6 +1,6 @@
 """CAP-01 Step 10 — writeback safety (option B; CI-01 / CC-03 / WB-SHOP-01).
 
-Deep non-regression: Matrix registry must not replace Maheep writeback execute map.
+Deep non-regression: Matrix registry must not replace writeback execute map.
 """
 
 from __future__ import annotations

@@ -1,7 +1,7 @@
 # PRD-DCS-10 — Fresh import before every DCS score (mandatory)
 
 **Status:** Step 4 ready · **v1 complete (BE)** · **Slice D (FE) done** — manual commit + PR · optional E+ later  
-**Owner track:** Sahil (`docs/ops/` / `docs/security/` / module folders) — **BE primary** (orchestrate + fresh_import + status API) · **FE light** (Data Center honesty)  
+**Owner track:** Engineering (module folders) — **BE primary** (orchestrate + fresh_import + status API) · **FE light** (Data Center honesty)  
 **Depends on:** CONN-01 import (`run_import`) · DCS-01 worker (`run_dcs_pipeline`) · PRD-FE-04 run progress  
 **Parent:** [PRD_DCS_01_ORCHESTRATION_AND_EMAIL.md](../dcs_scoring/PRD_DCS_01_ORCHESTRATION_AND_EMAIL.md) (§2 source_run_ids is **stale** — superseded by this PRD)  
 **Out of scope:** DCS-09 supplemental gates · changing BOOTSTRAP_DAYS window · incremental/delta sync · new connector types  

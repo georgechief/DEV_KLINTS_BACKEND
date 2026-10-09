@@ -1,7 +1,7 @@
 # PRD-FE-06 — Live guided DCS worklist (same real Overview UI)
 
 **Status:** Ready for implementation  
-**Owner track:** Maheep (`docs/writebacks/`)  
+**Owner track:** Writebacks (`docs/writebacks/`)  
 **Depends on:** FE-03 app lock (routes); FE-04 run progress tiles; DCS-08 revenue impact persistence (`RunIssueImpact`, `metadata.business_impact`); CheckMaster / DimensionMaster  
 **Surfaces:**  
 - BE: enrich `GET /api/v1/dcs/status/`; add `GET /api/v1/dcs/worklist/` + `GET /api/v1/dcs/worklist/{check_id}/`  

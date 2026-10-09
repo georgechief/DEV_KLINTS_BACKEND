@@ -1,7 +1,7 @@
 # PRD-M3-OBS-01B — Grafana Alert Closeout (Phase 6)
 
-**Status:** **Sahil prep done** (Phase 0–4 notes) · **live A5/A7/§11 still open (Rohan/ops)** — **P0 (M3)** · **Separate from demo**  
-**Owner track:** Sahil (`docs/ops/` / `docs/security/` / module folders) for docs/verify/induce polish; **Rohan/ops** for staging env + live sign-off  
+**Status:** **Engineering prep done** (Phase 0–4 notes) · **live A5/A7/§11 still open (Rohan/ops)** — **P0 (M3)** · **Separate from demo**  
+**Owner track:** Engineering (module folders) for docs/verify/induce polish; **Rohan/ops** for staging env + live sign-off  
 **Surfaces:** Grafana · Loki · Alloy · induce ERROR · alert → mailer → `noreplyklints@gmail.com`  
 **Milestone:** **M3** — finish observability AC (*… Grafana*) after stack already live  
 **Parent:** [PRD_M3_OBS_01_STAGING_GRAFANA_LOKI_ALLOY.md](./PRD_M3_OBS_01_STAGING_GRAFANA_LOKI_ALLOY.md) (Phases 0–5 shipped)  
@@ -20,7 +20,7 @@
 **Out of scope:** Prometheus (OBS-02) · product FE link · demo contacts · DP1 · SEC-01 · seed scripts  
 
 **Progress:** Tracker [M3_OBS_01B_WORKING_GAPS.md](./M3_OBS_01B_WORKING_GAPS.md) · notes [PHASE_0](./M3_OBS_01B_PHASE_0.md) · [PHASE_1](./M3_OBS_01B_PHASE_1.md) · [PHASE_2](./M3_OBS_01B_PHASE_2.md) · [PHASE_3](./M3_OBS_01B_PHASE_3.md) · [PHASE_4](./M3_OBS_01B_PHASE_4.md) · parent live SoT [M3_OBS_01_PHASE_6.md](./M3_OBS_01_PHASE_6.md)  
-**Sahil DoD:** induce/alert path accurate · no code drift · verify PASS · phase notes + PR draft ready  
+**Engineering DoD:** induce/alert path accurate · no code drift · verify PASS · phase notes + PR draft ready  
 **PRD DoD (full):** still needs ops A5 Explore marker + A7 email/stop-and-flag + induce off + §11 sign
 
 ---

@@ -2,7 +2,7 @@
 
 **PRD:** [PRD_M3_DEMO_01_DEMO_ENV_AND_DP1.md](./PRD_M3_DEMO_01_DEMO_ENV_AND_DP1.md)  
 **Branch:** `feature/m3-demo-01-shopify-klints-dev`  
-**Status:** **Sahil ship DONE** · staging A2/A3 + A10 = post-merge residual · SoT = live Shopify, not seed
+**Status:** **Engineering ship DONE** · staging A2/A3 + A10 = post-merge residual · SoT = live Shopify, not seed
 
 ## Phase board
 
@@ -14,7 +14,7 @@
 | 3 — Smoke + contact evidence | Local [x] · Staging residual | [PHASE_3](./M3_DEMO_01_PHASE_3.md) |
 | 4 — Full path + DP1 readiness note | [x] | [PHASE_4](./M3_DEMO_01_PHASE_4.md) |
 | 5 — Verify script | [x] | [PHASE_5](./M3_DEMO_01_PHASE_5.md) · verify PASS |
-| 6 — §11 + PR closeout | Sahil [x] · Staging residual | [PHASE_6](./M3_DEMO_01_PHASE_6.md) |
+| 6 — §11 + PR closeout | Engineering [x] · Staging residual | [PHASE_6](./M3_DEMO_01_PHASE_6.md) |
 
 ## Gaps
 
@@ -27,8 +27,8 @@
 | G5 Manago honest status | **Connected** ~2k+ — documented |
 | G6 verify script | **Done** — verify PASS |
 | G7 Full path + DP1 readiness | **Done** |
-| G8 FE honesty if import/score copy wrong | Optional / out of Sahil ship |
-| G9 §11 Sahil ship | **Done** — local-only A3 · [PHASE_6](./M3_DEMO_01_PHASE_6.md) |
+| G8 FE honesty if import/score copy wrong | Optional / out of Engineering ship |
+| G9 §11 Engineering ship | **Done** — local-only A3 · [PHASE_6](./M3_DEMO_01_PHASE_6.md) |
 | G9b staging A2 + A10 | **Residual** post-merge |
 | **G10 PT-04 writeback** | **Closed (WB-11+WB-12)** — stamp `klints_net_ltv`; re-score PASSes when stamp ≈ Shopify net · see §Writeback gaps |
 

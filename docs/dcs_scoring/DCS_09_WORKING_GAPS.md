@@ -6,7 +6,7 @@
 
 **Backlog:** Pack **BL-003**  
 **Depends on:** DCS 42-check path + snapshot · UC-01 / WF-01 recommend + Studio · OPS-UC-01 pilots seeded  
-**Out of scope:** Changing `EXPECTED_CHECK_COUNT=42` / `assemble_dcs_score()` · HO-02 Send · CAP-01B · Maheep writeback mappings for these 12 · inventing PASS
+**Out of scope:** Changing `EXPECTED_CHECK_COUNT=42` / `assemble_dcs_score()` · HO-02 Send · CAP-01B · writeback mappings for these 12 · inventing PASS
 
 ---
 
@@ -154,7 +154,7 @@ MVP1 pilot IDs in pack: UC-02, UC-04, UC-05, UC-06B, UC-08, UC-09, UC-10, UC-11,
 | Later | Why |
 |-------|-----|
 | E2E-01 | Loom after Ready path works |
-| Maheep fix/writeback for supplemental IDs | Download + human fix OK for M2 |
+| Writebacks fix/writeback for supplemental IDs | Download + human fix OK for M2 |
 | Auto-eval after every DCS | Convenience |
 | HO-02 | MCP Send |
 
@@ -319,7 +319,7 @@ Same as Step 0 §0.2 — loaded via `get_supplemental_checks_for_use_case` / `li
 | STOP_AND_FLAG | Catalogue 02 has no numeric cutovers — bands documented in `slice_a.py` |
 | Deferred | Confirmation-email deliverability + multi-source DOI policy (Catalogue text; need email/list + signup-source inputs) |
 | Snapshot vs DB | Prefer injected/`gate_inputs` contacts; else **ConnectorSnapshot** raw (DOI `state` not on frozen consent summary yet). Optional later: surface `doi_state_summary` in `consent_join` so CC-06 can read score `run_snapshot` alone |
-| Related docs checked | Sahil PRD + WORKING_GAPS · FUTURE appendix · DCS-04 threshold rule · pack sheets **02/11** · UC Library **03** · UC-02/05 blueprints · BL-003 / AT-004 — **no conflicting numeric cutovers found** |
+| Related docs checked | Engineering PRD + WORKING_GAPS · FUTURE appendix · DCS-04 threshold rule · pack sheets **02/11** · UC Library **03** · UC-02/05 blueprints · BL-003 / AT-004 — **no conflicting numeric cutovers found** |
 
 ### Deep-check (Step 4)
 
@@ -654,7 +654,7 @@ gh pr create --base main --title "…"   # use bodies above
 |------|--------|
 | FE evaluate CTA (Slice C) | P1 — optional Step 11+ |
 | Auto-eval after DCS | Later |
-| Maheep fix/writeback for supplemental IDs | Later |
+| Writebacks fix/writeback for supplemental IDs | Later |
 | HO-02 Send | Out of scope |
 
 ---
@@ -662,5 +662,5 @@ gh pr create --base main --title "…"   # use bodies above
 ## PR note (draft)
 
 **Right:** 12 supplemental gates (evaluate/store/recommend/APIs); UC-02 ready path; Slice A+B executors; FE Opportunities/Studio blockers + provisional banner; no DCS score-tile pollution; `verify_dcs09_backend.py` + `npm run verify:dcs09` green.  
-**Gap:** Slice C CTA; auto-eval; Maheep supplemental fix paths; HO-02.  
+**Gap:** Slice C CTA; auto-eval; Writebacks supplemental fix paths; HO-02.  
 **PR:** Manual — BE + FE on `feature/dcs-09-pilot-supplemental-gates` → `main` (fix upstream before push).

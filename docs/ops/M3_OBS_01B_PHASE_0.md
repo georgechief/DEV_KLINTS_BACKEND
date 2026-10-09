@@ -57,13 +57,13 @@ Confirm in GitHub Secret **`DEV_ENV_FILE`** / droplet `.env` (do **not** commit 
 | `M3_OBS_INDUCE_TOKEN` | long random (can pre-stage) | keep secret |
 | `M3_OBS_INDUCE_ENABLED` | **`false` until Phase 2** | enable only for proof window |
 
-**Sahil cannot verify staging secret values from this machine.** Phase 0 exit for env = checklist sent; Rohan confirms before Phase 2.
+**Engineering cannot verify staging secret values from this machine.** Phase 0 exit for env = checklist sent; Rohan confirms before Phase 2.
 
 ## What is still open (live — not Phase 0)
 
 | Gap | Owner |
 |-----|--------|
-| Staging induce enabled briefly | Rohan/ops + Sahil |
+| Staging induce enabled briefly | Rohan/ops + Engineering |
 | Explore shows `M3-OBS-01-INDUCE-WEB` under `service=web` | Live Phase 2 |
 | Alert email to noreplyklints@gmail.com | Live Phase 3 |
 | Induce disabled again | Live Phase 4 |

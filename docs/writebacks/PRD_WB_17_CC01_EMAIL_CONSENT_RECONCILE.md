@@ -1,8 +1,8 @@
 # PRD-WB-17 — CC-01 email consent reconcile (plan + gated forceOpt)
 
-**Status:** **Phase A shipping** — P0 M2 Catalogue · Sahil · gap-closed 2026-09-25  
+**Status:** **Phase A shipping** — P0 M2 Catalogue · Engineering · gap-closed 2026-09-25  
 
-**Owner track:** Sahil — **BE primary · FE Preview/Download + policy honesty** (pack Fix Owner = **Data lead** — not Klints automated)  
+**Owner track:** Engineering — **BE primary · FE Preview/Download + policy honesty** (pack Fix Owner = **Data lead** — not Klints automated)  
 **Surfaces:** Fix `/fix` Preview · FE-12 Download · Settings Allow writebacks · registry / mapping · possible sheet · Activity/audit · **DCS consent mismatches** · Manago `contact_upsert` **`forceOptIn` / `forceOptOut`** (Phase B)  
 **Milestone:** M2 Activation & Blueprint — Channel & Consent  
 **Depends on:** WB-03…WB-16 Phase A · FE-08/09/12 · live `evaluate_cc_01` + `consent_join` · CC-03 Approve live (evidence stamp) · SP-07 (namespace; only if `klints_` keys written)  
@@ -127,7 +127,7 @@ CC-01 FAIL
 |---|----------|------|
 | 1 | Catalogue Suggested Fix starts with **Define consent source-of-truth…** | **Yes** — Phase A ships policy honesty + plan |
 | 2 | Pack Fix Owner = **Data lead** | **Yes** — CheckMaster SoT. Mapping `fix_owner` documentary only. Phase A hard stops: `execute_mode=plan_only` + FE allowlist **off** + no `WritebackAllowedCheck`. Do **not** rely on `fix_owner_not_klints_automated` alone when sandbox execute ON |
-| 3 | Eng owner = **Sahil**; mutate owner stays Data lead unless product flips Fix Owner | **Yes** |
+| 3 | Eng owner = **Engineering**; mutate owner stays Data lead unless product flips Fix Owner | **Yes** |
 | 4 | Default policy matrix | **Yes** — §2.1 |
 | 5 | Phase A `execute_mode` = **`plan_only`** | **Yes** — reuse WB-16 pipeline wire; generalize deny reason by check |
 | 6 | Phase A FE Approve allowlist | **OFF** |
@@ -177,8 +177,8 @@ CC-01 FAIL
 ### 2.3 Lane wall
 
 ```text
-Sahil WB-17 Phase A  =  DCS sample enrich + plan Preview/Download + policy disclosure
-Sahil WB-17 Phase B  =  Manago forceOpt* batch + FE Approve (product override)
+WB-17 Phase A  =  DCS sample enrich + plan Preview/Download + policy disclosure
+WB-17 Phase B  =  Manago forceOpt* batch + FE Approve (product override)
 Do not regress       =  CC-03 / SP-07 / CI-* / LE-* / PT-04 live writebacks
 Out of this PR       =  CC-02 · CC-05 · Shopify consent API · live bi-di sync
 ```

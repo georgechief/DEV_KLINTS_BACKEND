@@ -173,7 +173,7 @@ class Cap01BeMatrixStep7WritebackSafetyTests(SimpleTestCase):
     """§8 writeback row — option B registry must still allow CI-01 capability."""
 
     def test_writeback_ci01_capability_still_execute_eligible(self):
-        # CI-01 mapping uses RESTV2.CONTACT.UPSERT (Maheep writeback JSON — not Matrix).
+        # CI-01 mapping uses RESTV2.CONTACT.UPSERT (writeback JSON — not Matrix).
         mapping_path = (
             Path(__file__).resolve().parents[1]
             / "writebacks"

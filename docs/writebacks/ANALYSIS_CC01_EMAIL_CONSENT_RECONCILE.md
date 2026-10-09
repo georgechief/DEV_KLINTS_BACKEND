@@ -273,7 +273,7 @@ Pilot: UC-06B, UC-17, UC-21 hard-gate on CC-01 PASS (Studio / pilots).
 
 Mirror `PRD_WB_15` / `PRD_WB_16` structure:
 
-1. Status / Owner track (**Data lead** — Sahil BE · FE Preview) / Depends on WB-16A + CC-03 + SP-07  
+1. Status / Owner track (**Data lead** — Engineering BE · FE Preview) / Depends on WB-16A + CC-03 + SP-07  
 2. Cursor agent brief (Phase A only in first paste)  
 3. Why / Before-After  
 4. Excel § column map (copy §1 table)  

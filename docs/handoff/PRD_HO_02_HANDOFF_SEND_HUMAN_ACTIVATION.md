@@ -1,7 +1,7 @@
 # PRD-HO-02 — Handoff Send with approval (human activation path)
 
 **Status:** Ready for implementation — **P0 (M2 contract AC)**  
-**Owner track:** Sahil (`docs/ops/` / `docs/security/` / module folders) — **BE + FE**  
+**Owner track:** Engineering (module folders) — **BE + FE**  
 **Surfaces:** `/handoff` Send · approval gate · status `APPROVED_FOR_ACTIVATION` → `ACTIVATED` · audit/bell  
 **Milestone:** M2 Activation & Blueprint (T2) — contract AC **“Send to Manago.ai functional with approval gate”**  
 **Depends on:** HO-01 (STAGED handoff live) · QA-01 · CAP-01 (route honesty) · WF-01 build package `human_guide`  
@@ -11,7 +11,7 @@
 - `02_Execution_Capabilities/manago_mcp_discovery_results.json` (MCP still pending)  
 - Blueprint `approval` + `handoff` blocks (e.g. `UC-02_blueprint.json`)  
 **Contract SoT:** Schedule 1 M2 — *Send to Manago.ai functional with approval gate*  
-**Out of scope:** MCP/A2A live workflow upsert/publish (no public REST create-workflow API; MCP `DISCOVERY_REQUIRED`) · inventing `CONFIRMED_LIVE` for `MCP.WORKFLOW.PUBLISH` · Maheep contact writebacks · full BL-017 8-state ORCH SM · Track B MCP discovery (CAP-01B) · E2E Loom (E2E-01 later)
+**Out of scope:** MCP/A2A live workflow upsert/publish (no public REST create-workflow API; MCP `DISCOVERY_REQUIRED`) · inventing `CONFIRMED_LIVE` for `MCP.WORKFLOW.PUBLISH` · Writebacks contact writebacks · full BL-017 8-state ORCH SM · Track B MCP discovery (CAP-01B) · E2E Loom (E2E-01 later)
 
 ---
 
@@ -76,7 +76,7 @@ Send (MVP1 / this PRD) =
 NOT in this PRD =
   POST to Manago MCP.WORKFLOW.UPSERT / PUBLISH
   Toast “Sent via MCP” / “Delivered to agent”
-  Contact writeback adapters (Maheep)
+  Contact writeback adapters (Writebacks)
 ```
 
 **Contract mapping:** “Send to Manago.ai functional with approval gate” = steps 1–4 functional in product + honest activation completion (5–6). Document in PR / submission that activation execution is **human in Manago** per pack Fallback Rules.
@@ -190,7 +190,7 @@ Pack schema `additionalProperties: false` on root — **prefer**:
 
 ### 4.5 Optional: `HandoffActivationApproval` model
 
-Mirror Maheep `WritebackApprovalToken` **pattern**, not the same table:
+Mirror Writebacks `WritebackApprovalToken` **pattern**, not the same table:
 
 | Field | Type | Notes |
 |-------|------|--------|
@@ -330,7 +330,7 @@ GET handoff serialize should include `activation_guide` or FE fetches package by
 
 ### 7.3 Deep links
 
-Audit → `/handoff?handoff_id=` (or existing package_id/qa_run_id query). Extend `resolveAuditDeepLink` if needed (Maheep may help — coordinate).
+Audit → `/handoff?handoff_id=` (or existing package_id/qa_run_id query). Extend `resolveAuditDeepLink` if needed (Writebacks may help — coordinate).
 
 ---
 
@@ -340,7 +340,7 @@ Audit → `/handoff?handoff_id=` (or existing package_id/qa_run_id query). Exten
 |-------|----------------|
 | **Klints DB** | `HandoffPackage.status`, `activation_meta`, audit rows |
 | **Manago** | **Nothing via API in HO-02** — human creates/activates workflow in UI |
-| **Not written** | Contact fields, Shopify notes (Maheep writebacks) |
+| **Not written** | Contact fields, Shopify notes (writebacks) |
 
 Operator may paste `manago_workflow_external_id` after confirm (from Manago workflow list UUID) for traceability — optional.
 
@@ -409,11 +409,11 @@ Script: `scripts/verify_ho02_backend.py` (mirror `verify_ho01_backend.py`).
 
 | Item | Owner |
 |------|--------|
-| **E2E-01** Loom + T2 submission (include HO-02 path) | Sahil lead |
+| **E2E-01** Loom + T2 submission (include HO-02 path) | Engineering lead |
 | **CAP-01B / TRACK-B** MCP discovery → real auto publish | Later if client requires |
 | **ORCH-SM-01** full 8-state machine | Negotiate; HO-02 ships minimal approve/activate |
-| Maheep writeback catalogue | Unrelated |
-| M2-OPS staging re-cert | Maheep |
+| writeback catalogue | Unrelated |
+| M2-OPS staging re-cert | Writebacks |
 
 ---
 
@@ -480,4 +480,4 @@ Script: `scripts/verify_ho02_backend.py` (mirror `verify_ho01_backend.py`).
 | Milestone | M2 / T2 — contract Send + approval |
 | Pack | Handoff schema · Matrix Fallback “Workflow publish” · no autonomous activation |
 | Parent | HO-01 |
-| Independent of | CAP-01B · MCP write evidence · Maheep WB catalogue |
+| Independent of | CAP-01B · MCP write evidence · Writebacks WB catalogue |

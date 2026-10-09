@@ -1,7 +1,7 @@
 # PRD-DCS-10 — Run diff (audit) + period compare (Overview)
 
 **Status:** Ready for implementation  
-**Owner track:** Backend DCS (`docs/dcs_scoring/`) + FE Overview / Data Center / Activity (Maheep + Sahil surfaces)  
+**Owner track:** Backend DCS (`docs/dcs_scoring/`) + FE Overview / Data Center / Activity (Writebacks + unrelated surfaces)  
 **Depends on:** DCS-01 orchestration · DCS-06 status/history APIs · DCS-08 revenue impact (`business_impact.estimate`) · AUDIT-01 Activity · FE-06 Overview live shell  
 **Surfaces:** `GET /api/v1/dcs/history/` · Overview period control · Dimension charts · Captured by Klints · Data Center trend · `/activity`  
 **Out of scope:** Real “money captured” workflow attribution · Opportunities live wiring (stub only) · Architecture AF period horizon · inventing Billing/capture ledger  
@@ -528,9 +528,9 @@ Same as existing history: authenticated user → company scope. Empty payload if
 |-------|------------------|----------|
 | **BE-A** Persist `run_diff` + audit | Backend / DCS | orchestrate + tests |
 | **BE-B** History `until` + `period_compare` + `at_stake_series` | Backend / DCS | history.py + views + tests |
-| **FE-A** Overview period binding | Maheep / Overview | OverviewPanel + query keys |
-| **FE-B** Activity Δ copy | Maheep / Audit | Activity timeline formatting |
-| **FE-C** Data Center Δ (small) | Sahil / Data Center | only if chart header needs period Δ |
+| **FE-A** Overview period binding | Writebacks / Overview | OverviewPanel + query keys |
+| **FE-B** Activity Δ copy | Writebacks / Audit | Activity timeline formatting |
+| **FE-C** Data Center Δ (small) | Engineering / Data Center | only if chart header needs period Δ |
 
 Ship **BE-A + BE-B** before FE-A so Overview is not double-mocked.
 

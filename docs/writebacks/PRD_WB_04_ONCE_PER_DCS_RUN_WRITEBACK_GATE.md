@@ -1,11 +1,11 @@
 # PRD-WB-04 — Once-per-DCS-run writeback gate
 
 **Status:** Ready for implementation — **P0 (M2 Fix honesty)**  
-**Owner track:** Maheep (`docs/writebacks/`) — **BE + FE**  
+**Owner track:** Writebacks (`docs/writebacks/`) — **BE + FE**  
 **Surfaces:** Fix `/fix?issue=<check_id>` · `POST /api/v1/writebacks/run/` (execute) · Activity (existing audits)  
 **Depends on:** WB-02 · WB-03 (Settings `writeback_execute_enabled` + allowlist CI-01 / CC-03 / WB-SHOP-01)  
 **Pairs with:** [PRD_WB_06](./PRD_WB_06_FIX_WRITEBACK_PROVENANCE.md) (persist `data_run_id` + restore Written UI — ship **with or immediately after** this PR)  
-**Out of scope:** Sahil Studio / QA / Handoff · new check mappings · LE-04 enable · BL-017 8-state ORCH machine · changing Settings toggle UX · inventing banked €  
+**Out of scope:** Studio / QA / Handoff · new check mappings · LE-04 enable · BL-017 8-state ORCH machine · changing Settings toggle UX · inventing banked €  
 
 ---
 
@@ -196,4 +196,4 @@ Gate logic is generic for any future allowlisted check_id.
 | Milestone | M2 Activation — Fix writeback honesty |
 | Parents | WB-02 · WB-03 |
 | Companion | WB-06 provenance / Fix restore |
-| Independent of | Sahil HO-01 · CAP-01 · QA-01 |
+| Independent of | Engineering HO-01 · CAP-01 · QA-01 |

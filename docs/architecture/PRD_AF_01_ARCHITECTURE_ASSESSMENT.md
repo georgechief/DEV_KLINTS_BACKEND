@@ -1,7 +1,7 @@
 # PRD-AF-01 — Architecture Assessment (BL-008 + BL-009)
 
 **Status:** Ready for implementation sequencing  
-**Owner track:** Sahil (`docs/ops/` / `docs/security/` / module folders)  
+**Owner track:** Engineering (module folders)  
 **Backlog:** `BL-008` (asset + dependency graph) → `BL-009` (per-asset + architecture verdicts)  
 **Milestone:** MVP1-B (after DCS headline score)  
 **MCP:** Deferred — use REST / documented fallbacks; destructive verdicts blocked when graph incomplete  
