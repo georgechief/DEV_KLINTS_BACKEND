@@ -1,7 +1,7 @@
 # PRD-WB-01 — Writeback adapter foundation (dry-run + check mappings)
 
 **Status:** Implemented (backend complete)  
-**Owner track:** Maheep (`docs/writebacks/`)  
+**Owner track:** Writebacks (`docs/writebacks/`)  
 **Backlog bridge:** Prepares **BL-017** (approval tokens) + pack Fix Type “Automated writeback (approved)”  
 **Depends on:** Shopify/Manago connectors (read already live) · DCS worklist evidence · CheckMaster `fix_type` / `fix_owner`  
 **Pack:** `Klints_MVP1_Rohan_Build_Pack_v1.2_20260718`  
@@ -45,7 +45,7 @@ Acceptance: §11.
 
 ---
 
-## 1. Why this (and why Maheep)
+## 1. Why this
 
 | Today | Gap |
 |-------|-----|
@@ -54,7 +54,7 @@ Acceptance: §11.
 | Pack / BL-017 | Needs adapters + diff hash before tokens |
 | `DataFixAction` model exists | Unused / not wired |
 
-**Maheep fit:** He owns connector surface (Shopify refresh, Manago v3 key, Integrations). Writers are the natural next layer.
+**Writebacks fit:** He owns connector surface (Shopify refresh, Manago v3 key, Integrations). Writers are the natural next layer.
 
 **Product rules:**
 1. Build plumbing + dry-run for **every write kind** the pack uses (details, tags, upserts, events, catalog — not only consent).
@@ -395,7 +395,7 @@ Emit audit: `writeback.previewed` / `writeback.execute_denied` / `writeback.exec
 
 ### 5.3 Sandbox / test-account real writes (required)
 
-Maheep **must** be able to prove writebacks work on connected **test** Manago + Shopify accounts — not only dry-run mocks.
+Writebacks track **must** be able to prove writebacks work on connected **test** Manago + Shopify accounts — not only dry-run mocks.
 
 | Setting | Purpose |
 |---------|---------|
@@ -498,7 +498,7 @@ WRITEBACK_SANDBOX_MAX_ROWS = 10
 - Fix page: “Preview writeback” button → call preview API → show before/after table (feeds FE-08 preview slot for real).  
 - Still **no** Approve execute until BL-017.
 
-Default: **BE only** for Maheep this sprint.
+Default: **BE only** for writebacks track this sprint.
 
 ---
 
@@ -575,6 +575,6 @@ Cross-check vs `Klints_MVP1_Rohan_Build_Pack_v1.2_20260718`. Items below were ea
 | Callable? | Library from anywhere; caller sets `batch_size` / `max_rows` |
 | Test accounts? | Sandbox company IDs get real API execute |
 | Prod writes? | Off until BL-017 |
-| Who? | Maheep |
+| Who? | Writebacks |
 
-**PRD:** WB-01 · **Track:** Maheep · **Sandbox prove** · **Prod kill-switch on**
+**PRD:** WB-01 · **Track:** Writebacks · **Sandbox prove** · **Prod kill-switch on**

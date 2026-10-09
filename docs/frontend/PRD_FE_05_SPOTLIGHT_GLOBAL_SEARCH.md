@@ -1,7 +1,7 @@
 # PRD-FE-05 — Spotlight global search (Cmd+K) + search API
 
 **Status:** Ready for implementation  
-**Owner track:** Maheep (`docs/writebacks/`)  
+**Owner track:** Writebacks (`docs/writebacks/`)  
 **Depends on:** FE-03 DCS app lock (`isNavRouteAllowed` / `dcsStatus`); AUDIT-01 events API; CONN-04 connectors list; DCS status API  
 **Surfaces:**  
 - FE: AppShell search trigger + `SpotlightSearch` (`cmdk` dialog, ⌘/Ctrl+K)  
@@ -395,11 +395,11 @@ Empty: `No matches. Try a page, check id (CI-02), or connector name.`
 - Server-driven Navigate page list  
 - Recents / favorites  
 - Full-text Postgres `SearchVector` (nice follow-up; v1 = `icontains` / exact check id)  
-- Sahil DCS-08 revenue impact (unrelated)
+- Engineering DCS-08 revenue impact (unrelated)
 
 ---
 
-## 12. Handoff note for Maheep
+## 12. Handoff note for writebacks track
 
 1. **v1 is checks + audit + connectors + runs** — not mock workflows.  
 2. Keep Navigate local so the palette stays useful while locked / offline.  

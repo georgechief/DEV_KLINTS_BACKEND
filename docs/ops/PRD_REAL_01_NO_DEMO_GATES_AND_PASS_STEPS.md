@@ -1,7 +1,7 @@
 # PRD-REAL-01 — Real path only (no demo gates) + clear steps when not Klints Approve
 
 **Status:** **Phase A–C shipping** · P0 · honesty + operator guidance  
-**Owner track:** Maheep / Sahil — **BE gates · FE Fix / Studio / Handoff honesty**  
+**Owner track:** Writebacks / Engineering — **BE gates · FE Fix / Studio / Handoff honesty**  
 **Surfaces:** `.env` REQUIRE_* · Studio pilot readiness · Fix `/fix` · Handoff stage · Architecture Lifecycle  
 **Depends on:** WB-02 / WB-03 / WB-21 · FE-13 fixture gate · CheckMaster ownership · `WRITEBACK_POSSIBLE_NOT_SHEET.csv` · `WRITEBACK_FIX_OWNERSHIP_MVP1_42.md` · AF `graph_complete` / MCP  
 **PRD path:** `docs/writebacks/`  

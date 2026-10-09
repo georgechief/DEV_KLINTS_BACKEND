@@ -1,12 +1,12 @@
 # PRD-WB-10 — LE-09 return / cancellation event writeback
 
 **Status:** Ready for implementation — **P0 (M2 — Catalogue Automated writeback)** · **impl landed (WB-10)**  
-**Owner track:** Sahil — **BE primary · FE Approve allowlist only**  
+**Owner track:** Engineering — **BE primary · FE Approve allowlist only**  
 **Surfaces:** Fix `/fix` Approve · Settings Allow writebacks · `WritebackAllowedCheck` · registry / mapping · possible sheet · Activity/audit  
 **Milestone:** M2 Activation & Blueprint (T2) — Lifecycle depth after WB-08/09  
 **Depends on:** WB-03…WB-09 · FE-08/09 · POLISH-01 · DCS `evaluate_le_09` + `lifecycle_join` live  
-**PRD path:** `docs/writebacks/` (writeback series numbering only — **owner is Sahil**)  
-**Parallel with:** Maheep WB-08/09 stack if unmerged — shares `dataruns/writebacks/**`; coordinate branch base  
+**PRD path:** `docs/writebacks/` (writeback series numbering only — **owner is Engineering**)  
+**Parallel with:** Writebacks WB-08/09 stack if unmerged — shares `dataruns/writebacks/**`; coordinate branch base  
 **Contract SoT:** Catalogue Automated writeback for LE-09; Writeback + Lifecycle live  
 **Pack SoT:**  
 - `Klints_Spec_InitialDataConsistencyCheck_v1.4.1` sheet **02 Check Catalogue** row **LE-09**  
@@ -98,7 +98,7 @@ DCS LE-09 FAIL (shopify_only_return gaps)
 **Lane wall:**
 
 ```text
-Sahil WB-10   =  LE-09 mapping + transform + allowlist + FE Approve list
+WB-10   =  LE-09 mapping + transform + allowlist + FE Approve list
 Do not regress  =  live writebacks (CI-01 / CC-03 / LE-01 / SP-07 / WB-SHOP-01)
 Out of this PR  =  Studio / HO / QA / CAP unless required for LE-09 Fix path
 ```

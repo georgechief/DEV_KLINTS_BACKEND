@@ -3,8 +3,8 @@
 **Date:** 2026-09-08  
 **Branch:** `feature/m3-obs-01-grafana-loki-alloy`  
 **Depends on:** Phase 0–5  
-**Live SoT:** GitHub Actions `deploy-development.yml` after merge to `main` (Sahil does **not** push `main`)  
-**Closeout track (2026-09-14):** [PRD_M3_OBS_01B_GRAFANA_ALERT_CLOSEOUT.md](./PRD_M3_OBS_01B_GRAFANA_ALERT_CLOSEOUT.md) · [M3_OBS_01B_WORKING_GAPS.md](./M3_OBS_01B_WORKING_GAPS.md) — Sahil prep done; live A5/A7 still ops
+**Live SoT:** GitHub Actions `deploy-development.yml` after merge to `main` (Engineering does **not** push `main`)  
+**Closeout track (2026-09-14):** [PRD_M3_OBS_01B_GRAFANA_ALERT_CLOSEOUT.md](./PRD_M3_OBS_01B_GRAFANA_ALERT_CLOSEOUT.md) · [M3_OBS_01B_WORKING_GAPS.md](./M3_OBS_01B_WORKING_GAPS.md) — Engineering prep done; live A5/A7 still ops
 
 ## What this phase is
 

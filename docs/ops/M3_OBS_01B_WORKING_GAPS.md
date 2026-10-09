@@ -2,7 +2,7 @@
 
 **PRD:** [PRD_M3_OBS_01B_GRAFANA_ALERT_CLOSEOUT.md](./PRD_M3_OBS_01B_GRAFANA_ALERT_CLOSEOUT.md)  
 **Branch:** `feature/m3-obs-01b-grafana-alert-closeout`  
-**Status:** Phase 0–4 **Sahil prep done** · ops live (A5/A7/disable/§11) pending · separate from DEMO-01  
+**Status:** Phase 0–4 **Engineering prep done** · ops live (A5/A7/disable/§11) pending · separate from DEMO-01  
 **Commit:** user will commit manually (no agent commit)
 
 ## Phase board
@@ -11,19 +11,19 @@
 |-------|--------|--------|
 | 0 — Lock / inventory | [x] | [M3_OBS_01B_PHASE_0.md](./M3_OBS_01B_PHASE_0.md) |
 | 1 — Code/docs gap fix | [x] | [M3_OBS_01B_PHASE_1.md](./M3_OBS_01B_PHASE_1.md) — **N/A, no drift** |
-| 2 — Live induce + Explore | Sahil [x] · PRD [ ] | [M3_OBS_01B_PHASE_2.md](./M3_OBS_01B_PHASE_2.md) — A5 needs ops |
-| 3 — Alert email / stop-and-flag | Sahil [x] · PRD [ ] | [M3_OBS_01B_PHASE_3.md](./M3_OBS_01B_PHASE_3.md) — A7 needs ops |
-| 4 — Disable + §11 + PR | Sahil [x] · PRD [ ] | [M3_OBS_01B_PHASE_4.md](./M3_OBS_01B_PHASE_4.md) — sign after live |
+| 2 — Live induce + Explore | Engineering [x] · PRD [ ] | [M3_OBS_01B_PHASE_2.md](./M3_OBS_01B_PHASE_2.md) — A5 needs ops |
+| 3 — Alert email / stop-and-flag | Engineering [x] · PRD [ ] | [M3_OBS_01B_PHASE_3.md](./M3_OBS_01B_PHASE_3.md) — A7 needs ops |
+| 4 — Disable + §11 + PR | Engineering [x] · PRD [ ] | [M3_OBS_01B_PHASE_4.md](./M3_OBS_01B_PHASE_4.md) — sign after live |
 
 ## Ownership
 
 | Slice | Owner | Status |
 |-------|--------|--------|
-| Repo induce + alert/mailer + Phase 0–4 docs | Sahil | **Done** |
+| Repo induce + alert/mailer + Phase 0–4 docs | Engineering | **Done** |
 | SSH / droplet / induce enable+disable | Rohan/ops | Pending |
 | Explore `M3-OBS-01-INDUCE-WEB` (A5) | Ops (+ paste) | **Open** |
 | Alert email / stop-and-flag (A7) | Ops (+ paste) | **Open** |
-| §11 signed + PR after evidence | Sahil after ops | **Open** |
+| §11 signed + PR after evidence | Engineering after ops | **Open** |
 
 ## Live gaps
 
@@ -35,7 +35,7 @@
 | Induce disabled again | Open (**ops** → Phase 4) |
 | Phase 6 §11 signed | Open (Phase 4 after A5+A7) |
 
-## Repo / static (Sahil)
+## Repo / static (Engineering)
 
 | Item | Status |
 |------|--------|

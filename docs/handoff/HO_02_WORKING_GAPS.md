@@ -175,7 +175,7 @@ npm run verify:ho01   # regression
 | MCP/A2A live workflow publish | CAP-01B / later |
 | Reject button in UI | Backend only; optional admin ops |
 | `agent_spec` collapse in guide panel | Optional §7.2 |
-| E2E Loom (E2E-01) | Sahil lead |
+| E2E Loom (E2E-01) | Engineering lead |
 | CI wire for `--run-tests` | When Django image available |
 
 ---

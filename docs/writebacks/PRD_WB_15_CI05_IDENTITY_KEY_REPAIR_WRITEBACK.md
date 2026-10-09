@@ -1,8 +1,8 @@
 # PRD-WB-15 — CI-05 identity key repair writeback
 
-**Status:** **Shipped** — P0 M2 Catalogue Automated writeback · Sahil  
+**Status:** **Shipped** — P0 M2 Catalogue Automated writeback · Engineering  
 
-**Owner track:** Sahil — **BE primary · FE Approve allowlist only** (pack Fix Owner = **Klints (automated)**)  
+**Owner track:** Engineering — **BE primary · FE Approve allowlist only** (pack Fix Owner = **Klints (automated)**)  
 **Surfaces:** Fix `/fix` Approve · Settings Allow writebacks · `WritebackAllowedCheck` · registry / mapping · possible sheet · Activity/audit · **DCS identity mismatches (new)** · Manago `contact_upsert` (`externalId`)  
 **Milestone:** M2 Activation & Blueprint — Customer Identity join spine  
 **Depends on:** WB-03…WB-14 · FE-08/09 · live `evaluate_ci_05` + `identity_join` · Manago `RESTV2.CONTACT.UPSERT` (**CONFIRMED_LIVE** via CI-01)  
@@ -109,7 +109,7 @@ CI-05 FAIL / WARN / UNKNOWN(with_link=0)
 | 15 | Bijection precheck at enrich / execute | **Yes** — skip intent if Shopify id already used as another contact’s `link_key` |
 | 16 | Do **not** add CI-05 to `suppressFixProceedToStudio` | **Yes** |
 | 17 | Sample cap | **`CI_MISMATCH_SAMPLE` = 50**; emit from identity/DB — do not rely on capped `link_key_reused[:50]` for writes |
-| 18 | Eng owner = **Sahil**; pack Fix Owner = **Klints (automated)** | **Yes** |
+| 18 | Eng owner = **Engineering**; pack Fix Owner = **Klints (automated)** | **Yes** |
 | 19 | Optional `detail_set` `klints_erp_id` (T2 overview CI-16) | **Out of scope** — CI-16 not in MVP1-42 |
 | 20 | Interaction with CI-01 | CI-01 creates Shopify-only contacts **with** link_key; CI-05 sets link_key on **existing** Manago contacts. Prefer clear CI-01 gaps first when both FAIL — disclosure honesty |
 | 21 | Writeback when score is **UNKNOWN** (`with_link=0`) | **Yes** — attach `missing_link_key` on that path so first-time estates can Approve; scoring UNKNOWN unchanged |
@@ -130,7 +130,7 @@ Live estates (e.g. DCS 486) often **FAIL on `reused`**, not on missing keys. Exc
 ### 2.2 Lane wall
 
 ```text
-Sahil WB-15   =  DCS missing_link_key rows + CI-05 mapping + allowlist + FE
+WB-15   =  DCS missing_link_key rows + CI-05 mapping + allowlist + FE
 Do not regress =  CI-01 / CC-03 / LE-* / PT-04 / SP-07 live writebacks
 Out of this PR =  CI-03 merge · CI-16 ERP · dangling rewrite · coverage threshold changes
 ```

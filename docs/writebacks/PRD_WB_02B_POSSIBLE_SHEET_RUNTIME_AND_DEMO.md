@@ -1,7 +1,7 @@
 # PRD-WB-02B — Possible-sheet runtime path + Zoom demo (writeback + download)
 
 **Status:** Ready for implementation — **P0 follow-up** (prod Fix Approve blocked)  
-**Owner track:** Maheep (`docs/writebacks/`)  
+**Owner track:** Writebacks (`docs/writebacks/`)  
 **Surfaces:** `GET /api/v1/writebacks/possible/` · `/fix?issue=<check_id>` · Zoom recording delivered to Rohan  
 **Depends on:** WB-01C · WB-02 · FE-12 (already merged to `main`)  
 **Out of scope:** Prod `WRITEBACKS_ENABLED=True` · new mappings · LE-04 enable · MCP · Workflow Studio · generating the possible sheet as a progress job · removing `.dockerignore` `docs` wholesale  
@@ -124,7 +124,7 @@ From **current live issues** on Data Consistency (any FAIL/WARN with row evidenc
 
 ## 6. Zoom recording — required deliverable
 
-Maheep must **record a Zoom** (or Loom) and send the **share link** to Rohan in the PR description **and** Slack.
+Writebacks track must **record a Zoom** (or Loom) and send the **share link** to Rohan in the PR description **and** Slack.
 
 ### 6.1 Recording contents (one continuous take preferred)
 
@@ -134,7 +134,7 @@ Maheep must **record a Zoom** (or Loom) and send the **share link** to Rohan in 
 4. **Download path** — From Data Consistency → Fix on **another current** live issue (prefer non-writable) → Download evidence → open/show file name + a few rows.  
 5. **Negative (30s)** — LE-04 or clearly blocked check: Approve disabled.
 
-### 6.2 Links Maheep must paste with the Zoom
+### 6.2 Links Writebacks track must paste with the Zoom
 
 In PR / Slack message, include:
 

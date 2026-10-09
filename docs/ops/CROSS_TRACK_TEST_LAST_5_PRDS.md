@@ -1,7 +1,7 @@
 # Cross-track polish — last 5 PRDs each (common test cases)
 
 **Status:** Active team process  
-**Audience:** Maheep · Sahil · Rohan (review)  
+**Audience:** Writebacks · Engineering · Rohan (review)  
 **Goal:** Cross-test each other’s **last 5 PRDs** — code honesty + UI polish. Not a new-feature sprint.  
 **Env:** Production preferred — `https://klints-frontend.vercel.app` + `https://apis.klints.io`  
 **Rule:** Live Data Consistency issues only. **No fixtures** (`iss-*`).  
@@ -33,12 +33,12 @@
 
 | Tester | Tests | Track |
 |--------|-------|--------|
-| **Sahil** | Maheep’s last 5 (§2) | Fix · writeback · evidence |
-| **Maheep** | Sahil’s last 5 (§3) | Plan · PDF · AI · blueprint API |
+| **Engineering** | Writebacks’s last 5 (§2) | Fix · writeback · evidence |
+| **Writebacks** | Engineering’s last 5 (§3) | Plan · PDF · AI · blueprint API |
 
 ---
 
-## 2. Common test cases — Maheep track (Sahil executes)
+## 2. Common test cases — Writebacks tracks (Engineering executes)
 
 PRDs: **FE-11B** · **WB-01C** · **WB-02** · **FE-12** · **WB-02B**  
 Docs: `docs/writebacks/PRD_*` (see `docs/writebacks/README.md` #23–27).
@@ -96,7 +96,7 @@ Docs: `docs/writebacks/PRD_*` (see `docs/writebacks/README.md` #23–27).
 | **Pass** | Both work on prod; both URLs listed in §5 report |
 | **Fail** | Only one path works |
 
-**Sahil polish notes (while testing Maheep)**  
+**Engineering polish notes (while testing Writebacks)**  
 - Trust steps don’t jump ahead  
 - Fix footer CTAs readable on narrow width  
 - Activity / bell after approve if PRD claims it  
@@ -104,7 +104,7 @@ Docs: `docs/writebacks/PRD_*` (see `docs/writebacks/README.md` #23–27).
 
 ---
 
-## 3. Common test cases — Sahil track (Maheep executes)
+## 3. Common test cases — Engineering tracks (Writebacks executes)
 
 PRDs: **ORCH-01** · **RPT-01** · **RPT-01B** · **AI-01** · **WF-01**  
 Docs: `docs/ops/PRD_*` (see `docs/ops/README.md` #6–10).
@@ -159,7 +159,7 @@ Docs: `docs/ops/PRD_*` (see `docs/ops/README.md` #6–10).
 | **Pass for cross-test** | Report clearly: **Studio still fixture** — do **not** mark WF-01 product-complete |
 | **Fail** | Claiming live Studio bind / generate button when still `getStudioBlueprint` fixtures |
 
-**Maheep polish notes (while testing Sahil)**  
+**Writebacks polish notes (while testing Engineering)**  
 - Empty / loading / error states  
 - Fix vs Build CTA confusion on Data Consistency  
 - PDF/AI timeouts don’t break app shell  
@@ -170,8 +170,8 @@ Docs: `docs/ops/PRD_*` (see `docs/ops/README.md` #6–10).
 
 | Track | Cross-test pass means |
 |-------|------------------------|
-| **Maheep** | Sahil completes **TC-M3 + TC-M5** on prod without `/possible/` 500 **and** files §5 report |
-| **Sahil** | Maheep completes **TC-S2 + TC-S5**; **TC-S6** listed under Gaps; §5 report filed |
+| **Writebacks** | Engineering completes **TC-M3 + TC-M5** on prod without `/possible/` 500 **and** files §5 report |
+| **Engineering** | Writebacks completes **TC-S2 + TC-S5**; **TC-S6** listed under Gaps; §5 report filed |
 
 ---
 
@@ -185,7 +185,7 @@ Each tester posts **one written report** (Slack or PR comment). No Zoom/Loom.
 ## Cross-test report
 Date:
 Tester:
-Track tested: Maheep | Sahil
+Track tested: Writebacks | Engineering
 Env: prod | staging
 
 ### Working (right)
@@ -241,8 +241,8 @@ Owner to fix:
 ```text
 Cross-test: docs/CROSS_TRACK_TEST_LAST_5_PRDS.md
 
-Sahil → Maheep TC-M1…M6
-Maheep → Sahil TC-S1…S6
+Engineering → Writebacks TC-M1…M6
+Writebacks → Engineering TC-S1…S6
 
 Deliverable = written right/gap report (§5). No Zoom recording.
 Live issues only. WF-01 Studio FE = known gap (TC-S6) — list it under Gaps.
@@ -254,6 +254,6 @@ Live issues only. WF-01 Studio FE = known gap (TC-S6) — list it under Gaps.
 
 | Track | Index |
 |-------|--------|
-| Maheep | [docs/writebacks/README.md](../dcs_scoring/reference/README.md) |
-| Sahil | [docs/ops/README.md](../dcs_scoring/reference/README.md) |
+| Writebacks | [docs/writebacks/README.md](../dcs_scoring/reference/README.md) |
+| Engineering | [docs/ops/README.md](../dcs_scoring/reference/README.md) |
 | WB-02B (P0 unblock) | [writebacks/PRD_WB_02B_POSSIBLE_SHEET_RUNTIME_AND_DEMO.md](../writebacks/PRD_WB_02B_POSSIBLE_SHEET_RUNTIME_AND_DEMO.md) |

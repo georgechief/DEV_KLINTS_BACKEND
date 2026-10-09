@@ -1,8 +1,8 @@
 # PRD-WB-18 — CC-02 SMS / mobile consent reconcile (plan + gated forcePhoneOpt)
 
-**Status:** **Phase A complete 2026-09-25** · Phase B optional (not required for ownership Correct — plan-only) · P0 M2 Catalogue · Sahil  
+**Status:** **Phase A complete 2026-09-25** · Phase B optional (not required for ownership Correct — plan-only) · P0 M2 Catalogue · Engineering  
 
-**Owner track:** Sahil — **BE primary · FE Preview/Download + policy honesty** (pack Fix Owner = **Data lead** — not Klints automated)  
+**Owner track:** Engineering — **BE primary · FE Preview/Download + policy honesty** (pack Fix Owner = **Data lead** — not Klints automated)  
 **Surfaces:** Fix `/fix` Preview · FE-12 Download · Settings Allow writebacks · registry / mapping · possible sheet · Activity/audit · **DCS SMS consent mismatches** · Manago `contact_upsert` **`forcePhoneOptIn` / `forcePhoneOptOut`** (Phase B optional)  
 **Milestone:** M2 Activation & Blueprint — Channel & Consent  
 **Depends on:** WB-17 Phase A (CC-01 pattern live) · WB-03…WB-16 · FE-08/09/12 · live `evaluate_cc_02` + `consent_join` · CC-03 evidence stamp (gate only)  

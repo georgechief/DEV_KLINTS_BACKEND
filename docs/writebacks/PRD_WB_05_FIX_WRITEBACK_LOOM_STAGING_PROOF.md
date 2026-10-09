@@ -1,10 +1,10 @@
 # PRD-WB-05 — Fix writeback Loom / staging proof (CI-01 · CC-03 · WB-SHOP-01)
 
 **Status:** Ready for implementation — **P1 (M2 demo reliability)**  
-**Owner track:** Maheep (`docs/writebacks/`) — **BE + FE only if gaps found**; primarily **staging proof + Loom**  
+**Owner track:** Writebacks (`docs/writebacks/`) — **BE + FE only if gaps found**; primarily **staging proof + Loom**  
 **Surfaces:** Settings → Workspace · Fix · Connected Manago / Shopify admin UIs · Activity  
 **Depends on:** WB-02 · WB-03 · (recommended) WB-04 gate so Loom does not re-Approve accidentally  
-**Out of scope:** New mappings · LE-04 enable · Studio / QA / Handoff · Sahil tracks · changing pack blueprints  
+**Out of scope:** New mappings · LE-04 enable · Studio / QA / Handoff · Engineering tracks · changing pack blueprints  
 
 ---
 
@@ -119,7 +119,7 @@ Bugs fixed in this PR: <list or none>
 - [ ] Checklist §5 completed (Y/N per row; skips explained)  
 - [ ] Settings UI used to enable — **not** manage.py  
 - [ ] Any entry/copy/rollback bugs found during recording are fixed or explicitly deferred with ticket id  
-- [ ] No Sahil surface changes  
+- [ ] No unrelated surface changes  
 
 ---
 
@@ -149,4 +149,4 @@ Larger gate work → WB-04 / WB-06, not here.
 |------|------|
 | Parent Loom | WB-03 §8 |
 | Milestone | M2 — Fix demo readiness for T2 |
-| Independent of | Sahil HO-01 · CAP-01 · pilot seed (ops) |
+| Independent of | Engineering HO-01 · CAP-01 · pilot seed (ops) |

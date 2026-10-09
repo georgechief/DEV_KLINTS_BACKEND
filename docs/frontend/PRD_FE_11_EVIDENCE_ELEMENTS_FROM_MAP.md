@@ -1,8 +1,8 @@
 # PRD-FE-11 — Evidence “Elements” = platform field / model from connector map
 
 **Status:** Ready for implementation  
-**Owner track:** Maheep (`docs/writebacks/`) — FE + worklist display enrichment  
-**Consult:** **Sahil** when BE touches check executors / provenance shape / worklist contracts he owns (`docs/ops/` / `docs/security/` / module folders) — do not silently change DCS result semantics without him  
+**Owner track:** Writebacks (`docs/writebacks/`) — FE + worklist display enrichment  
+**Consult:** **Engineering** when BE touches check executors / provenance shape / worklist contracts he owns (`docs/ops/` / `docs/security/` / module folders) — do not silently change DCS result semantics without him  
 **Depends on:** FE-09 (friendly evidence table) · connector `map.json` · DCS worklist detail  
 **Pack / product:** Operators must see **which field/model** the difference was found on (Shopify / Manago API names), not blank “—”  
 **Out of scope:** Writeback execute · changing check PASS/FAIL logic · inventing fields not in evidence or map
@@ -32,23 +32,23 @@ FE: ignore placeholder locators ("—", empty); resolve Elements from
 
 Acceptance: §6. Verify on CI-13 and at least one field-level check (e.g. CI-01).
 
-Consult Sahil if you change executor provenance shapes, CheckResult
+Consult Engineering if you change executor provenance shapes, CheckResult
 contracts, or worklist detail fields beyond additive element metadata.
 ```
 
 ---
 
-## 0b. When to consult Sahil
+## 0b. When to consult Engineering
 
 | Situation | Who |
 |-----------|-----|
-| FE-only: fix `friendlyEvidenceElement` resolve order / placeholder `"—"` | Maheep alone |
-| Additive API fields on evidence rows (`element`, `api_key`, `db_key`, `entity`) via worklist normalize | Maheep; **ping Sahil** for a quick review on the PR |
-| Changing what executors put in `provenance.mismatches` / `evidence` (CI-13, CI-01, …) | **Consult Sahil first** — he owns DCS check/result surface |
-| Renaming/removing existing evidence keys FE already consumes | **Must consult Sahil** — breaking change |
-| Unsure whether a check’s “element” is a map field vs drift metric | **Ask Sahil** for the check’s intended surface |
+| FE-only: fix `friendlyEvidenceElement` resolve order / placeholder `"—"` | Writebacks alone |
+| Additive API fields on evidence rows (`element`, `api_key`, `db_key`, `entity`) via worklist normalize | Writebacks; **ping Engineering** for a quick review on the PR |
+| Changing what executors put in `provenance.mismatches` / `evidence` (CI-13, CI-01, …) | **Consult Engineering first** — he owns DCS check/result surface |
+| Renaming/removing existing evidence keys FE already consumes | **Must consult Engineering** — breaking change |
+| Unsure whether a check’s “element” is a map field vs drift metric | **Ask Engineering** for the check’s intended surface |
 
-Sahil track pointer: `docs/ops/README.md` (DCS / worklist / related PRDs). Leave a short note on the PR: “Sahil consulted: yes/no — …”.
+Engineering tracks pointer: `docs/ops/README.md` (DCS / worklist / related PRDs). Leave a short note on the PR: “Engineering consulted: yes/no — …”.
 
 ---
 
@@ -195,7 +195,7 @@ If the check only has aggregate counts, Element = the **metric/surface name**, n
 - [ ] “Where it came from” matches actual sources (CI-13 → Manago, not fake Shopify)  
 - [ ] Unit/verify coverage for FE helper + BE normalize  
 - [ ] No JSON dump regress (FE-09 still holds)  
-- [ ] Sahil consulted if executor/provenance/worklist contract changed (note on PR)  
+- [ ] Engineering consulted if executor/provenance/worklist contract changed (note on PR)  
 
 ---
 
@@ -216,6 +216,6 @@ If the check only has aggregate counts, Element = the **metric/surface name**, n
 | Bug? | Elements blank on Differences; locator `"—"` masks side |
 | Fix? | BE enrich entity/api_key/element; FE resolve order + ignore placeholders |
 | Map? | Use `connectors/*/map.json` api_key for field-level diffs |
-| Who? | Maheep |
+| Who? | Writebacks |
 
-**PRD:** FE-11 · **Track:** Maheep · **Bar:** Elements shows real field/model  
+**PRD:** FE-11 · **Track:** Writebacks · **Bar:** Elements shows real field/model  

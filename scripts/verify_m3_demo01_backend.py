@@ -420,7 +420,7 @@ def main() -> int:
 
     print("M3-DEMO-01 static checks: PASS", flush=True)
     print(
-        "NOTE: Sahil ship complete (local-only A3). Staging A2/A10 = residual ops "
+        "NOTE: Engineering ship complete (local-only A3). Staging A2/A10 = residual ops "
         "(see docs/ops/M3_DEMO_01_PHASE_6.md).",
         flush=True,
     )

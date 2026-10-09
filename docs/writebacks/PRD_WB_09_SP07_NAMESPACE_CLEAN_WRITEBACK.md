@@ -1,11 +1,11 @@
 # PRD-WB-09 — SP-07 namespace clean writeback
 
 **Status:** Ready for implementation — **P0 (M2 — Gate Fix; unlocks all writebacks)**  
-**Owner track:** Maheep (`docs/writebacks/`) — **BE primary · FE Approve allowlist + Fix copy**  
+**Owner track:** Writebacks (`docs/writebacks/`) — **BE primary · FE Approve allowlist + Fix copy**  
 **Surfaces:** Fix `/fix` Approve · Settings Allow writebacks · `WritebackAllowedCheck` · registry / mapping · possible sheet · SP-07 DCS detector allowlist · Activity/audit  
 **Milestone:** M2 Activation & Blueprint (T2) — Writeback depth after WB-08  
 **Depends on:** WB-03…WB-08 · FE-08/09 · POLISH-01 · DCS SP-07 executor (`evaluate_sp_07`) live  
-**Parallel with:** Sahil Studio / HO / QA — **no shared files / no dependency**  
+**Parallel with:** Engineering Studio / HO / QA — **no shared files / no dependency**  
 **Contract SoT:** Catalogue Automated writeback for SP-07; Writeback + Lifecycle live  
 **Pack SoT:**  
 - `Klints_Spec_InitialDataConsistencyCheck_v1.4.1` sheet **02 Check Catalogue** row **SP-07**  
@@ -419,7 +419,7 @@ Excel: *Renames logged with reverse map.*
 | `dataruns/writebacks/rollback*.py` | `reverse_rename_map` |
 | `dataruns/writebacks/WRITEBACK_POSSIBLE_NOT_SHEET.csv` | Honesty sheet |
 | FE `src/lib/writebacks.ts` | Approve allowlist |
-| **Forbidden:** `dataruns/use_cases/handoff*` · Studio / QA | Sahil |
+| **Forbidden:** `dataruns/use_cases/handoff*` · Studio / QA | Engineering |
 
 ---
 

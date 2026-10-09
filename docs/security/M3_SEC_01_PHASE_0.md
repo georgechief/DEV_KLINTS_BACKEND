@@ -117,7 +117,7 @@ Inventory API surfaces and existing tests so Phases 1–5 have a fixed allowlist
 
 ## Stop-and-flag
 
-1. **`DataRunViewSet`:** Maheep `PRD_FE_05` and older `PRD_CONNECTOR_CSV_EXPORT` document `GET /api/v1/dataruns/` / `{id}`. **Do not unregister** — Phase 3 must **scope to caller tenant** and deny foreign `?tenant=`.
+1. **`DataRunViewSet`:** Writebacks `PRD_FE_05` and older `PRD_CONNECTOR_CSV_EXPORT` document `GET /api/v1/dataruns/` / `{id}`. **Do not unregister** — Phase 3 must **scope to caller tenant** and deny foreign `?tenant=`.
 2. **`TenantViewSet`:** No FE in this workspace; README lists `/api/v1/tenants/`. Prefer **scope to caller’s tenant** (not silent delete). If FE later needs multi-tenant admin list, that is a product decision — flag Rohan before expanding.
 3. **`get_user_company` = first company by `created_at`:** residual risk for packet (PRD D / §5.6) — do not redesign multi-company-per-tenant in SEC-01.
 

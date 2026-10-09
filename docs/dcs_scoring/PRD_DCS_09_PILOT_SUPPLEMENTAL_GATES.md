@@ -1,11 +1,11 @@
 # PRD-DCS-09 — Pilot supplemental preflight gates (M2)
 
 **Status:** Steps 0–12 done; Step 13 PR ready (manual commit) — **P0 for M2 claim** · see [DCS_09_WORKING_GAPS.md](./DCS_09_WORKING_GAPS.md) §Step 13  
-**Owner track:** Sahil (`docs/ops/` / `docs/security/` / module folders) — **BE primary · FE light**  
+**Owner track:** Engineering (module folders) — **BE primary · FE light**  
 **Backlog:** Pack **BL-003**  
 **Depends on:** DCS 42-check path + snapshot · UC-01 / WF-01 recommend + Studio · OPS-UC-01 pilots seeded  
-**Parallel:** Maheep [M2-OPS-01](../ops/PRD_M2_OPS_01_STAGING_HARDEN.md) (staging + Fix smoke — does not implement these gates)  
-**Out of scope:** Changing headline **42** / `assemble_dcs_score` · HO-02 MCP Send · CAP-01B discovery · Maheep writeback mappings for these 12 · BL-017 ORCH · inventing PASS  
+**Parallel:** Writebacks [M2-OPS-01](../ops/PRD_M2_OPS_01_STAGING_HARDEN.md) (staging + Fix smoke — does not implement these gates)  
+**Out of scope:** Changing headline **42** / `assemble_dcs_score` · HO-02 MCP Send · CAP-01B discovery · writeback mappings for these 12 · BL-017 ORCH · inventing PASS  
 
 **Pack SoT:** sheet **11 Pilot Supplemental Gates** + Catalogue **02** for the 12 IDs · `pilot_manifest.json` → `supplemental_preflight_checks`  
 **Supersedes for implementation:** [`docs/dcs_scoring/PRD_DCS_09_PILOT_SUPPLEMENTAL_GATES-FUTURE-PRD.md`](../dcs_scoring/PRD_DCS_09_PILOT_SUPPLEMENTAL_GATES-FUTURE-PRD.md) (kept as archive / long appendix)
@@ -246,7 +246,7 @@ Long per-check appendix remains in the archive FUTURE PRD §8 if needed — do n
 | Later | Why |
 |-------|-----|
 | **E2E-01** | Loom + M2 submission after Ready path works |
-| Fix/writeback for supplemental IDs | Maheep / later — download + human fix OK for M2 |
+| Fix/writeback for supplemental IDs | Writebacks / later — download + human fix OK for M2 |
 | Auto-eval after every DCS | Convenience |
 | HO-02 | MCP Send |
 
@@ -267,4 +267,4 @@ Long per-check appendix remains in the archive FUTURE PRD §8 if needed — do n
 | Milestone | M2 — hard-green Build readiness before T2 claim |
 | Pack | BL-003 · sheet 11 · sheet 02 · pilot_manifest |
 | Parents | WF-01 §3.2 · UC-01 recommend · DCS-04 executors |
-| Independent of | HO-02 · CAP-01B · Maheep WB catalogue wave |
+| Independent of | HO-02 · CAP-01B · Writebacks WB catalogue wave |

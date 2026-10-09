@@ -1,7 +1,7 @@
 # PRD-RPT-01 — Full Assessment Report PDF (on-demand) + download audit
 
 **Status:** Ready for implementation  
-**Owner track:** Sahil (`docs/ops/` / `docs/security/` / module folders) — BE compose/render + thin FE export  
+**Owner track:** Engineering (module folders) — BE compose/render + thin FE export  
 **Backlog bridge:** Pack **BL-013 / BL-014 / BL-015** (compose · render · security) — **v1 ships FULL content** (no free/paid lock for now)  
 **Depends on:** DCS scored run + worklist · AF latest (if present) · ORCH-01 plan (optional for priority column) · AUDIT-01 `append_audit_event`  
 **Pack:** `Klints_MVP1_Rohan_Build_Pack_v1.2_20260718`  
@@ -339,6 +339,6 @@ src/components/klints/OverviewPanel.tsx  # wire existing "Export brief" button
 | Store what? | Canonical payload + hash |
 | Audit? | Email · time · IP · user · report id |
 | Free/paid? | **Not now** — full report |
-| Who? | Sahil |
+| Who? | Engineering |
 
-**PRD:** RPT-01 · **Track:** Sahil · **Bar:** full PDF + download audit  
+**PRD:** RPT-01 · **Track:** Engineering · **Bar:** full PDF + download audit  

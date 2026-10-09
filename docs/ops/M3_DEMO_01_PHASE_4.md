@@ -8,7 +8,7 @@
 
 | Slice | Status |
 |-------|--------|
-| **Full path docs (Sahil)** | **DONE** (2026-09-15) |
+| **Full path docs (Engineering)** | **DONE** (2026-09-15) |
 | **Staging walkthrough evidence** | **PENDING** — repeat on Vercel |
 | **§11 A4 partial** | **Local done** — live path + seed contrast · staging Loom optional |
 
@@ -159,12 +159,12 @@ Allowed M3 claim: *demo uses live Shopify klints-dev + Klints import* — not *s
 | Item | Phase |
 |------|-------|
 | Staging walkthrough / Loom | Residual ops |
-| §11 Sahil ship | **Done** — [PHASE_6](./M3_DEMO_01_PHASE_6.md) |
+| §11 Engineering ship | **Done** — [PHASE_6](./M3_DEMO_01_PHASE_6.md) |
 
 ## Exit
 
 Phase 4 **done** (docs + local API evidence).  
-**Next:** [Phase 6](./M3_DEMO_01_PHASE_6.md) Sahil ship closed.
+**Next:** [Phase 6](./M3_DEMO_01_PHASE_6.md) Engineering ship closed.
 
 ## Do not
 

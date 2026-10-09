@@ -8,7 +8,7 @@
 
 | Slice | Status |
 |-------|--------|
-| **Sahil (repo / prep)** | **DONE** (2026-09-14) — PR notes + §11 template + disable checklist |
+| **Engineering (repo / prep)** | **DONE** (2026-09-14) — PR notes + §11 template + disable checklist |
 | **Ops live (Rohan)** | **PENDING** — disable induce after proof; help fill A5/A7 |
 | **PRD Phase 4 full close** | **NOT done** until induce off + §11 signed with evidence |
 
@@ -22,21 +22,21 @@
 
 | Owner | Scope |
 |-------|--------|
-| **Sahil** | Phase docs 0–4, WORKING_GAPS, PR title/body draft, §11 paste block, verify PASS claim (static) |
+| **Engineering** | Phase docs 0–4, WORKING_GAPS, PR title/body draft, §11 paste block, verify PASS claim (static) |
 | **Rohan / ops** | `M3_OBS_INDUCE_ENABLED=false` after proof, redeploy/restart web, A5/A7 evidence |
-| **Sahil after ops** | Tick §11 from evidence, sign off, open PR |
+| **Engineering after ops** | Tick §11 from evidence, sign off, open PR |
 
-## Sahil checklist (prep)
+## Engineering checklist (prep)
 
 | # | Task | Done |
 |---|------|------|
 | S1 | Disable-induce ops steps documented | [x] |
 | S2 | §11 template ready to paste (below) | [x] |
 | S3 | PR title + body draft (below) | [x] |
-| S4 | WORKING_GAPS Phase 4 Sahil prep marked | [x] |
+| S4 | WORKING_GAPS Phase 4 Engineering prep marked | [x] |
 | S5 | Manual commit (user) — do **not** agent-commit | [x] noted |
 
-## Ops / live checklist (Rohan → then Sahil)
+## Ops / live checklist (Rohan → then Engineering)
 
 | # | Task | Done |
 |---|------|------|
@@ -85,7 +85,7 @@ Signed off: _name / date_
 
 A1/A3/A4/A6/A8/A10 are **repo-proven** or known staging facts; **A5 + A7 stay unchecked** until ops evidence. Re-confirm A2/A9 Actions on the proof day.
 
-## PR draft (Sahil — open when ready)
+## PR draft (Engineering — open when ready)
 
 **Title:** `docs(M3-OBS-01B): Grafana alert closeout phase notes and handoff`
 
@@ -94,7 +94,7 @@ A1/A3/A4/A6/A8/A10 are **repo-proven** or known staging facts; **A5 + A7 stay un
 ```markdown
 ## Summary
 - Phase notes for M3-OBS-01B (Grafana alert closeout): Phase 0–4
-- Working gaps tracker with Sahil vs ops ownership split
+- Working gaps tracker with Engineering vs ops ownership split
 - No runtime code changes — induce/alert/mailer already on main
 - Live A5 (Explore marker) + A7 (email / stop-and-flag) remain ops after enable window
 
@@ -115,7 +115,7 @@ Pen-test · SEC complete because of Grafana · DP1 · demo/Shopify · Prometheus
 
 | Exit | When |
 |------|------|
-| Sahil Phase 4 prep | **Met** — this file + PR draft |
+| Engineering Phase 4 prep | **Met** — this file + PR draft |
 | PRD Phase 4 full | Induce disabled + §11 signed with A5 + A7 |
 
 ## Do not

@@ -1,13 +1,13 @@
 # PRD-FE-13 — Shell honesty, deep-links & Data Center assessment export
 
 **Status:** Ready for implementation  
-**Owner track:** Maheep (`docs/writebacks/`) — **FE primary** (reuse existing assessment PDF BE; no new writeback APIs)  
+**Owner track:** Writebacks (`docs/writebacks/`) — **FE primary** (reuse existing assessment PDF BE; no new writeback APIs)  
 **Surfaces:** AppShell · bell / NotificationsPanel · Settings · Data Consistency · Overview · Activity · Spotlight · Fix deep-links · nav Phase 4–5  
 **Depends on:**  
 - **RPT-01** — `downloadAssessmentBrief` / compose + PDF (already wired on Overview **Export brief**)  
 - **AUDIT-01 / AUDIT-02** — activity + notifications  
 - **FE-08** — live Fix `?issue=<check_id>`  
-- **WF-02 / QA-01** (Sahil) — Phase 4–5 real engines; this PRD only adds **honest shell** until those land  
+- **WF-02 / QA-01** (Engineering) — Phase 4–5 real engines; this PRD only adds **honest shell** until those land  
 **Design SoT:** Keep existing chrome; stop lying CTAs and dead clicks  
 **Out of scope:** QA hard-test engine · Handoff MCP Send · new writeback mappings · CONN-07 · inventing a second PDF format  
 
@@ -199,7 +199,7 @@ Already copy-honest (FE-07). Optional polish:
 
 ## 7. Nav honesty — Phase 4 QA / Phase 5 Handoff
 
-Until Sahil **QA-01** / **HO-01** are live in prod:
+Until Engineering **QA-01** / **HO-01** are live in prod:
 
 ### 7.1 Options (pick one — prefer A)
 
@@ -216,7 +216,7 @@ Until Sahil **QA-01** / **HO-01** are live in prod:
 | QA **Re-run** toast that pretends gates ran | Disable until QA-01; or only show when live package QA exists |
 | Spotlight listing QA/Handoff as if fully productized | Add hint “Phase 4 · soon” / “Phase 5 · soon” in search hint text |
 
-When QA-01 ships, remove soft-lock copy in a tiny follow-up — don’t block this PRD on Sahil.
+When QA-01 ships, remove soft-lock copy in a tiny follow-up — don’t block this PRD on Engineering.
 
 ---
 
@@ -335,7 +335,7 @@ flowchart TD
 | `OverviewPanel.tsx` | Activity row deep-links; NBA → live Fix |
 | `opportunities.tsx` | Plan deep-links |
 | `settings.tsx` | Deferred field UI |
-| `handoff.tsx` / `qa.tsx` | Soft-lock Send / fake re-run until Sahil engines (minimal) |
+| `handoff.tsx` / `qa.tsx` | Soft-lock Send / fake re-run until Engineering engines (minimal) |
 | `fix-flow.ts` / `fix.tsx` | Prod fixture bleed gate |
 | `SpotlightSearch.tsx` | Hints + href respect |
 | verify script | `verify:fe13` — Export uses `downloadAssessmentBrief`; no “not available in v1” toast; notification click ≠ only `/activity` hardcoded |
@@ -372,12 +372,12 @@ flowchart TD
 | Item | |
 |------|--|
 | Parents | RPT-01 Export brief · AUDIT-02 bell · FE-07 Settings · FE-08 Fix |
-| Sibling | Sahil QA-01 / HO-01 (real Phase 4–5) — this PRD only honesty until then |
+| Sibling | Engineering QA-01 / HO-01 (real Phase 4–5) — this PRD only honesty until then |
 | Explicit non-goal | Second PDF type · MCP Send · new writebacks |
 
 ---
 
-## 16. Implementation order (suggested for Maheep)
+## 16. Implementation order (suggested for writebacks track)
 
 1. **Export fix plan** (§4) — highest visible win, ~S  
 2. Settings deferred UI (§6) — ~S  

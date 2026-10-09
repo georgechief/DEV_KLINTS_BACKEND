@@ -19,7 +19,7 @@ M2-OPS-01 staging notes
 
 ### §3 staging (UI-only + explicit skip)
 [x] FE/API reachable (Vercel + apis.klints.io health)
-[x] Explicit skip owner=Maheep: droplet migrate / pilots verify / Celery inspect (no SSH)
+[x] Explicit skip owner=Writebacks: droplet migrate / pilots verify / Celery inspect (no SSH)
 [x] Local: migrations clean, pilots 16+UC-02, allowlist, connectors, terminal DCS
 
 ### §4 Fix smoke

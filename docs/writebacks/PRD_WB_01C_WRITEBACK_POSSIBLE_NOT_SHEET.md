@@ -1,7 +1,7 @@
 # PRD-WB-01C — Writeback possible/not sheet + common write API contract
 
 **Status:** Backend implemented  
-**Owner track:** Maheep (`docs/writebacks/`)  
+**Owner track:** Writebacks (`docs/writebacks/`)  
 **Depends on:** WB-01 + WB-01B ([BE #39](https://github.com/Rohan070/klints_backend/pull/39) / [FE #27](https://github.com/Rohan070/klints_frontend/pull/27)) — merge first or land on same branch  
 **Pack sources (read-only — do not rewrite pack history):**  
 - `Klints_MVP1_Rohan_Build_Pack_v1.2_20260718/01_Specifications/Klints_Spec_InitialDataConsistencyCheck_v1.4.1_20260718.xlsx` → sheet **02 Check Catalogue** (Suggested Fix · Fix Type · Fix Owner · Rollback Note · surfaces)  

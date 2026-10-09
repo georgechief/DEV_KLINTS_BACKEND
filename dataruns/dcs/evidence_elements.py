@@ -10,7 +10,7 @@ from dataruns.connectors.mapping import load_connector_map, mappings_for_entity
 _PLACEHOLDER_LOCATORS = frozenset({"—", "-", "n/a", "na", "none", "null"})
 
 # Check-level defaults when executors emit bare {side, count, …} rows.
-# Worklist-only (PRD-FE-11 §0b) — executors / CheckResult unchanged (Sahil).
+# Worklist-only (PRD-FE-11 §0b) — executors / CheckResult unchanged (Engineering).
 _CHECK_DEFAULTS: dict[str, dict[str, Any]] = {
     "CI-01": {
         "entity": "contact",

@@ -1,7 +1,7 @@
 # PRD-UC-01 — Use Case Library & MVP1 Pilots (BL-010)
 
 **Status:** BE Ready · **FE layout superseded by UC-01B**  
-**Owner track:** Sahil (`docs/ops/` / `docs/security/` / module folders)  
+**Owner track:** Engineering (module folders)  
 **Backlog:** `BL-010` (load exact 16-pilot registry; preserve UC-06 parent / UC-06B variant)  
 **Milestone:** MVP1-B (after Architecture AF-01)  
 **Surfaces:** APIs under `/api/v1/use-cases/` · FE pilots band via **[PRD-UC-01B](./PRD_UC_01B_OPPORTUNITIES_ORIGINAL_DESIGNS_RECONNECT.md)** (not Opportunities hero)  
@@ -611,9 +611,9 @@ Do not render a fake € impact.
 
 | Slice | Owner | Focus |
 |-------|-------|--------|
-| **BE-A** Seed + models | Sahil | load command + tests |
-| **BE-B** Recommendations API | Sahil | DCS + AF join |
-| **FE-A** Opportunities pilots | Sahil / FE | Replace fixtures |
+| **BE-A** Seed + models | Engineering | load command + tests |
+| **BE-B** Recommendations API | Engineering | DCS + AF join |
+| **FE-A** Opportunities pilots | Engineering / FE | Replace fixtures |
 | **Follow-up** DCS-09 | Backend | Real supplemental readiness |
 
 ---

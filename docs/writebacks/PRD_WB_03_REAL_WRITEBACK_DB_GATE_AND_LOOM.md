@@ -1,13 +1,13 @@
 # PRD-WB-03 — Real writeback via UI gate (default OFF, Fix approve, Loom)
 
 **Status:** Ready for implementation — **P0 follow-up to PR #46**  
-**Owner track:** Maheep (`docs/writebacks/`) — **BE + FE**  
+**Owner track:** Writebacks (`docs/writebacks/`) — **BE + FE**  
 **Surfaces:**  
 - **Settings → Workspace** (Admin toggle: enable/disable writebacks for **this** company)  
 - Fix `/fix` Approve → real Manago/Shopify write when ON  
 - Loom: UI toggle + reflect + rollback for **all** allowlisted checks  
 **Depends on:** WB-02 / WB-02B / FE-12 · PR [#46](https://github.com/Rohan070/klints_backend/pull/46) (must correct default-ON)  
-**Out of scope:** `manage.py` as the operator path · Global `WRITEBACKS_ENABLED=True` for all tenants · LE-04 enable · new mappings · MCP · Workflow Studio · Sahil tracks  
+**Out of scope:** `manage.py` as the operator path · Global `WRITEBACKS_ENABLED=True` for all tenants · LE-04 enable · new mappings · MCP · Workflow Studio · Engineering tracks  
 
 ---
 

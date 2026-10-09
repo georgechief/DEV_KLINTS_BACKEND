@@ -1,7 +1,7 @@
 # GAP-01 Working / Build order (PRD-GAP-01)
 
 **PRD:** `PRD_GAP_01_M2_CODE_GAPS_WEEKS_5_9.md`  
-**Owner:** Sahil (BE + FE)  
+**Owner:** Engineering (BE + FE)  
 **Scope:** M2 code gaps Weeks 5–9 — ordered slices, no theater, no fake MCP.
 
 **Locked decision (confirm in each PR):** Slice A = **A1** (pack ORCH 8-state) unless client waiver → A3.
@@ -775,7 +775,7 @@ BE commit `(GAP-01C)` also tracked Slice B scaffold (`manago_mcp_*`, `test_manag
 
 **Phase 8 deep recheck (2026-09-03):** Pass. Re-grepped D0.8 surfaces (nav/Spotlight/Studio/QA/Handoff/Lifecycle) — no Agent-handoff / agent-ready / for-the-agent theater. Download chain intact: FE downloads API `BuildPackageResponse` only; BE `serialize_build_package` normalizes format. Re-ran FE `wf01/qa01/ho01/ho02` + BE `verify_wf01` — all **PASS**. No product fix required. (Live browser click-path remains operator manual per Phase 8 note.)
 
-**Phase 9 shipped (2026-09-03):** Docs closeout · known limits · FE/BE PR drafts (Sahil commits manually).
+**Phase 9 shipped (2026-09-03):** Docs closeout · known limits · FE/BE PR drafts (Engineering commits manually).
 
 ### Slice D known limits (ship with PR)
 
@@ -981,7 +981,7 @@ BE tree may still carry Slice B scaffold (`manago_mcp_*`). **Do not expand those
 | NBA unlock | `nbaOpenTarget` does not re-apply app-unlock; stakes/top-issue use unlock-aware `issueOpenTarget` |
 | Out of scope | Pack / Matrix / MCP unchanged (E0.10). Live browser smoke = operator-manual |
 
-**Phase 5 shipped (2026-09-04):** Docs closeout · known limits table · FE/BE PR drafts (Sahil commits manually). BE = docs-only (E0.9 FE-first; no sync-health API).
+**Phase 5 shipped (2026-09-04):** Docs closeout · known limits table · FE/BE PR drafts (Engineering commits manually). BE = docs-only (E0.9 FE-first; no sync-health API).
 
 **Phase 5 deep recheck (2026-09-04):** Hostile docs pass found PRD §4.4 still **PARTIAL / Not Started** for W8-02/03/04 while §9 + WORKING_GAPS claimed shipped — timeline Code column updated to **DONE (Slice E)** with honest scope (no dedicated 3-way screen; Integrations health not continuous dashboard; QA matrix via `qaFailDeepLink`). Stale “Open decision (refine…)” header cleaned. FE `verify:gap01e` + `wf02`/`fe13`/`qa01` reconfirmed **PASS**. Branch still tracks `origin/feature/gap01-slice-d-honesty` until first push `-u` to Slice E remote (ops, not code).
 
@@ -1265,7 +1265,7 @@ Static re-ran **PASS** after harden.
 
 | Item | Reason |
 |------|--------|
-| WB-08 catalogue wave | Maheep / out of GAP-01 |
+| WB-08 catalogue wave | Writebacks / out of GAP-01 |
 | Partner external API (W8-06) | M3 |
 | Perf 50k / &lt;60s (W9-07) | Defer |
 | Inventing MCP publish | Slice B + evidence only |

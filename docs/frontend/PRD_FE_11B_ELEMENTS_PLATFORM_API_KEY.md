@@ -1,10 +1,10 @@
 # PRD-FE-11B — Elements = platform source field (`api_key`)
 
 **Status:** Ready for implementation  
-**Owner track:** Maheep (`docs/writebacks/`)  
+**Owner track:** Writebacks (`docs/writebacks/`)  
 **Depends on:** FE-11 merged ([BE #39](https://github.com/Rohan070/klints_backend/pull/39) / [FE #27](https://github.com/Rohan070/klints_frontend/pull/27))  
 **Corrects:** FE-11 display priority — Elements must show the **platform source field** for that row’s connector, not a marketing / side label  
-**Consult Sahil:** only if changing executor provenance; this PRD is worklist display + enrichment priority only  
+**Consult Engineering:** only if changing executor provenance; this PRD is worklist display + enrichment priority only  
 **Out of scope:** Writebacks · changing PASS/FAIL · inventing fields not in `map.json` / Catalogue surfaces
 
 ---
@@ -125,6 +125,6 @@ Verify script: update `verify:fe11` / add `verify:fe11b` — assert **api_key wi
 | Bug? | Elements = friendly labels, not platform fields |
 | Fix? | Show `{entity}.{api_key}` e.g. `order.value` |
 | SoT? | `connectors/{shopify,manago_ai}/map.json` |
-| Who? | Maheep |
+| Who? | Writebacks |
 
-**PRD:** FE-11B · **Track:** Maheep · **Bar:** Elements = platform source field
+**PRD:** FE-11B · **Track:** Writebacks · **Bar:** Elements = platform source field

@@ -1,12 +1,12 @@
 # PRD-FE-12 — Fix evidence Excel / CSV download
 
 **Status:** Ready for implementation **after** WB-02  
-**Owner track:** Maheep (`docs/writebacks/`) — **PR 2 of 2** (follow-up; do not start until WB-02 merged)  
+**Owner track:** Writebacks (`docs/writebacks/`) — **PR 2 of 2** (follow-up; do not start until WB-02 merged)  
 **Surfaces:** `/fix` (Phase 2) · optionally Data Consistency issue detail  
 **Depends on:** FE-08 / FE-09 (live evidence) · WB-02 (Approve honesty — so download is clearly the path for non-writable checks)  
 **Design SoT:** Keep `original-designs` Fix chrome; add one secondary control — do not redesign  
 **Pack SoT:** Evidence samples from DCS (`check_result` evidence / mismatches); Catalogue Suggested Fix for helper copy  
-**Out of scope:** Writeback execute · new mappings · MCP · Handoff · PDF assessment report (Sahil RPT) · inventing rows not in API evidence  
+**Out of scope:** Writeback execute · new mappings · MCP · Handoff · PDF assessment report (Engineering RPT) · inventing rows not in API evidence  
 
 ---
 

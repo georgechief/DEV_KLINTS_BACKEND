@@ -1,7 +1,7 @@
 # PRD-FE-08 — Fix screen ↔ live Data Center issue bridge
 
 **Status:** Complete (frontend implemented Aug 2026)  
-**Owner track:** Maheep (`docs/writebacks/`)  
+**Owner track:** Writebacks (`docs/writebacks/`)  
 **Surfaces:** `/fix` · `/data-consistency` (links only)  
 **Depends on:** Live DCS worklist (`GET /api/v1/dcs/worklist/`) · existing Fix UI chrome  
 **Design reference (authoritative UX):** frontend branch **`original-designs`** — `src/routes/fix.tsx` + `src/styles/fix.css` + fixture `fixPlans` layout  
@@ -327,7 +327,7 @@ export type FixTarget =
 | Diff-bound approval tokens + audit | BL-017 / Fix backend |
 | Real sandbox test execution | Build pack execution |
 | Orchestration `task_type=FIX` | ORCH-01 |
-| Use Case Library | UC-01 (Sahil) |
+| Use Case Library | UC-01 (Engineering) |
 | Restyling Fix away from original-designs | Design pass (not this PRD) |
 
 ---
@@ -341,6 +341,6 @@ export type FixTarget =
 | Design? | **original-designs** Fix page = chrome reference |
 | Data? | DCS worklist only |
 | Writes? | None — Coming soon |
-| Maheep alone? | Yes — FE-only |
+| Writebacks alone? | Yes — FE-only |
 
-**PRD:** FE-08 · **Track:** Maheep · **Design ref:** `original-designs` `/fix`
+**PRD:** FE-08 · **Track:** Writebacks · **Design ref:** `original-designs` `/fix`

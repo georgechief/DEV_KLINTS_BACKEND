@@ -7,7 +7,7 @@
 
 | Slice | Status |
 |-------|--------|
-| **Verify script (Sahil)** | **DONE** — `scripts/verify_m3_demo01_backend.py` |
+| **Verify script (Engineering)** | **DONE** — `scripts/verify_m3_demo01_backend.py` |
 | **§11 A5 (static)** | **PASS** · staging Loom still Phase 6 |
 | **PRD Phase 5** | **DONE** for repo prep |
 
@@ -70,8 +70,8 @@ python scripts/verify_m3_demo01_backend.py --run-tests  # + bootstrap_health + c
 
 ## Exit
 
-Phase 5 **done** for Sahil prep (hardened).  
-**Next:** [Phase 6](./M3_DEMO_01_PHASE_6.md) — Sahil ship DONE (local-only A3).
+Phase 5 **done** for engineering prep (hardened).  
+**Next:** [Phase 6](./M3_DEMO_01_PHASE_6.md) — Engineering ship DONE (local-only A3).
 
 ## Do not
 

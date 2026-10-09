@@ -1,11 +1,11 @@
 # PRD — Company website SalesManago / Manago tracker scrape
 
 **Status:** Ready for implementation (check ID corrected)  
-**Owner track:** Sahil (`docs/ops/` / `docs/security/` / module folders)  
+**Owner track:** Engineering (module folders)  
 **Check ID:** `FD-07` (employer correction — not FD-03)  
 **Filename note:** Historical filename still says FD-03; implement under **FD-07**.  
 **Depends on:**  
-- `Company.domain` populated (signup / Settings website — `company_domain`; see Maheep AUTH-01)  
+- `Company.domain` populated (signup / Settings website — `company_domain`; see Writebacks AUTH-01)  
 - DCS foundation executor wiring (`dataruns/dcs/executors/foundation.py`, DCS-01 orchestrate)  
 - Excel FD-07 VISIT / smclient path remains required alongside this scrape  
 **Repos:** Python HTML scraper + FD-07 executor (scrape + signals)  
@@ -269,8 +269,8 @@ Scrape is network I/O: run inside the DCS Celery task (same as other gates). Cac
 
 | Doc | Relation |
 |-----|----------|
-| Maheep AUTH-01 | Collects / stores `Company.domain` (`company_domain`) |
-| Maheep FE-03 | FD-03 `isOptional=true` — optional FAIL does not block dashboard |
+| Writebacks AUTH-01 | Collects / stores `Company.domain` (`company_domain`) |
+| Writebacks FE-03 | FD-03 `isOptional=true` — optional FAIL does not block dashboard |
 | DCS-02 | Foundation gate inventory — update FD-03 row |
 | DCS-01 | Runs executor inside `run_dcs_score` |
 | DCS-00 | Assemble ignores optional gate for BLOCKED when FE-03 rules apply |

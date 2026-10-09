@@ -1,7 +1,7 @@
 # PRD-FE-09 — DCS title casing + Fix evidence (no raw JSON)
 
 **Status:** Complete (frontend implemented Aug 2026)  
-**Owner track:** Maheep (`docs/writebacks/`)  
+**Owner track:** Writebacks (`docs/writebacks/`)  
 **Surfaces:** `/data-consistency` · `/fix` (live path) · shared `src/lib/dcs.ts` / `src/lib/fix-live-plan.ts`  
 **Depends on:** FE-08 live Fix bridge (merged) · live worklist + issue detail APIs · existing `formatFriendlyEvidenceRows`  
 **Design source of truth:** frontend branch **`original-designs`** — human Title Case titles + human evidence tables (never JSON blobs)  
@@ -284,11 +284,11 @@ Operators get **design-grade readability** from live evidence. They do **not** g
 
 | Item | Owner |
 |------|--------|
-| Executors emit richer row samples (`order.id`, human `summary` on value) | Backend / Sahil DCS |
+| Executors emit richer row samples (`order.id`, human `summary` on value) | Backend / Engineering DCS |
 | Expose `fix_type` / `fix_owner` on worklist **detail** | Backend small |
 | Pack `finding.schema` persistence | Later |
 | BL-017 before/after writeback preview | Approvals PRD |
-| UC-01B Opportunities tracker restore | Sahil |
+| UC-01B Opportunities tracker restore | Engineering |
 
 ---
 
@@ -301,6 +301,6 @@ Operators get **design-grade readability** from live evidence. They do **not** g
 | Data? | Existing worklist evidence — no new APIs |
 | Writes? | None |
 | Pack? | Evidence samples only; writeback preview later |
-| Maheep alone? | Yes — FE-only |
+| Writebacks alone? | Yes — FE-only |
 
-**PRD:** FE-09 · **Track:** Maheep · **Design SoT:** `original-designs` titles + human tables · **Extends:** FE-08
+**PRD:** FE-09 · **Track:** Writebacks · **Design SoT:** `original-designs` titles + human tables · **Extends:** FE-08

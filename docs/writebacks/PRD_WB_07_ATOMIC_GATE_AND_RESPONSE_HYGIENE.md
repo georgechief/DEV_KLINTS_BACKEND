@@ -1,10 +1,10 @@
 # PRD-WB-07 — Atomic once-per-run gate + writeback response hygiene
 
 **Status:** Ready for implementation — **P0 (M2 Fix harden)** after POLISH-01  
-**Owner track:** Maheep (`docs/writebacks/`) — **BE primary · FE only if Entity column needs masked display**  
+**Owner track:** Writebacks (`docs/writebacks/`) — **BE primary · FE only if Entity column needs masked display**  
 **Surfaces:** `POST /api/v1/writebacks/run/` (execute) · `WritebackJob` create order · serialize intents · Fix preview Entity column  
 **Depends on:** WB-04 · WB-06 · POLISH-01 (honest denial copy + executed audit already fixed)  
-**Out of scope:** Sahil CAP-01 / Studio / QA / Handoff · new Catalogue mappings · LE-04 · Shopify metafield execute · Celery audit verify · changing Settings toggle UX · inventing banked revenue  
+**Out of scope:** CAP-01 / Studio / QA / Handoff · new Catalogue mappings · LE-04 · Shopify metafield execute · Celery audit verify · changing Settings toggle UX · inventing banked revenue  
 
 ---
 
@@ -241,7 +241,7 @@ Optional: `scripts/verify_wb07_backend.py` for smoke.
 | Later | Why |
 |-------|-----|
 | New Catalogue mappings wave | Pack coverage (CI-03, SP-01, LE-01…) |
-| Unify writeback caps with Sahil CAP-01 registry | Shared Matrix |
+| Unify writeback caps with CAP-01 registry | Shared Matrix |
 | Celery `verify_audit_chain` | AUDIT v1.1 |
 | Prefer Shopify metafield over native note | Surface matrix residual |
 
@@ -260,5 +260,5 @@ Optional: `scripts/verify_wb07_backend.py` for smoke.
 |------|------|
 | Parents | WB-04 · WB-06 · POLISH-01 §7 leftovers · WB-01 mask rule |
 | Milestone | M2 Fix harden — demo-safe concurrent Approve |
-| Independent of | Sahil CAP-01 · HO-02 |
+| Independent of | Engineering CAP-01 · HO-02 |
 | Pack | Stop-and-flag; no fabricated writes; PII minimization on API |

@@ -1,10 +1,10 @@
 # PRD-CAP-01 — Capability Matrix resolver (MCP vs human route)
 
 **Status:** Steps 0–11 done; Step 12 PR ready (manual commit) — **P0 (M2)** · see [CAP_01_WORKING_GAPS.md](./CAP_01_WORKING_GAPS.md) §Step 12  
-**Owner track:** Sahil (`docs/ops/` / `docs/security/` / module folders) — **BE + FE**  
+**Owner track:** Engineering (module folders) — **BE + FE**  
 **Surfaces:** Build package `route` · Studio · QA eyebrow · Handoff capability summary · `GET` capabilities API  
 **Depends on:** WF-01 (package `route` / `capability_resolution`) · HO-01 (handoff shows route honestly) · pack Capability Matrix v1.1  
-**Out of scope:** Live MCP tool calls / discovery runs against Manago (**ops evidence later**) · **HO-02** MCP Send / `ACTIVATED` · autonomous publish · Maheep writeback execute mappings · inventing `CONFIRMED_LIVE` without pack/evidence · BL-017 ORCH SM · changing the 16 blueprint JSON files  
+**Out of scope:** Live MCP tool calls / discovery runs against Manago (**ops evidence later**) · **HO-02** MCP Send / `ACTIVATED` · autonomous publish · writeback execute mappings · inventing `CONFIRMED_LIVE` without pack/evidence · BL-017 ORCH SM · changing the 16 blueprint JSON files  
 
 ---
 
@@ -19,7 +19,7 @@ Read:
   (sheets 02 Capability Matrix, 05 Fallback Rules) + capability_record.schema.json
 - Pack: manago_mcp_discovery_results.json (all PENDING — do not invent CONFIRMED)
 - Code: dataruns/use_cases/build_package.py (_resolve_capabilities — currently hardcodes HUMAN)
-- Maheep (do not break): dataruns/writebacks/capabilities.json + capabilities.py
+- Writebacks (do not break): dataruns/writebacks/capabilities.json + capabilities.py
 
 Ship:
 1. Seed/load Matrix rows into a capability registry (JSON under dataruns/ + optional model) (§3).
@@ -54,7 +54,7 @@ From **Build Pack v1.2** / Capability Matrix **v1.1**:
 |---------|----------|
 | `build_package._resolve_capabilities` | **Hardcodes** `MCP.WORKFLOW.UPSERT` → `resolved_status: HUMAN_FALLBACK`; other deps → `NOT_CONFIRMED` |
 | Package `route` | Always **`HUMAN_FALLBACK`** in practice (MCP branch never sets `resolved_status == "MCP"`) |
-| Maheep writebacks | Separate tiny `writebacks/capabilities.json` (REST/Shopify WRITE) — **not** the Matrix registry |
+| writebacks | Separate tiny `writebacks/capabilities.json` (REST/Shopify WRITE) — **not** the Matrix registry |
 | Studio / Handoff | Show package `route` when present; no Matrix-backed resolver |
 
 **CAP-01** makes route + resolution **Matrix-backed and honest**, without flipping MCP to live or implementing Send.
@@ -105,7 +105,7 @@ Also seed:
 | `MCP.WORKFLOW.PUBLISH` | `DISCOVERY_REQUIRED` |
 | `RESTV2.WORKFLOW.LIST` | `CONFIRMED_LIVE` (read — does **not** unlock package `route=MCP`) |
 
-### 3.3 Maheep writebacks
+### 3.3 writebacks
 
 **Do not break** `dataruns/writebacks/capabilities.py`.  
 
@@ -268,7 +268,7 @@ Copy rules:
 - [x] `capability_resolution[]` lists blueprint deps with Matrix-backed statuses / fallbacks  
 - [x] `GET /api/v1/capabilities/` works tenant-auth  
 - [x] Studio + Handoff honest about route; **no MCP Send**  
-- [x] Maheep writebacks still execute for allowlisted checks  
+- [x] writebacks still execute for allowlisted checks  
 - [x] Pack rule respected: no fabricated MCP CONFIRMED in seed  
 
 ---
@@ -280,7 +280,7 @@ Copy rules:
 | **E2E-01** | Lumera path Loom + M2 submission (after CAP honesty) |
 | **HO-02** | Live MCP/A2A Send + `ACTIVATED` when UPSERT/PUBLISH confirmed |
 | **CAP-01B** | Run MCP discovery plan (MCP-D-01…); attach evidence; flip statuses with audit |
-| **Unify** writeback + Matrix registry | Maheep follow-up if option B chosen |
+| **Unify** writeback + Matrix registry | Writebacks follow-up if option B chosen |
 
 ---
 
@@ -299,5 +299,5 @@ Copy rules:
 | Milestone | M2 — honest MCP vs human before T2 E2E claim |
 | Pack | Capability Matrix v1.1 · Fallback Rules · `capability_record.schema.json` · MCP discovery PENDING |
 | Parents | WF-01 §7.1–7.2 · HO-01 §10 |
-| Independent of | HO-02 Send · Maheep POLISH-01 (already shipped) |
+| Independent of | HO-02 Send · Writebacks POLISH-01 (already shipped) |
 | BUILD_README | “Capability Matrix resolves Manago MCP, Agent, REST, … and human fallbacks” |

@@ -1,7 +1,7 @@
 # PRD-RPT-01B — Assessment PDF content & design polish
 
 **Status:** Ready for implementation  
-**Owner track:** Sahil (`docs/ops/` / `docs/security/` / module folders)  
+**Owner track:** Engineering (module folders)  
 **Depends on:** RPT-01 merged ([BE #38](https://github.com/Rohan070/klints_backend/pull/38) / [FE #26](https://github.com/Rohan070/klints_frontend/pull/26))  
 **Trigger:** Live sample `docs/reports/klints-assessment-lumera-skin-13-2026-08-12.pdf` — structure OK, **content/UX not stakeholder-ready**  
 **Out of scope:** Free/paid gating · storing PDF bytes · LLM narratives · changing Overview Export brief wiring · FE redesign beyond what PDF needs
@@ -179,6 +179,6 @@ FE: **no change** unless a bug blocks Export brief.
 | What? | Make the Assessment PDF a real client brief |
 | Biggest gap? | Empty What to fix + raw log copy |
 | API/FE? | Unchanged |
-| Who? | Sahil |
+| Who? | Engineering |
 
-**PRD:** RPT-01B · **Track:** Sahil · **Bar:** stakeholder-readable full PDF  
+**PRD:** RPT-01B · **Track:** Engineering · **Bar:** stakeholder-readable full PDF  

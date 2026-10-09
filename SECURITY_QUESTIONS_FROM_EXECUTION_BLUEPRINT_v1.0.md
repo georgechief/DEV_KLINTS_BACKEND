@@ -31,7 +31,7 @@
 | Which AI? | **Mistral** in the **EU**, model id **`mistral-small-latest`**. Privacy filter before send. LangSmith tracing on (`noreplyklints@gmail.com`). |
 | Reports | PDF is **generated on download** (not stored as a file). Only authorized people. |
 | Backups | **Off** in development (fake data). Turn on for a live partner; restore aim **5–10 minutes**. Never restore-tested yet. |
-| Who can operate? | **Rohan Girdhani** + **Sahil Kumar**. 24h critical. Sahil can deploy under guidance. |
+| Who can operate? | **Rohan Girdhani** + **Astrapse secondary operator**. 24h critical. Engineering can deploy under guidance. |
 | Gate B effort | **7–10 days outside phase 1** (reviewer ~3–4 days + fixes ~6 days). Independent pen test not booked yet. |
 | Legal / DPAs | **Ask Comenius counsel** — we do not invent signed contracts from code. |
 
@@ -124,7 +124,7 @@ Gate B closes only when three parallel lanes converge. Engineering is one lane, 
 | 2 | **Platform foundation** — Fix deployment product, environments, network boundaries, database roles, secrets architecture and CI/CD constraints | Frankfurt droplet + Managed Postgres; Fernet via Actions; tag deploy. LB/RLS/KMS deferred as Alternatives. | Alternative proposed |
 | 3 | **Highest-risk controls** — Implement tenant isolation and connector credential protection first | App-level scoping live; no RLS. Fernet shared key. Future: per-tenant Docker. | Alternative proposed |
 | 4 | **AI and report path** — AI Data Contract, Mistral EU route, validation/fallback, canonical report payload, report access and provenance | PrivacyGate+allowlist; mistral-small-latest; EU ops; payload_hash; PDF stream. Gaps: EU hard-pin, 2603, PDF byte hash, cohort. | In progress |
-| 5 | **Operational readiness** — Logs, monitoring, backup restore, deletion replay, incident response, access control, deployment approval and secondary-operator runbooks | Grafana live; backups OFF; restore never tested; no formal tabletop. Sahil secondary under guidance. | Evidence pending |
+| 5 | **Operational readiness** — Logs, monitoring, backup restore, deletion replay, incident response, access control, deployment approval and secondary-operator runbooks | Grafana live; backups OFF; restore never tested; no formal tabletop. Astrapse secondary under guidance. | Evidence pending |
 | 6 | **Independent evidence and Gate B review** — Acceptance catalogue, independent review, disposition findings, customer security evidence pack | Pen test (e.g. pentest-tools.com) not booked; GB-25 pack not assembled. | Blocked |
 
 ### 3.2 What may run in parallel
@@ -144,7 +144,7 @@ Gate B closes only when three parallel lanes converge. Engineering is one lane, 
 
 | Party | Accountable for now | Must not decide alone | Confirmed? |
 |-------|---------------------|----------------------|------------|
-| Rohan / Astrapse Labs | Architecture options; implementation; automated tests; as-built evidence; runbooks; estimate and dependencies | Legal roles; product audience; retention periods; acceptance of residual risk; authorisation of live data | Yes — Rohan Girdhani (Lead); Sahil Kumar (tester/secondary under guidance) |
+| Rohan / Astrapse Labs | Architecture options; implementation; automated tests; as-built evidence; runbooks; estimate and dependencies | Legal roles; product audience; retention periods; acceptance of residual risk; authorisation of live data | Yes — Rohan Girdhani (Lead); Astrapse secondary operator (tester/secondary under guidance) |
 | Comenius Agency | Product decisions; accounts; owner appointments; acceptance of risk; approval of gates; customer-facing claims | Technical feasibility or security evidence without Rohan and the independent reviewer | Ask Comenius |
 | Counsel / privacy owner | Processing roles; transfers; Article 50 determination; DPIA screening; contract language | Engineering architecture or undocumented product-intent assumptions | Ask Comenius / counsel |
 | Independent reviewer | Independent review of tenant isolation and credential handling; findings and dispositions | Implementation ownership or self-review of code they authored | Not booked (pentest-tools.com path) |
@@ -207,7 +207,7 @@ Full normative wording and tests remain in **v1.3**.
 | WP1-1 | Recommend and document the exact DigitalOcean deployment product and managed services used? | Droplet + Managed Postgres (~2 GB), Frankfurt. No LB/autoscaling yet (~3d later when design partner live). Evidence: `.github/workflows/deploy-development.yml`, `docker-compose.yml`, `deploy/`, RELEASES.md, v1.0.2. | Complete |
 | WP1-2 | Define development, staging and production boundaries; production data and credentials must not exist outside production? | Client staging = tag deploy from `georgechief/DEV_KLINTS_BACKEND` to apis.klints.io; synthetic data. Formal prod boundary evidence incomplete. | In progress |
 | WP1-3 | Hard-code approved external destinations and deny user-, tenant- or data-controlled provider endpoints? | Mistral direct; EU ops practice only — **no hard-pin fail-closed in code**. | Alternative proposed |
-| WP1-4 | Document support, administrative and break-glass paths, including access expiry and audit events? | Access: Rohan Girdhani + Sahil Kumar; 24h critical. Formal break-glass runbook not named. | Evidence pending |
+| WP1-4 | Document support, administrative and break-glass paths, including access expiry and audit events? | Access: Rohan Girdhani + Astrapse secondary operator; 24h critical. Formal break-glass runbook not named. | Evidence pending |
 | WP1-5 | Produce an as-built service/region map and identify facts that remain provider claims or not established? | Partial map: Frankfurt droplet + Managed PG; Grafana `/grafana/`. DPA/subprocessor map → provider/Comenius. | Evidence pending |
 
 | Gate A refs (exact tests in v1.3) | Disposition | Status |
@@ -237,12 +237,12 @@ Full normative wording and tests remain in **v1.3**.
 | WP2-2 | Enforce PostgreSQL RLS with FORCE ROW LEVEL SECURITY; application roles must not own tenant tables or hold BYPASSRLS? | **Not building database RLS now.** Today: app filters by company. **Proposed later:** one Docker stack per tenant (~7–10 days after phase 1). | Alternative proposed |
 | WP2-3 | Use transaction-scoped tenant context and test connection-pool leakage and missing-context failure? | Not as blueprint RLS context — app filters only. | Alternative proposed |
 | WP2-4 | Validate tenant membership server-side for every request and job; JWT claims are not the trust boundary? | Server-side company resolution via `get_user_company`; roles admin/analyst/viewer. Residual: multi-company-per-tenant not productized (M3-SEC-01). | In progress |
-| WP2-5 | Define least-privilege roles, privileged MFA, session revocation, support role and break-glass access? | Roles exist; MFA/break-glass formalization incomplete. Ops: Rohan + Sahil; 24h critical. | Evidence pending |
+| WP2-5 | Define least-privilege roles, privileged MFA, session revocation, support role and break-glass access? | Roles exist; MFA/break-glass formalization incomplete. Ops: Rohan + Engineering; 24h critical. | Evidence pending |
 | WP2-6 | Run the complete TEN negative-test family in CI and prepare the implementation for independent review? | Independent review not booked; TEN family evidence not complete. | Blocked |
 
 | Comenius inputs | Notes | Status |
 |-----------------|-------|--------|
-| Named support/admin holders | Rohan Girdhani (Lead); Sahil Kumar (Astrapse) | Complete |
+| Named support/admin holders | Rohan Girdhani (Lead); Astrapse secondary operator | Complete |
 | Approves the revocation target | Need Comenius | Comenius decision required |
 | Selects the independent reviewer | Path: pentest-tools.com; not booked | Blocked |
 
@@ -404,12 +404,12 @@ Full normative wording and tests remain in **v1.3**.
 
 | # | Rohan / Astrapse action (as question) | Answer / evidence | Status |
 |---|---------------------------------------|-------------------|--------|
-| WP7-1 | Establish repository visibility, organisation plan and the independent production approval mechanism? | Live SoT: `georgechief/DEV_KLINTS_BACKEND` tags. Auto tag deploy. Plan/visibility/approver → Comenius. Sahil secondary under guidance. | Comenius decision required |
+| WP7-1 | Establish repository visibility, organisation plan and the independent production approval mechanism? | Live SoT: `georgechief/DEV_KLINTS_BACKEND` tags. Auto tag deploy. Plan/visibility/approver → Comenius. Astrapse secondary under guidance. | Comenius decision required |
 | WP7-2 | Separate production credentials; restrict them to the production job and narrowest supported scopes? | Secrets via GitHub Actions into deploy; formal prod separation evidence pending. | In progress |
 | WP7-3 | Protect the default branch; pin actions to commit hashes; run dependency, container and secret scans; retain the SBOM? | SBOM / pinned Action hashes / branch protection **not proven in-repo** as Gate B hard asks. | Evidence pending |
 | WP7-4 | Build once and promote the same digest; separate migration credentials and approvals; test a documented rollback action? | Tag-based CD; digest promotion / rollback evidence incomplete. | Evidence pending |
 | WP7-5 | Record digest, approver, migration status, timestamp and outcome for every deployment? | RELEASES.md / tag history partial; dual-control approval not shown. | Evidence pending |
-| WP7-6 | Write deployment, patch, restore and credential-rotation runbooks and demonstrate deployment by a second person? | Deploy scripts exist; Sahil can operate under guidance; formal second-person demo evidence pending. | In progress |
+| WP7-6 | Write deployment, patch, restore and credential-rotation runbooks and demonstrate deployment by a second person? | Deploy scripts exist; Engineering can operate under guidance; formal second-person demo evidence pending. | In progress |
 
 | Acceptance IDs | Pass? | Evidence | Status |
 |----------------|-------|----------|--------|
@@ -417,13 +417,13 @@ Full normative wording and tests remain in **v1.3**.
 | CICD-06 … CICD-13 (cited in WP7 refs — disposition via v1.3) | No | Not evidenced | Not started |
 | BCP-03, BCP-07 | No | Continuity demos incomplete | Evidence pending |
 | VUL family (v1.3) | No | Pen test not booked | Blocked |
-| O-14 (cited with O-02/O-03 — pull definition from v1.3) | Pending | Sahil secondary recommended | Comenius decision required |
+| O-14 (cited with O-02/O-03 — pull definition from v1.3) | Pending | Astrapse secondary recommended | Comenius decision required |
 
 | Comenius inputs | Notes | Status |
 |-----------------|-------|--------|
 | Confirms GitHub facts | Plan + visibility needed | Comenius decision required |
 | Names the independent approver | Not named | Comenius decision required |
-| Identifies the secondary operator | Sahil Kumar under guidance | Complete |
+| Identifies the secondary operator | Astrapse secondary operator under guidance | Complete |
 
 | Evidence to retain | Have we retained it? | Status |
 |--------------------|----------------------|--------|
@@ -501,7 +501,7 @@ Gate B is cumulative and binary. No live tenant data is authorised until every b
 |----|------------------|---------------|--------------------|-----------------------|--------|
 | GB-13 | Tenant isolation implemented, all negative tests passed and independently reviewed | Astrapse + reviewer | Planned | App-level company scoping; **no RLS**; pen test not booked. Future per-tenant Docker. | Alternative proposed |
 | GB-14 | Credential store implemented, backup-decryption test passed and independently reviewed | Astrapse + reviewer | Planned | Shared Fernet via Actions; rotatable; no per-tenant DEK; independent review not done | Alternative proposed |
-| GB-15 | No standing production access; named access matrix and expiring break-glass tested and audited | Comenius + Astrapse | Planned | Named: Rohan Girdhani + Sahil Kumar; 24h critical; formal break-glass test missing | Evidence pending |
+| GB-15 | No standing production access; named access matrix and expiring break-glass tested and audited | Comenius + Astrapse | Planned | Named: Rohan Girdhani + Astrapse secondary operator; 24h critical; formal break-glass test missing | Evidence pending |
 | GB-16 | DigitalOcean and production account ownership documented under Comenius Agency | Comenius | Planned | Service map partial (Astrapse); ownership docs → Comenius | Legal/provider evidence required |
 
 ### 6.4 Operations and evidence
@@ -572,10 +572,10 @@ These items require owner action outside normal implementation. Rohan should ide
 | O-09 | Assessment Report intended audience | Confirm how access and download controls support each option | Comenius | **Recommend:** authorized account personnel only; stream PDF; no shareable file trail. | Alternative proposed |
 | O-11 / O-12 | Retention periods and legal-hold policy | Inventory of stores, logs, backups and deletion capabilities | Comenius | PDF zero file retention; JSON payload may remain in DB; backups off in dev until live partner. Need approved matrix. | Comenius decision required |
 | O-13 | Key/secrets implementation | Preferred technical option after O-01 | Astrapse | **Recommend:** stay env Fernet via GitHub Actions (rotatable). Disclose single shared key — not per-tenant DEK/KMS. | Alternative proposed |
-| O-14 | *(Cited in WP7 with O-02/O-03 — definition in v1.3; likely continuity / secondary operator)* | Pull wording from v1.3; supply technical input | Comenius + Astrapse | **Recommend secondary:** Sahil Kumar under guidance; 24h critical with Rohan. | Comenius decision required |
+| O-14 | *(Cited in WP7 with O-02/O-03 — definition in v1.3; likely continuity / secondary operator)* | Pull wording from v1.3; supply technical input | Comenius + Astrapse | **Recommend secondary:** Astrapse secondary operator under guidance; 24h critical with Rohan. | Comenius decision required |
 | O-16 / O-17 | First design partner, jurisdiction and scale | Capacity/security constraints and maximum supported volumes | Comenius | Capacity: current ~2GB Managed PG; no LB yet. Partner choice = Comenius. | Comenius decision required |
 | O-18 | RTO and RPO | Feasible targets and cost/architecture consequences | Comenius | **Recommend restore target 5–10 min** when DO backups enabled; never tested yet. | Comenius decision required |
-| O-19 | Incident owners and contact routes | Runbook roles and technical escalation needs | Comenius | Technical: Rohan primary, Sahil secondary; formal IR owners = Comenius. | Comenius decision required |
+| O-19 | Incident owners and contact routes | Runbook roles and technical escalation needs | Comenius | Technical: Rohan primary, Astrapse secondary; formal IR owners = Comenius. | Comenius decision required |
 | O-25 | Exact sanitised A1 payload retention | Implementability, storage and deletion implications of Options A/B | Comenius + privacy | Implementable either way; need decision. | Comenius decision required |
 | O-26 | Cryptographic signing at P0 or enhanced control | Implementation cost and key-custody implications | Comenius | **Recommend:** keep optional; do not block base hash/provenance. | Comenius decision required |
 | O-27 | Session revocation service level | Measured feasible target and technical dependency | Comenius | Need measured target; roles exist today. | Comenius decision required |
@@ -611,7 +611,7 @@ These items require owner action outside normal implementation. Rohan should ide
 |-------|------------------|-------------------|--------|
 | Requirement ID | Full blueprint ID or work-package ID | Yes — this pack | In progress |
 | Status | Not started; In progress; Evidence pending; Blocked; Ready for independent review; Complete | Yes — this pack | In progress |
-| Owner | Named individual, not only an organisation | Rohan / Sahil / Comenius as noted | In progress |
+| Owner | Named individual, not only an organisation | Rohan / Astrapse secondary / Comenius as noted | In progress |
 | Dependency | Open decision, provider evidence, another WP or external reviewer | Yes — legal + pen test called out | In progress |
 | Implementation reference | Ticket, pull request, commit and deployed artefact digest | Partial (tags / RELEASES.md) | Evidence pending |
 | Evidence | Test result, configuration export, review record, runbook or executed instrument | Backend repo plan; packet incomplete | Evidence pending |
@@ -658,7 +658,7 @@ Rohan's Gate B handover should be a compact evidence pack. It does not need to r
 | Reports | Canonical schema, hash records, report access tests, semantic re-render and provenance inspection | Partial | payload_hash; no PDF byte hash | Alternative proposed |
 | Operations | Logging/monitoring configuration, alert tests, retention/deletion implementation, restore transcript, incident and degraded-mode runbooks | Partial | Grafana live; backups off; no restore/tabletop | Evidence pending |
 | Delivery | CI/CD configuration, approval evidence, scan/SBOM outputs, digest promotion and rollback result | Partial | Tag workflows / RELEASES.md | Evidence pending |
-| Continuity | Patch process, deployment/restore runbooks and second-person deployment demonstration | Partial | Sahil secondary; demos incomplete | Evidence pending |
+| Continuity | Patch process, deployment/restore runbooks and second-person deployment demonstration | Partial | Astrapse secondary; demos incomplete | Evidence pending |
 | Status | Final requirement disposition, open findings, exceptions, dependencies and bottom-up estimate actuals/variance | Partial | This pack + companion; review findings N/A | In progress |
 
 ### 10.2 Final questions before Gate B
@@ -671,7 +671,7 @@ If any answer is **No**, live tenant processing remains blocked. Synthetic devel
 | 10.2.2 | Can an independent reviewer reproduce the tenant-isolation and credential-store evidence? | No | Pen test not booked; no RLS; shared Fernet |
 | 10.2.3 | Can Klints identify exactly what left the environment in every model call without exposing prohibited content in logs? | Partial | PrivacyGate/allowlist; LangSmith active — full proof pending |
 | 10.2.4 | Can a report be traced to its canonical payload, model route, policy version, human edits and issued-file hash? | Partial | payload_hash yes; PDF byte hash no; Art. 50 open |
-| 10.2.5 | Can a second person deploy, restore and initiate incident response using the written runbooks? | Partial | Sahil can deploy under guidance; restore never tested; no tabletop |
+| 10.2.5 | Can a second person deploy, restore and initiate incident response using the written runbooks? | Partial | Engineering can deploy under guidance; restore never tested; no tabletop |
 | 10.2.6 | Does every customer-facing security statement have an evidence reference or an explicit not-established qualification? | No | GB-25 pack not assembled |
 
 ### GATE B OUTCOME

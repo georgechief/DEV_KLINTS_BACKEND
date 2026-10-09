@@ -1,8 +1,8 @@
 # PRD-WB-14 — LE-02 purchase value correction writeback
 
-**Status:** **Shipped (impl landed)** — P0 M2 Catalogue Automated writeback · Sahil  
+**Status:** **Shipped (impl landed)** — P0 M2 Catalogue Automated writeback · Engineering  
 
-**Owner track:** Sahil — **BE primary · FE Approve allowlist only** (pack Fix Owner = **Klints (automated)**)  
+**Owner track:** Engineering — **BE primary · FE Approve allowlist only** (pack Fix Owner = **Klints (automated)**)  
 **Surfaces:** Fix `/fix` Approve · Settings Allow writebacks · `WritebackAllowedCheck` · registry / mapping · possible sheet · Activity/audit · **DCS lifecycle mismatches (new)** · Manago adapter `event_correct` (**new**)  
 **Milestone:** M2 Activation & Blueprint (T2) — Lifecycle value honesty  
 **Depends on:** WB-03…WB-13 · FE-08/09 · live `evaluate_le_02` + `lifecycle_join` · LE-05/LE-01 treating path for gap-driven FAIL · Manago `updateContactExtEvent` (**capability discovery → CONFIRMED**)  
@@ -109,7 +109,7 @@ LE-02 FAIL
 | 11 | Suggested Fix **Part A** (gross vs net mapping config) | **Out of scope** — if FAIL is only `gross_vs_net_definition` and **no** `value_mismatch` rows → Preview **0** + explain |
 | 12 | FE allowlist add **LE-02** only (no new Fix chrome) | **Yes** |
 | 13 | `approval_tier` = **`individual`** | **Yes** — matches `stub_factory` T6 default (native revenue overwrite; higher risk than `klints_` hygiene). One Fix Approve still may send up to sample cap of intents; tier echoed on preview |
-| 14 | Eng owner track = **Sahil**; pack Fix Owner = **Klints (automated)** | **Yes** |
+| 14 | Eng owner track = **Engineering**; pack Fix Owner = **Klints (automated)** | **Yes** |
 | 15 | Capability must be **`CONFIRMED_LIVE` or `CONFIRMED_LIMITED`** before execute | **Yes** — shipped `CONFIRMED_LIMITED` batch_max 50 |
 | 16 | Do **not** add LE-02 to `suppressFixProceedToStudio` | **Yes** — PT-04 only |
 | 17 | Absolute per-row money gate for emitting mismatch | **`abs(shopify_gross − manago_value) > 0.01`** (currency units) |
@@ -130,7 +130,7 @@ LE-02 FAIL
 ### 2.2 Lane wall
 
 ```text
-Sahil WB-14   =  DCS value_mismatch rows + event_correct adapter + LE-02 mapping + allowlist + FE
+WB-14   =  DCS value_mismatch rows + event_correct adapter + LE-02 mapping + allowlist + FE
 Do not regress =  LE-01 / LE-05 / LE-09 / PT-04 / SP-07 / CI-01 / CC-03 live writebacks
 Out of this PR =  LE-06 · LE-08 event_update · net definition flip · manago_only delete · CI-05
 ```

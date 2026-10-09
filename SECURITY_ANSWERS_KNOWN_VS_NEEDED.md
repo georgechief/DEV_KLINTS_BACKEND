@@ -22,7 +22,7 @@
 | Connector secrets | **Fernet** with **one global env key** — not per-tenant DEKs |
 | AI | Direct **Mistral**, default model **`mistral-small-latest`** (not pinned `2603`); PrivacyGate + allowlist exist; **ops says EU-region Mistral for now** — still **no hard EU pin in app code** |
 | Hosting (Rohan confirmed 11 Sep 2026) | Droplet **+ Managed Postgres (~2 GB)** in **Frankfurt**; **no LB/autoscaling** yet; live SoT = **`georgechief/DEV_KLINTS_BACKEND` tags** |
-| Access | **Rohan Girdhani** + **Sahil Kumar**; 24h critical; pen test via commercial tooling (not booked) |
+| Access | **Rohan Girdhani** + **Astrapse secondary operator**; 24h critical; pen test via commercial tooling (not booked) |
 | Secrets trust (Rohan) | Env Fernet via **GitHub Actions**; rotatable; never committed — still **one shared key** |
 | Shopify scopes (Rohan) | Includes **`write_customers`** + reads (inventory/orders/products/store credit tx) — **not read-only** |
 | Gate B effort (Rohan) | **7–10 days outside phase 1**: reviewer ~3–4d + remediations ~6d |
@@ -220,7 +220,7 @@ Answers are short. Evidence is the proof.
 ### Isolation & access (WP2 / GB-13 / GB-15)
 
 - [x] **B5.** **Today:** app-level company scoping (shared multi-tenant). **Not building Postgres RLS now.** **Future recommendation (post phase 1):** package system that spins **one Docker stack per tenant** (cloud or on-prem) from workflow — estimate **+7–10 days** with patching; decide after phase 1.
-- [x] **B6.** People who can touch staging/ops: **Rohan Girdhani (Lead)** and **Sahil Kumar (Astrapse — code tester/reviewer; training for expansion)**.
+- [x] **B6.** People who can touch staging/ops: **Rohan Girdhani (Lead)** and **Astrapse secondary operator** (code tester/reviewer; training for expansion).
 - [x] **B7.** **24-hour critical break resolution** supported; broader team can jump in if needed. Formal break-glass runbook not named beyond that.
 - [x] **B8.** Independent review path: schedule **industry-grade online pen test** (e.g. [pentest-tools.com](https://pentest-tools.com/)). Firm/engagement **not booked yet**.
 
@@ -253,7 +253,7 @@ Answers are short. Evidence is the proof.
 
 - [x] **B23.** **Never** restore-tested for Klints. Backups intentionally **off** in development. DO can turn backups on anytime.
 - [x] **B24.** Ops visibility now: **Grafana live** + **LangSmith** for AI/error tracing. Full incident tabletop packet: **not done**. Recent DO incident (service deletion) noted as learned risk.
-- [x] **B25.** Deployments are **auto** (tag workflow). **Sahil Kumar** can operate under guidance as secondary.
+- [x] **B25.** Deployments are **auto** (tag workflow). **Astrapse secondary operator** can operate under guidance as secondary.
 
 ### Estimate / process (WP0 / §4.2)
 

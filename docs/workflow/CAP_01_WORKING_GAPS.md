@@ -325,7 +325,7 @@ Authoritative BE sign-off before FE. FE §8 rows (Studio / Handoff) → Steps 8�
 
 ## Step 10 — Writeback safety (option B)
 
-**Goal:** CAP-01 Matrix registry must **not** break Maheep writeback execute for allowlisted checks.  
+**Goal:** CAP-01 Matrix registry must **not** break writeback execute for allowlisted checks.  
 **Tests:** `dataruns.tests.test_capability_matrix_step10`
 
 | Lock | Expect | Status |
@@ -403,7 +403,7 @@ npm run verify:ho01   # Send lock non-regression
 |------|------|
 | `docs/workflow/PRD_CAP_01_CAPABILITY_MATRIX_RESOLVER.md` | This PRD |
 | `dataruns/use_cases/build_package.py` (`_resolve_capabilities`) | Replaced in Step 5 — Matrix resolver |
-| `dataruns/writebacks/capabilities.json` + `capabilities.py` | Maheep — **do not break** (option B) |
+| `dataruns/writebacks/capabilities.json` + `capabilities.py` | Writebacks — **do not break** (option B) |
 
 ### 0.1 Dependencies
 
@@ -459,7 +459,7 @@ Overview principle (sheet 01): MCP starts DISCOVERY_REQUIRED; never inferred liv
 |---------|----------|
 | `build_package._resolve_capabilities` | **CAP-01 Step 5:** Matrix resolver (was hardcoded HUMAN / NOT_CONFIRMED) |
 | Package `route` | Becomes `MCP` only if UPSERT row `resolved_status == "MCP"` — **never** with hardcode |
-| Maheep writebacks | `writebacks/capabilities.json` + `capabilities.py` — REST/Shopify execute gate; **≠** Matrix |
+| writebacks | `writebacks/capabilities.json` + `capabilities.py` — REST/Shopify execute gate; **≠** Matrix |
 | FE Handoff | **CAP-01 Step 9:** route chip + resolution from live handoff/package; Send locked |
 | FE Studio | **CAP-01 Step 8:** route chip + resolution line from live package |
 
@@ -479,7 +479,7 @@ Overview principle (sheet 01): MCP starts DISCOVERY_REQUIRED; never inferred liv
 
 | Option | Decision |
 |--------|----------|
-| **A** Shared loader | Deferred — Maheep / CAP unify later |
+| **A** Shared loader | Deferred — Writebacks / CAP unify later |
 | **B** Leave writeback JSON as-is | **Locked** — CAP registry is Studio/package only; TODO to unify |
 
 **Why B:** Different shape (`batch_max`, no channel/evidence). Unifying now risks CI-01 / CC-03 / WB-SHOP-01. PRD allows B.

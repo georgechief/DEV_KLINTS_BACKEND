@@ -7,7 +7,7 @@
 
 | Slice | Status |
 |-------|--------|
-| **Sahil (repo / prep)** | **DONE** (2026-09-14) |
+| **Engineering (repo / prep)** | **DONE** (2026-09-14) |
 | **Ops live (Rohan)** | **PENDING** — enable induce + run script + Explore marker |
 | **PRD Phase 2 full close** | **NOT done** until A5 marker evidence exists |
 
@@ -19,15 +19,15 @@ Prove controlled ERROR on staging: enable induce → fire marker → see it in G
 
 | Owner | Scope |
 |-------|--------|
-| **Sahil** | Induce path on `main`, verify/tests green, runbook accurate, Phase 2 checklist docs, Rohan handoff note |
-| **Rohan / ops** | `DEV_ENV_FILE` / droplet `.env`, SSH on server, enable/disable induce, run droplet script (or hand Sahil evidence) |
+| **Engineering** | Induce path on `main`, verify/tests green, runbook accurate, Phase 2 checklist docs, Rohan handoff note |
+| **Rohan / ops** | `DEV_ENV_FILE` / droplet `.env`, SSH on server, enable/disable induce, run droplet script (or hand Engineering evidence) |
 | **Either** | Grafana Explore confirm of `M3-OBS-01-INDUCE-WEB` + paste evidence here |
 
-**Note:** SSH already exists on the server — that is **ops**, not Sahil. Sahil does not own droplet write / induce flag flip.
+**Note:** SSH already exists on the server — that is **ops**, not Engineering. Engineering does not own droplet write / induce flag flip.
 
 **Partial staging fact (not A5):** Grafana already works and shows service logs. That supports stack health; it does **not** replace the controlled induce marker proof.
 
-## Sahil checklist (prep)
+## Engineering checklist (prep)
 
 | # | Task | Done |
 |---|------|------|
@@ -47,7 +47,7 @@ Prove controlled ERROR on staging: enable induce → fire marker → see it in G
 | 2.3 | Droplet: `bash deploy/scripts/m3-obs-induce-web-error.sh` | [ ] |
 | 2.4 | Explore: `{service="web"} \|= "M3-OBS-01-INDUCE-WEB"` | [ ] |
 | 2.5 | `staging-logs-error-web` pending/firing; redis (etc.) no false-fire | [ ] |
-| 2.6 | Capture evidence below (or send Sahil screenshot) | [ ] |
+| 2.6 | Capture evidence below (or send Engineering screenshot) | [ ] |
 | 2.7 | WORKING_GAPS → Phase 2 full `[x]` when Explore proven | [ ] |
 
 ## Live runbook (ops on staging)
@@ -85,7 +85,7 @@ bash deploy/scripts/m3-obs-induce-web-error.sh
 
 | Exit | When |
 |------|------|
-| Sahil Phase 2 prep | **Met** — docs + path ready; waiting on ops |
+| Engineering Phase 2 prep | **Met** — docs + path ready; waiting on ops |
 | PRD Phase 2 full | Explore shows `M3-OBS-01-INDUCE-WEB` under `service=web` + evidence pasted |
 
 **Next after full Phase 2:** Phase 3 — alert email to `noreplyklints@gmail.com` (or stop-and-flag).

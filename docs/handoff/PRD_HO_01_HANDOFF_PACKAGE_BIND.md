@@ -1,7 +1,7 @@
 # PRD-HO-01 — Handoff package bind (staged · live page · no fake Send)
 
 **Status:** In progress — **P0 (M2 Handoff half)** · Steps 0–11 done; Step 12 PR ready (manual commit)  
-**Owner track:** Sahil (`docs/ops/` / `docs/security/` / module folders) — **BE + FE**  
+**Owner track:** Engineering (module folders) — **BE + FE**  
 **Surfaces:** `/handoff` · QA “Continue to Handoff” · FlowStepper Handoff · build-package APIs  
 **Milestone:** M2 Activation & Blueprint (T2) — contract row **QA + Handoff live**; QA-01 shipped QA; **this PRD ships Handoff bind + staged package**  
 **Depends on:**  
@@ -10,7 +10,7 @@
 - **OPS-UC-01** — pilots seeded (otherwise no package to hand off)  
 **Pack SoT:** `03_Machine_Contracts/handoff_package.schema.json` · blueprint `handoff` block  
 **Design SoT:** existing `/handoff` chrome — **replace fixture body** with live package; keep visual language  
-**Out of scope:** Live MCP/A2A **Send** to Manago · Capability Matrix resolver (**CAP-01**) · Maheep writebacks · BL-012 waves · BL-017 8-state ORCH · force-PASS QA  
+**Out of scope:** Live MCP/A2A **Send** to Manago · Capability Matrix resolver (**CAP-01**) · writebacks · BL-012 waves · BL-017 8-state ORCH · force-PASS QA  
 
 ---
 
@@ -235,4 +235,4 @@ metadata: handoff_id, package_id, qa_run_id, use_case_id, status=STAGED
 | Contract | M2 — Handoff half after QA-01 |
 | Pack | `handoff_package.schema.json` · BL-020 partial (staged, not full Lumera E2E) |
 | Parents | QA-01 · WF-01 · WF-02 |
-| Independent of | Maheep WB-04/05/06 |
+| Independent of | WB-04/05/06 |

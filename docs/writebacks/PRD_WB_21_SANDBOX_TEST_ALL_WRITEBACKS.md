@@ -2,7 +2,7 @@
 
 **Status:** **Phase A–D done** — full matrix harness + Phase D honesty/live hooks · P0 · honesty + test contract (not a new writeback mapping)  
 
-**Owner track:** Maheep / Sahil — **BE primary · FE honesty only**  
+**Owner track:** Writebacks / Engineering — **BE primary · FE honesty only**  
 **Surfaces:** Settings Allow writebacks · Fix `/fix` Preview → Approve → execute → Rollback · `WritebackAllowedCheck` · possible sheet · pytest harness · optional live env suite  
 **Depends on:** WB-01…WB-20 · WB-03 Settings gate · WB-04 once-per-run · FE allowlist  
 **PRD path:** `docs/writebacks/`  

@@ -1,7 +1,7 @@
 # PRD-GAP-01 — M2 code gaps (Weeks 5–9) · point-to-point SoT
 
-**Status:** Ready for Sahil — **P0 (solo engineer · M2 claim honesty)**  
-**Owner track:** Sahil (`docs/ops/` / `docs/security/` / module folders) — **BE + FE** (Maheep track closed; no parallel owner)  
+**Status:** Ready for engineering — **P0 (solo engineer · M2 claim honesty)**  
+**Owner track:** Engineering (module folders) — **BE + FE** (Writebacks tracks closed; no parallel owner)  
 **Surfaces:** Approval / writeback lifecycle · ORCH SM · Track B MCP · Studio/QA/Handoff honesty · demo seed  
 **Milestone:** M2 Activation & Blueprint (T2) — close **code** gaps vs contract + pack + timeline Weeks 5–9  
 **SoT layers (priority order when they conflict):**  
@@ -38,7 +38,7 @@ Stop-and-flag before inventing MCP publish or flipping Matrix to CONFIRMED_LIVE.
 | Timeline sheet marks many Week 5–8 items **Completed** | Client may think CDUC 8-state, MCP Send, AI agents, auto-rollback, demo seed exist |
 | Contract M2 still lists **8-state SM** + **Track B MCP/A2A** | Code has **neither** as literal runtime |
 | Pack forbids inventing MCP live | HO-02 human Send is correct for pack; contract AC still names Track B |
-| Only Sahil remains | Need one ordered gap list — not Maheep WB-08 |
+| Only Engineering remains | Need one ordered gap list — not WB-08 |
 
 This document is the **code gap SoT**. Each row: timeline/contract ask → code reality → gap → slice ID.
 
@@ -61,7 +61,7 @@ This document is the **code gap SoT**. Each row: timeline/contract ask → code 
 
 ---
 
-## 3. Priority for Sahil (build order)
+## 3. Priority for engineering (build order)
 
 Do **not** start everything. Solo order:
 
@@ -75,7 +75,7 @@ Do **not** start everything. Solo order:
 | **P2** | **F — Week 9 demo seed** | `seed_demo_tenant`, demo corpus | M |
 | **Defer** | Perf 50k/60s · partner external API · full AI “agents” rename | M3 / post-claim | — |
 
-If client **waives C1+C2 in writing**, Sahil skips A+B for claim and only does **D (honesty)** + staging smoke. Still document waiver against this PRD.
+If client **waives C1+C2 in writing**, Engineering skips A+B for claim and only does **D (honesty)** + staging smoke. Still document waiver against this PRD.
 
 ---
 
@@ -163,7 +163,7 @@ Timeline Week 5 8-state ≠ pack ORCH enum. **Slice A must pick which 8-state th
 
 ### Slice A — Approval / ORCH 8-state (P0 · Contract C1)
 
-**Decision lock (Sahil must confirm in PR body):**
+**Decision lock (Engineering must confirm in PR body):**
 
 ```text
 Option A1 (pack-aligned): Implement OrchestrationTask model + SM matching
@@ -383,11 +383,11 @@ Errors: `invalid_transition` 409 · `forbidden` 403 · company 404.
 | Contract | Schedule 1 M2 bundle + AC |
 | Timeline | Weeks 5–9 task list (NV CX sheet) |
 | Next after gaps | Claim packet / Schedule 2 deposit (ops) · M3 |
-| Independent of | Maheep WB-08 · closed Maheep PRs #69/#46 |
+| Independent of | WB-08 · closed Writebacks PRs #69/#46 |
 
 ---
 
-## 13. One-page summary for Sahil
+## 13. One-page summary for engineering
 
 ```text
 DONE enough: Studio, QA≥80, Handoff STAGED, HO-02 human Send+approval,

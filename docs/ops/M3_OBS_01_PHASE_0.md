@@ -1,7 +1,7 @@
 # M3-OBS-01 — Phase 0 lock notes
 
 **Date:** 2026-09-08  
-**Branch:** `feature/m3-obs-01-grafana-loki-alloy` (from `main`; Sahil does **not** push to `main`)  
+**Branch:** `feature/m3-obs-01-grafana-loki-alloy` (from `main`; Engineering does **not** push to `main`)  
 **PRD:** `PRD_M3_OBS_01_STAGING_GRAFANA_LOKI_ALLOY.md`
 
 ## 0.1 Deploy path read-through — done
@@ -19,7 +19,7 @@
 
 ## 0.2 Staging disk / RAM + SSH
 
-**SSH / deploy access:** Already live on **`main`** via `.github/workflows/deploy-development.yml` (`DEV_HOST` + `DEV_SSH_PRIVATE_KEY`). Sahil does **not** push `main`; after PR merge, that workflow is the SoT for putting OBS on the droplet.
+**SSH / deploy access:** Already live on **`main`** via `.github/workflows/deploy-development.yml` (`DEV_HOST` + `DEV_SSH_PRIVATE_KEY`). Engineering does **not** push `main`; after PR merge, that workflow is the SoT for putting OBS on the droplet.
 
 **Disk / RAM numbers:** Still useful once (paste into PR). Anyone with droplet shell can run:
 
@@ -44,11 +44,11 @@ Phase 1 compose-in-repo may proceed; staging fit confirmed after merge smoke (or
 | Use | Value |
 |-----|-------|
 | Grafana admin + alert target | `noreplyklints@gmail.com` (locked D6) |
-| Outbound mail SoT | Existing **Klints mailer API** (`MAILER_API_URL` / `MAILER_API_TOKEN` in `.env` / `DEV_ENV_FILE`) — Sahil has this in local env |
+| Outbound mail SoT | Existing **Klints mailer API** (`MAILER_API_URL` / `MAILER_API_TOKEN` in `.env` / `DEV_ENV_FILE`) — Engineering has this in local env |
 
 **Phase 4 note:** Grafana alert contact points are usually SMTP or webhook. Plan: wire alerts to email `noreplyklints@gmail.com` using **staging mailer** (SMTP if present, or webhook → mailer API). Do **not** invent a second mail product. If Grafana cannot call the mailer cleanly, stop-and-flag with evidence — still ship Explore.
 
-**Sahil checklist:**
+**Engineering checklist:**
 - [x] Mailer API available in own env (matches `.env.example` pattern)
 - [ ] Phase 4: prove one alert email lands (or stop-and-flag)
 

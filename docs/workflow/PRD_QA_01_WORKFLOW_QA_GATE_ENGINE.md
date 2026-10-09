@@ -1,7 +1,7 @@
 # PRD-QA-01 — Workflow QA gate engine (BL-018)
 
 **Status:** Ready for implementation  
-**Owner track:** Sahil (`docs/ops/` / `docs/security/` / module folders) — **BE + FE**  
+**Owner track:** Engineering (module folders) — **BE + FE**  
 **Surfaces:** `/qa` · Workflow Studio “→ QA” CTA · FlowStepper Build→QA→Handoff · build package APIs  
 **Milestone:** M2 Activation & Blueprint (T2) — contract row **QA + Handoff live (score 0–100, ≥80 gate)**; this PRD ships **QA**; Handoff Send is a follow-up PRD  
 **Depends on:**  
@@ -9,7 +9,7 @@
 - **WF-02** — journey stages; QA step enabled when `package_id` present  
 - Pack `qa` block on every pilot blueprint + `03_Machine_Contracts/qa_result.schema.json`  
 **Design SoT:** existing `/qa` chrome (`flow-card`, gate rows, Phase 4 PageTitle) — **replace fixtures with live package QA**; keep visual language  
-**Out of scope:** Live MCP/A2A Send · full `handoff_package` activation · BL-017 8-state ORCH machine · BL-012 waves · Maheep writebacks · inventing hard_tests beyond pack  
+**Out of scope:** Live MCP/A2A Send · full `handoff_package` activation · BL-017 8-state ORCH machine · BL-012 waves · writebacks · inventing hard_tests beyond pack  
 
 ---
 
@@ -462,10 +462,10 @@ Link BE+FE PRs; deliverable for M2 QA row.
 
 ---
 
-## 15. Implementation notes for Sahil
+## 15. Implementation notes for engineering
 
 1. Start BE evaluators + UC-02 golden test (seed package → expect PASS).  
 2. Wire FE empty/stub path → live; keep CSS classes (`flow-card`, `flow-gate-row`).  
-3. Do **not** wait on Maheep writebacks for QA.  
+3. Do **not** wait on writebacks for QA.  
 4. If `gates_snapshot` shape differs slightly in prod payloads, normalize in one helper — don’t fork tests.  
 5. Score chip is the hero metric; gate table is the proof — same hierarchy as fixture design.  
