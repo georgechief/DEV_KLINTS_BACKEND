@@ -1734,6 +1734,8 @@ def _enrich_pt04_row(company: Company, row: dict[str, Any]) -> dict[str, Any] | 
     out["manago_contact_id"] = manago_id or None
     out["write_entity_key"] = write_entity_key
     out["shopify_net"] = shopify_net
+    out["incomplete_refund_history"] = bool(out.get("incomplete_refund_history"))
+    out["mixed_currency"] = bool(out.get("mixed_currency"))
     return out
 
 
@@ -2042,6 +2044,26 @@ def _intent_from_operation(
             rollback_strategy=rollback_strategy,
         )
 
+    # B3: reject PT-04 before payload build (incomplete / currency / out-of-def / zero).
+    if str(check_id or "").strip().upper() == "PT-04" and op_kind == "detail_set":
+        pt04_reject = _pt04_stamp_reject_reason(context=context, fields=fields)
+        if pt04_reject:
+            return WriteIntent(
+                check_id=check_id,
+                op_kind=op_kind,
+                operation=operation_id,
+                target_system=target,
+                entity_type=entity_type,
+                entity_key=entity_key,
+                namespace=namespace,
+                template_id=str(template_id) if template_id else None,
+                source_evidence_ref=str(row.get("locator") or row_index),
+                status="error",
+                error_reason=pt04_reject,
+                capability_id=str(capability_id) if capability_id else None,
+                rollback_strategy=rollback_strategy,
+            )
+
     try:
         payload, before, after, rollback = _build_payload_and_state(
             company=company,
@@ -2245,6 +2267,38 @@ def _intent_from_operation(
     )
 
 
+def _pt04_stamp_reject_reason(
+    *,
+    context: dict[str, Any],
+    fields: dict[str, Any],
+) -> str | None:
+    """B3: reject klints_net_ltv write when history/currency/value is out of def."""
+    from dataruns.dcs.product_truth import dollars_to_cents
+
+    if context.get("incomplete_refund_history") is True:
+        return "incomplete_refund_history"
+    if context.get("mixed_currency") is True:
+        return "mixed_currency"
+    raw_net = fields.get("detail_value")
+    if raw_net is None:
+        raw_net = context.get("shopify_net")
+    try:
+        net = float(raw_net)
+    except (TypeError, ValueError):
+        return "net_out_of_definition"
+    if net != net:  # NaN
+        return "net_out_of_definition"
+    if net < 0:
+        return "net_out_of_definition"
+    cents = dollars_to_cents(net)
+    if cents is None:
+        return "net_out_of_definition"
+    # Manago dictionary NUMBER requires a positive integer — cannot store 0.
+    if cents <= 0:
+        return "net_zero_not_storable"
+    return None
+
+
 def _before_equals_after(before: dict[str, Any], after: dict[str, Any]) -> bool:
     if not isinstance(before, dict) or not isinstance(after, dict):
         return False
@@ -2360,7 +2414,13 @@ def _build_payload_and_state(
             extras=extras,
         )
     if op_kind == "detail_set" and target == "manago":
-        return _detail_set_payload(company=company, fields=fields, entity_key=entity_key)
+        return _detail_set_payload(
+            company=company,
+            fields=fields,
+            entity_key=entity_key,
+            extras=extras,
+            check_id=check_id,
+        )
     if op_kind == "tag_add" and target == "manago":
         return _tag_add_payload(company=company, fields=fields, entity_key=entity_key)
     if op_kind == "event_ingest" and target == "manago":
@@ -2676,7 +2736,14 @@ def _detail_set_payload(
     company: Company,
     fields: dict[str, Any],
     entity_key: str,
+    extras: dict[str, Any] | None = None,
+    check_id: str | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
+    from dataruns.dcs.product_truth import (
+        dollars_to_cents,
+        klints_net_ltv_dollars_from_contact,
+    )
+
     detail_key = str(fields.get("detail_key") or "")
     detail_value = fields.get("detail_value")
     clear_detail_key = str(fields.get("clear_detail_key") or "").strip()
@@ -2685,7 +2752,6 @@ def _detail_set_payload(
     if not email and "@" in str(entity_key or ""):
         email = str(entity_key).strip()
     contact = find_manago_contact(company, email=email or None, contact_id=contact_id or None)
-    before_value = contact_detail_value(contact, detail_key) if contact else None
     clear_before = (
         contact_detail_value(contact, clear_detail_key) if contact and clear_detail_key else None
     )
@@ -2696,18 +2762,80 @@ def _detail_set_payload(
         or (contact or {}).get("id")
         or (entity_key if entity_key and "@" not in entity_key else "")
     )
+    extras = extras if isinstance(extras, dict) else {}
+    dict_cents = (
+        str(extras.get("detail_storage") or "") == "dictionary_number_cents"
+        or (
+            str(check_id or "").upper() == "PT-04"
+            and str(detail_key).strip().lower() == "klints_net_ltv"
+        )
+    )
+
+    if dict_cents:
+        from dataruns.dcs.product_truth import _dictionary_number_raw
+
+        cents = dollars_to_cents(detail_value)
+        if cents is None or cents <= 0:
+            # Should be caught by _pt04_stamp_reject_reason before build.
+            raise UnmappedFieldError("klints_net_ltv_cents")
+        before_dollars = (
+            klints_net_ltv_dollars_from_contact(contact) if contact else None
+        )
+        before_cents = (
+            dollars_to_cents(before_dollars) if before_dollars is not None else None
+        )
+        prior_was_dict = bool(
+            contact and _dictionary_number_raw(contact, detail_key) is not None
+        )
+        # already_at_target compares cents↔cents (legacy dollars normalized above).
+        dict_type = str(extras.get("dictionary_type") or "NUMBER")
+        payload: dict[str, Any] = {
+            "email": resolved_email or None,
+            "contactId": resolved_id or None,
+            "dictionaryProperties": [
+                {"name": detail_key, "type": dict_type, "value": cents}
+            ],
+            "_detail_storage": "dictionary_number_cents",
+            "_value_unit": "cents",
+        }
+        if extras.get("clear_legacy_properties", True):
+            # Empty string clears legacy standard-detail stamp (text/float).
+            payload["properties"] = {detail_key: ""}
+        before = {detail_key: before_cents}
+        after = {detail_key: cents}
+        # Rollback must restore the prior bag shape — never write negative NUMBER.
+        if prior_was_dict and before_cents is not None and before_cents > 0:
+            rollback_value: Any = before_cents
+            prior_bag = "dictionary"
+        elif before_dollars is not None:
+            # Legacy properties (may be negative from old bug) — restore as text.
+            rollback_value = before_dollars
+            prior_bag = "properties"
+        else:
+            rollback_value = None
+            prior_bag = "clear"
+        rollback = {
+            detail_key: rollback_value,
+            "_detail_storage": "dictionary_number_cents",
+            "_value_unit": "cents",
+            "_dictionary_type": dict_type,
+            "_prior_bag": prior_bag,
+        }
+        return payload, before, after, rollback
+
+    before_value = contact_detail_value(contact, detail_key) if contact else None
     properties: dict[str, Any] = {detail_key: detail_value}
     if clear_detail_key and clear_detail_key != detail_key:
         # Empty string clears Manago standard detail (null is a no-op).
         properties[clear_detail_key] = ""
-    payload: dict[str, Any] = {
+    payload = {
         "email": resolved_email or None,
         "contactId": resolved_id or None,
         "properties": properties,
     }
-    before: dict[str, Any] = {detail_key: before_value}
-    after: dict[str, Any] = {detail_key: detail_value}
-    rollback: dict[str, Any] = {detail_key: before_value}
+    before = {detail_key: before_value}
+    after = {detail_key: detail_value}
+    rollback = {detail_key: before_value}
     if clear_detail_key and clear_detail_key != detail_key:
         before[clear_detail_key] = clear_before
         after[clear_detail_key] = None

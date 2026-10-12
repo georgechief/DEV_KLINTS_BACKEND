@@ -345,6 +345,12 @@ class AssertExternalAccountAvailableTests(ConnectorUniquenessTestBase):
 class ManagoCreateUniquenessApiTests(ConnectorUniquenessTestBase):
     def setUp(self):
         super().setUp()
+        self._dns_patcher = patch(
+            "tenants.manago_endpoint.socket.getaddrinfo",
+            return_value=[(None, None, None, None, ("93.184.216.34", 443))],
+        )
+        self._dns_patcher.start()
+        self.addCleanup(self._dns_patcher.stop)
         self.factory = APIRequestFactory()
         self.admin_a = self._create_user(
             "admin-a@company-a.com",
@@ -388,8 +394,11 @@ class ManagoCreateUniquenessApiTests(ConnectorUniquenessTestBase):
         force_authenticate(request, user=user)
         return ConnectorListCreateView.as_view()(request)
 
+    @patch("tenants.emails.send_email")
     @patch("tenants.connector_views.enqueue_connector_bootstrap")
-    def test_company_a_connects_manago_successfully(self, mock_bootstrap):
+    def test_company_a_connects_manago_successfully(
+        self, mock_bootstrap, mock_send_email
+    ):
         mock_bootstrap.return_value = MagicMock(
             data_run=MagicMock(id="bootstrap-run-a", metadata={"days": 30}),
             task_queued=True,
@@ -579,7 +588,8 @@ class ShopifyCallbackUniquenessApiTests(ConnectorUniquenessTestBase):
 
     def _state(self, company, **overrides):
         payload = {
-            "user_id": "unused",
+            # Must be a real UUID — User.pk is UUIDField; "unused" 500'd the callback.
+            "user_id": str(self.admin_a.id),
             "company_id": str(company.id),
             "shop": self.shop,
             "return_to": "http://localhost:5173/onboarding",
@@ -605,6 +615,7 @@ class ShopifyCallbackUniquenessApiTests(ConnectorUniquenessTestBase):
         )
         return ShopifyOAuthCallbackView.as_view()(request)
 
+    @patch("tenants.emails.send_email")
     @patch("tenants.connector_views.enqueue_connector_bootstrap")
     @patch("tenants.shopify.fetch_shop")
     @patch("tenants.shopify.exchange_code_for_token")
@@ -613,6 +624,7 @@ class ShopifyCallbackUniquenessApiTests(ConnectorUniquenessTestBase):
         mock_exchange,
         mock_fetch,
         mock_bootstrap,
+        mock_send_email,
     ):
         self._create_shopify_connector(
             company=self.company_a,
@@ -642,6 +654,7 @@ class ShopifyCallbackUniquenessApiTests(ConnectorUniquenessTestBase):
         self.assertEqual(DataRun.objects.count(), data_runs_before)
         mock_bootstrap.assert_not_called()
 
+    @patch("tenants.emails.send_email")
     @patch("tenants.connector_views.enqueue_connector_bootstrap")
     @patch("tenants.shopify.fetch_shop")
     @patch("tenants.shopify.exchange_code_for_token")
@@ -650,6 +663,7 @@ class ShopifyCallbackUniquenessApiTests(ConnectorUniquenessTestBase):
         mock_exchange,
         mock_fetch,
         mock_bootstrap,
+        mock_send_email,
     ):
         self._create_shopify_connector(
             company=self.company_a,

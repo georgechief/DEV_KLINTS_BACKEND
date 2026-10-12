@@ -1,6 +1,6 @@
 # M3-SEC-01 — RBAC Matrix (product roles)
 
-**PRD:** [PRD_M3_SEC_01_RBAC_ISOLATION_SECURITY_PACKET.md](../security/PRD_M3_SEC_01_RBAC_ISOLATION_SECURITY_PACKET.md)  
+**PRD:** [PRD_M3_SEC_01_RBAC_ISOLATION_SECURITY_PACKET.md](./PRD_M3_SEC_01_RBAC_ISOLATION_SECURITY_PACKET.md)  
 **Date:** 2026-09-11  
 **Roles:** `User.Role` = `admin` / `analyst` / `viewer` (`tenants/models.py`) — **not** Django `IsAdminUser`  
 **Default API auth:** `IsAuthenticated` (`core/settings/base.py` `REST_FRAMEWORK`)  
@@ -89,11 +89,12 @@ Unauthenticated mutating product APIs → **401** via default `IsAuthenticated` 
 
 ---
 
-## `/api/v1/dataruns/` ✅ Phase 3 scoped
+## `/api/v1/dataruns/` ✅ Phase 3 scoped + B1 read-only
 
 | Surface / method | Admin | Analyst | Viewer | Notes / code gate |
 |------------------|-------|---------|--------|-------------------|
-| `GET/POST/PUT/PATCH/DELETE …/` (ViewSet) | R/W (own) | R/W (own) | R/W (own) | Always filter caller tenant; ignore foreign `?tenant=`; `tenant_slug` read-only |
+| `GET …/` / `GET …/<pk>/` | R (own) | R (own) | R (own) | Caller tenant only; ignore foreign `?tenant=` |
+| `POST/PUT/PATCH/DELETE …/` | — | — | — | **B1** — 405 for all roles incl. Admin; DCS evidence via pipeline / `POST /dcs/runs/` only |
 
 ---
 
@@ -242,7 +243,7 @@ Company scoping via `get_user_company` — isolation covered in Phase 2 (`test_m
 | # | Finding | Follow-up |
 |---|---------|-----------|
 | F1 | `TenantViewSet` global `.all()` + no role gate | **Fixed Phase 3** — scoped; create/destroy 403; Admin update; slug/is_active RO |
-| F2 | `DataRunViewSet` foreign `?tenant=` + no role gate | **Fixed Phase 3** — caller tenant only; tenant_slug RO; force tenant on write |
+| F2 | `DataRunViewSet` foreign `?tenant=` + writable forge | **Fixed Phase 3** (scope) + **B1** (ReadOnlyModelViewSet; status/metadata RO; writes 405 all roles) |
 | F3 | `POST /connectors/verify/` has no role gate | Documented residual (not hardened in SEC-01) |
 | F4 | Team `GET /invites/` open to Viewer | Matches current product; document |
 | F5 | AI POSTs allowed for Viewer | Matches `_AI_READ_ROLES`; isolation covered Phase 2 |

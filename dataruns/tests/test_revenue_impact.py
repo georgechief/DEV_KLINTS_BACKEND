@@ -358,7 +358,7 @@ class Pt04RevenueTests(SimpleTestCase):
         )
         self.assertIsNone(result.provenance["revenue_window_days"])
         self.assertEqual(
-            result.provenance["revenue_scope"], "lifetime_linked_contacts"
+            result.provenance["revenue_scope"], "shopify_orders_in_import_snapshot"
         )
 
 

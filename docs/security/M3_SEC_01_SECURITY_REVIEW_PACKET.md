@@ -1,6 +1,6 @@
 # M3-SEC-01 — Security review packet
 
-**PRD:** [PRD_M3_SEC_01_RBAC_ISOLATION_SECURITY_PACKET.md](../security/PRD_M3_SEC_01_RBAC_ISOLATION_SECURITY_PACKET.md)  
+**PRD:** [PRD_M3_SEC_01_RBAC_ISOLATION_SECURITY_PACKET.md](./PRD_M3_SEC_01_RBAC_ISOLATION_SECURITY_PACKET.md)  
 **Date:** 2026-09-11  
 **Branch:** `feature/m3-sec-01-rbac-isolation-packet`  
 **Scope:** Internal evidence pack + targeted harden for product RBAC, tenant isolation, and audit tamper-detection packaging.
@@ -52,7 +52,7 @@ Full Admin / Analyst / Viewer × surface matrix:
 
 → **[M3_SEC_01_RBAC_MATRIX.md](./M3_SEC_01_RBAC_MATRIX.md)**
 
-Phase notes: [M3_SEC_01_PHASE_1.md](../security/M3_SEC_01_PHASE_1.md), [M3_SEC_01_PHASE_4.md](../security/M3_SEC_01_PHASE_4.md).
+Phase notes: [M3_SEC_01_PHASE_1.md](./M3_SEC_01_PHASE_1.md), [M3_SEC_01_PHASE_4.md](./M3_SEC_01_PHASE_4.md).
 
 **Negatives command:**
 
@@ -71,7 +71,7 @@ Cross-company (Company A vs Company B) suites:
 | `dataruns/tests/test_m3_sec01_tenant_isolation.py` | Writebacks, DCS, architecture, AI |
 | `tenants/tests/test_m3_sec01_tenant_isolation.py` | Team, connectors, Tenant/DataRun ViewSets |
 
-Additional families cited (not rebuilt): orch, handoff, QA/build-packages, audit, reports, search, pilot-gates — see [WORKING_GAPS](../security/M3_SEC_01_WORKING_GAPS.md) “Covered elsewhere”.
+Additional families cited (not rebuilt): orch, handoff, QA/build-packages, audit, reports, search, pilot-gates — see [WORKING_GAPS](./M3_SEC_01_WORKING_GAPS.md) “Covered elsewhere”.
 
 **Isolation command:**
 
@@ -111,10 +111,14 @@ python manage.py verify_audit_chain --company-id <COMPANY_UUID>
 | ID | Finding | Fix |
 |----|---------|-----|
 | F1 | `TenantViewSet` listed all tenants | Scoped to caller `tenant_id`; create/destroy 403; update Admin-only; `slug`/`is_active` read-only |
-| F2 | `DataRunViewSet` foreign `?tenant=` leak | Always filter caller tenant; ignore `?tenant=`; force tenant on create/update; `tenant_slug` read-only |
+| F2 | `DataRunViewSet` foreign `?tenant=` leak + in-tenant HTTP forge (B1) | Phase 3: always filter caller tenant; ignore `?tenant=`. **B1:** `ReadOnlyModelViewSet` for all roles incl. Admin; serializer fully read-only; DCS evidence only via scoring pipeline |
 | F-run | `WritebackRunView` taught payload/action shape before role | **Viewer denied first** (before action-name validation); then wrong-role gates before `_missing_run_keys` (→ 403, not 400) |
 
 Evidence: Phase 3–4 notes + isolation / RBAC suites + verify source checks (Viewer-before-action + Viewer-before-keys).
+
+**B1 (client M3):** `/api/v1/dataruns/` is read-only for all roles including Admin (`ReadOnlyModelViewSet`). Negatives: `dataruns/tests/test_m3_sec01_b1_datarun_readonly.py` (forge POST/PUT/PATCH/DELETE + unlock negative). Legitimate DCS rows: `POST /api/v1/dcs/runs/` + pipeline only. No other product ViewSet accepts arbitrary terminal `dcs_score` metadata over HTTP; Django `/admin/` DataRun edit remains a staff residual (§7.3).
+
+**B2 (client M3):** SP-07 consent preflight is **always** enforced when a mapping sets `requires_consent_namespace_clean`. The previous bypass when `writeback_execute_enabled` was true is **removed** (not replaced by a sandbox-tenant exception). Policy: workspace writebacks opt-in enables Approve→execute only; it does not skip SP-07. Negatives: `test_writeback_guards_and_preflight.py` (FAIL → preview **and** execute blocked; missing / WARN / no DCS run → blocked; PASS → allowed; direct `run_preflight` unit). `verify_m3_sec01_backend.py` asserts `preflight.py` does not reference `is_writeback_execute_enabled`.
 
 **2026-09-12 deep recheck (Steps 1–6):** ViewSet isolation OK; DataRun UUID/`PUT`/status probes locked; RBAC suite extended (bootstrap, Manago owners, api-v3-key, Analyst tenant create/destroy); writeback Viewer-before-action; execute isolation assert = 400/403/404 only; SEC-01 combined suites **83 OK**; verify **PASS**.
 
@@ -126,9 +130,9 @@ Must remain visible (not “fixed away” by documentation):
 
 1. **`get_user_company`** returns the first company for the user’s tenant ordered by `created_at`. Multi-company-per-tenant is **not** productized — do not claim per-company RBAC beyond that helper.
 2. **Grafana / Loki (M3-OBS-01)** is ops observability. Grafana ops admin ≠ product `User.Role` RBAC. Observability does **not** prove isolation or RBAC.
-3. **Django `/admin/`** is a staff/superuser path, separate from product Admin / Analyst / Viewer.
+3. **Django `/admin/`** is a staff/superuser path, separate from product Admin / Analyst / Viewer. Staff can still edit `DataRun` in admin (ORM residual after B1 HTTP lock). Already-forged historical rows (if any) need re-score / ops cleanup.
 4. **Track B MCP** remains Client-blocked — do not claim MCP live.
-5. **`POST /connectors/verify/`** has no product role gate (matrix F3) — authenticated users can call verify; document as residual / optional harden.
+5. **`POST /connectors/verify/`** has no product role gate (matrix F3) — authenticated users can call verify; document as residual / optional harden. **SSRF hardened (Gate B P1):** HTTPS + allowlisted Manago hosts; redirects and private/internal DNS blocked; no `print()` of email/client_id.
 6. **Intentional Viewer writes** (QA run, AI suggest POSTs, audit mark-read) match product PRDs — not treated as RBAC holes.
 7. **Audit verify command** is ops/manual — not continuous SIEM monitoring.
 
@@ -156,7 +160,7 @@ Out of scope for this packet / PR / M3 claim language. Do **not** claim:
 
 ### M3-SEC-01 employer acceptance (§11)
 
-Evidence captured in [M3_SEC_01_PHASE_6.md](../security/M3_SEC_01_PHASE_6.md): verify **PASS**; SEC-01 suites **83 OK** (2026-09-12 deep recheck). A2 = new isolation suites + cited orch/handoff/audit modules (see PHASE_6 A2 map).
+Evidence captured in [M3_SEC_01_PHASE_6.md](./M3_SEC_01_PHASE_6.md): verify **PASS**; SEC-01 suites **83 OK** (2026-09-12 deep recheck). A2 = new isolation suites + cited orch/handoff/audit modules (see PHASE_6 A2 map).
 
 - [x] **A1** — `M3_SEC_01_RBAC_MATRIX.md` covers every `/api/v1/*` family from `core/urls.py`
 - [x] **A2** — Cross-tenant suite green (writebacks + DCS + connectors + team + audit + orch + handoff minimum)

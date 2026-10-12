@@ -392,7 +392,120 @@ class PlatformScopedUniquenessTests(TestCase):
             },
             platform="manago_ai",
         )
-        self.assertEqual(counts["orders"], 0)
-        self.assertFalse(
-            Order.objects.filter(company=self.company, source="manago_ai").exists()
+        # Manago synthesizes its own contact stub for the order's contact_external_id
+        # (same string) — must not attach to the Shopify contact row.
+        self.assertEqual(counts["orders"], 1)
+        manago_order = Order.objects.get(
+            company=self.company, source="manago_ai", external_id="tx-1"
+        )
+        self.assertEqual(manago_order.contact.source, "manago_ai")
+        self.assertNotEqual(
+            manago_order.contact_id,
+            Contact.objects.get(
+                company=self.company, source="shopify", external_id="alice@example.com"
+            ).id,
+        )
+
+    def test_shopify_order_persists_when_customer_missing_from_contacts_window(self):
+        """Orders use created_at_min; customers use updated_at_min — stubs fill the gap."""
+        from dataruns.connectors.import_data import persist_normalized_records
+
+        counts = persist_normalized_records(
+            company=self.company,
+            normalized={
+                "contacts": [],  # customer 999 not in customers window
+                "orders": [
+                    {
+                        "external_id": "9001",
+                        "contact_external_id": "999",
+                        "email": "buyer@example.com",
+                        "amount": "42.00",
+                        "currency": "USD",
+                        "status": "paid",
+                    }
+                ],
+            },
+            platform="shopify",
+        )
+        # Stub is persisted for linking but must not inflate Contacts count.
+        self.assertEqual(counts["contacts"], 0)
+        self.assertEqual(counts["orders"], 1)
+        contact = Contact.objects.get(
+            company=self.company, source="shopify", external_id="999"
+        )
+        self.assertEqual(contact.email, "buyer@example.com")
+        order = Order.objects.get(
+            company=self.company, source="shopify", external_id="9001"
+        )
+        self.assertEqual(order.contact_id, contact.id)
+
+    def test_manago_order_links_via_contact_id_stub(self):
+        from dataruns.connectors.import_data import persist_normalized_records
+
+        counts = persist_normalized_records(
+            company=self.company,
+            normalized={
+                "contacts": [],
+                "orders": [
+                    {
+                        "external_id": "tx-88",
+                        "contact_external_id": "manago-contact-88",
+                        "email": "vip@example.com",
+                        "amount": "15.00",
+                        "currency": "USD",
+                        "status": "paid",
+                    }
+                ],
+            },
+            platform="manago_ai",
+        )
+        self.assertEqual(counts["contacts"], 0)
+        self.assertEqual(counts["orders"], 1)
+        self.assertTrue(
+            Contact.objects.filter(
+                company=self.company,
+                source="manago_ai",
+                external_id="manago-contact-88",
+            ).exists()
+        )
+
+    def test_manago_fetched_contacts_count_excludes_order_stubs(self):
+        from dataruns.connectors.import_data import persist_normalized_records
+
+        counts = persist_normalized_records(
+            company=self.company,
+            normalized={
+                "contacts": [
+                    {
+                        "external_id": "c-1",
+                        "email": "a@example.com",
+                        "phone": "",
+                    }
+                ],
+                "orders": [
+                    {
+                        "external_id": "tx-1",
+                        "contact_external_id": "c-1",
+                        "email": "a@example.com",
+                        "amount": "10.00",
+                        "currency": "USD",
+                        "status": "paid",
+                    },
+                    {
+                        "external_id": "tx-2",
+                        "contact_external_id": "c-orphan",
+                        "email": "orphan@example.com",
+                        "amount": "11.00",
+                        "currency": "USD",
+                        "status": "paid",
+                    },
+                ],
+            },
+            platform="manago_ai",
+        )
+        self.assertEqual(counts["contacts"], 1)
+        self.assertEqual(counts["orders"], 2)
+        self.assertEqual(
+            Contact.objects.filter(company=self.company, source="manago_ai").count(),
+            2,
         )

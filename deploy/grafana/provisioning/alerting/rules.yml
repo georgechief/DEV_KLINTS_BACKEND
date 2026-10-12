@@ -10,7 +10,7 @@ groups:
     interval: 1m
     rules:
       - uid: staging-logs-error-web
-        title: staging-logs-error-web
+        title: Web ERROR logs (staging)
         condition: C
         data:
           - refId: A
@@ -60,13 +60,13 @@ groups:
           severity: warning
           m3_obs: "01"
         annotations:
-          summary: Staging ERROR-like logs on service=web
+          summary: Staging web (Django API) is logging ERROR-like lines
           description: One or more ERROR-like lines in the last 5m for Docker service web.
         notification_settings:
           receiver: m3-obs-noreplyklints
 
       - uid: staging-logs-error-celery_worker
-        title: staging-logs-error-celery_worker
+        title: Celery worker ERROR logs (staging)
         condition: C
         data:
           - refId: A
@@ -116,13 +116,13 @@ groups:
           severity: warning
           m3_obs: "01"
         annotations:
-          summary: Staging ERROR-like logs on service=celery_worker
+          summary: Staging celery worker is logging ERROR-like lines
           description: One or more ERROR-like lines in the last 5m for Docker service celery_worker.
         notification_settings:
           receiver: m3-obs-noreplyklints
 
       - uid: staging-logs-error-celery_beat
-        title: staging-logs-error-celery_beat
+        title: Celery beat ERROR logs (staging)
         condition: C
         data:
           - refId: A
@@ -172,13 +172,13 @@ groups:
           severity: warning
           m3_obs: "01"
         annotations:
-          summary: Staging ERROR-like logs on service=celery_beat
+          summary: Staging celery beat is logging ERROR-like lines
           description: One or more ERROR-like lines in the last 5m for Docker service celery_beat.
         notification_settings:
           receiver: m3-obs-noreplyklints
 
       - uid: staging-logs-error-nginx
-        title: staging-logs-error-nginx
+        title: Nginx ERROR logs (staging)
         condition: C
         data:
           - refId: A
@@ -228,13 +228,13 @@ groups:
           severity: warning
           m3_obs: "01"
         annotations:
-          summary: Staging ERROR-like logs on service=nginx
+          summary: Staging nginx is logging ERROR-like lines
           description: One or more ERROR-like lines in the last 5m for Docker service nginx.
         notification_settings:
           receiver: m3-obs-noreplyklints
 
       - uid: staging-logs-error-redis
-        title: staging-logs-error-redis
+        title: Redis ERROR logs (staging)
         condition: C
         data:
           - refId: A
@@ -284,7 +284,8 @@ groups:
           severity: warning
           m3_obs: "01"
         annotations:
-          summary: Staging ERROR-like logs on service=redis
+          summary: Staging redis is logging ERROR-like lines
           description: One or more ERROR-like lines in the last 5m for Docker service redis.
         notification_settings:
           receiver: m3-obs-noreplyklints
+

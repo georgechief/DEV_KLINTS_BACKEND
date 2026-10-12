@@ -5,19 +5,21 @@ from __future__ import annotations
 from typing import Any
 
 from dataruns.dcs.worklist import extract_dcs_payload, get_latest_terminal_dcs_run
-from dataruns.writebacks.gates import is_writeback_execute_enabled
 from tenants.models import Company, Connector
 
 
 def run_preflight(*, company: Company, mapping: dict[str, Any]) -> str | None:
+    """Return a blocked_reason string, or None when preview/execute may proceed.
+
+    Policy (client B2 / M3): when ``requires_consent_namespace_clean`` is set,
+    SP-07 must PASS on the latest terminal DCS run. There is no bypass for
+    ``writeback_execute_enabled`` / sandbox — that flag only opts the workspace
+    into Approve→execute; it must not skip consent-namespace checks.
+    """
     blocked = _connector_preflight(company=company, mapping=mapping)
     if blocked:
         return blocked
     if mapping.get("requires_consent_namespace_clean"):
-        # WB-01B sandbox proof: allow CC-03 execute on allowlisted sandbox tenants
-        # even when SP-07 is not yet PASS on the latest DCS score.
-        if is_writeback_execute_enabled(company):
-            return None
         return _sp07_namespace_clean(company=company)
     return None
 

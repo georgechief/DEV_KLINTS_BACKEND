@@ -198,11 +198,99 @@ class WritebackWb11TransformTests(TestCase):
         self.assertEqual(intent.op_kind, "detail_set")
         self.assertEqual(intent.status, "ready")
         self.assertEqual(intent.rollback_strategy, "revert_detail")
-        props = intent.payload.get("properties") or {}
-        self.assertEqual(props.get("klints_net_ltv"), 123.45)
+        # B3 Phase 3: NUMBER dictionary detail in integer cents.
+        dict_rows = intent.payload.get("dictionaryProperties") or []
+        self.assertEqual(len(dict_rows), 1)
+        self.assertEqual(dict_rows[0].get("name"), "klints_net_ltv")
+        self.assertEqual(dict_rows[0].get("type"), "NUMBER")
+        self.assertEqual(dict_rows[0].get("value"), 12345)
+        # Legacy properties text stamp cleared on write.
+        self.assertEqual((intent.payload.get("properties") or {}).get("klints_net_ltv"), "")
         supported, reason = rollback_supported(intent)
         self.assertTrue(supported)
         self.assertIsNone(reason)
+
+    def test_rejects_incomplete_refund_history(self):
+        """B3 Phase 2: preview/execute must not stamp when refund history is incomplete."""
+        mapping = get_check_mapping("PT-04")
+        with patch(
+            "dataruns.writebacks.transform.find_manago_contact",
+            return_value={
+                "email": "buyer@net.test",
+                "contactId": "mc-1",
+                "properties": {},
+            },
+        ):
+            intents = build_intents_from_mapping(
+                company=self.company,
+                mapping=mapping,
+                evidence_rows=[
+                    {
+                        "side": "net_overstatement",
+                        "person.email": "buyer@net.test",
+                        "manago_contact_id": "mc-1",
+                        "shopify_net": 80.0,
+                        "write_entity_key": "buyer@net.test",
+                        "incomplete_refund_history": True,
+                    }
+                ],
+            )
+        self.assertEqual(len(intents), 1)
+        self.assertEqual(intents[0].status, "error")
+        self.assertEqual(intents[0].error_reason, "incomplete_refund_history")
+
+    def test_rejects_mixed_currency(self):
+        mapping = get_check_mapping("PT-04")
+        with patch(
+            "dataruns.writebacks.transform.find_manago_contact",
+            return_value={
+                "email": "buyer@net.test",
+                "contactId": "mc-1",
+                "properties": {},
+            },
+        ):
+            intents = build_intents_from_mapping(
+                company=self.company,
+                mapping=mapping,
+                evidence_rows=[
+                    {
+                        "side": "net_overstatement",
+                        "person.email": "buyer@net.test",
+                        "manago_contact_id": "mc-1",
+                        "shopify_net": 20.0,
+                        "write_entity_key": "buyer@net.test",
+                        "mixed_currency": True,
+                    }
+                ],
+            )
+        self.assertEqual(intents[0].status, "error")
+        self.assertEqual(intents[0].error_reason, "mixed_currency")
+
+    def test_rejects_negative_net_out_of_definition(self):
+        mapping = get_check_mapping("PT-04")
+        with patch(
+            "dataruns.writebacks.transform.find_manago_contact",
+            return_value={
+                "email": "buyer@net.test",
+                "contactId": "mc-1",
+                "properties": {},
+            },
+        ):
+            intents = build_intents_from_mapping(
+                company=self.company,
+                mapping=mapping,
+                evidence_rows=[
+                    {
+                        "side": "net_overstatement",
+                        "person.email": "buyer@net.test",
+                        "manago_contact_id": "mc-1",
+                        "shopify_net": -19.95,
+                        "write_entity_key": "buyer@net.test",
+                    }
+                ],
+            )
+        self.assertEqual(intents[0].status, "error")
+        self.assertEqual(intents[0].error_reason, "net_out_of_definition")
 
     def test_contact_id_only_entity_key(self):
         mapping = get_check_mapping("PT-04")
@@ -288,7 +376,9 @@ class WritebackWb11TransformTests(TestCase):
             return_value={
                 "email": "a@example.com",
                 "contactId": "mc-1",
-                "properties": {"klints_net_ltv": 50},
+                "dictionaryProperties": [
+                    {"name": "klints_net_ltv", "type": "NUMBER", "value": 5000}
+                ],
             },
         ):
             intents = build_intents_from_mapping(
@@ -308,8 +398,8 @@ class WritebackWb11TransformTests(TestCase):
         self.assertEqual(intents[0].status, "skipped")
         self.assertEqual(intents[0].error_reason, "already_at_target")
 
-    def test_already_at_target_numeric_string_vs_float(self):
-        """Manago often stores detail values as strings — still already_at_target."""
+    def test_already_at_target_legacy_properties_dollars(self):
+        """Legacy properties float dollars still already_at_target vs cents target."""
         mapping = get_check_mapping("PT-04")
         with patch(
             "dataruns.writebacks.transform.find_manago_contact",
@@ -334,6 +424,62 @@ class WritebackWb11TransformTests(TestCase):
             )
         self.assertEqual(intents[0].status, "skipped")
         self.assertEqual(intents[0].error_reason, "already_at_target")
+
+    def test_rejects_zero_net_not_storable(self):
+        mapping = get_check_mapping("PT-04")
+        with patch(
+            "dataruns.writebacks.transform.find_manago_contact",
+            return_value={
+                "email": "buyer@net.test",
+                "contactId": "mc-1",
+                "properties": {},
+            },
+        ):
+            intents = build_intents_from_mapping(
+                company=self.company,
+                mapping=mapping,
+                evidence_rows=[
+                    {
+                        "side": "net_overstatement",
+                        "person.email": "buyer@net.test",
+                        "manago_contact_id": "mc-1",
+                        "shopify_net": 0,
+                        "write_entity_key": "buyer@net.test",
+                    }
+                ],
+            )
+        self.assertEqual(intents[0].status, "error")
+        self.assertEqual(intents[0].error_reason, "net_zero_not_storable")
+
+    def test_rollback_snapshot_restores_legacy_negative_via_properties(self):
+        """Pre-B3 negative properties stamps must not roll back as NUMBER."""
+        mapping = get_check_mapping("PT-04")
+        with patch(
+            "dataruns.writebacks.transform.find_manago_contact",
+            return_value={
+                "email": "buyer@net.test",
+                "contactId": "mc-1",
+                "properties": {"klints_net_ltv": "-19.95"},
+            },
+        ):
+            intents = build_intents_from_mapping(
+                company=self.company,
+                mapping=mapping,
+                evidence_rows=[
+                    {
+                        "side": "net_overstatement",
+                        "person.email": "buyer@net.test",
+                        "manago_contact_id": "mc-1",
+                        "shopify_net": 100.0,
+                        "write_entity_key": "buyer@net.test",
+                    }
+                ],
+            )
+        intent = intents[0]
+        self.assertEqual(intent.status, "ready")
+        snap = intent.rollback_snapshot or {}
+        self.assertEqual(snap.get("_prior_bag"), "properties")
+        self.assertEqual(snap.get("klints_net_ltv"), -19.95)
 
     def test_resolves_identity_from_contact_db(self):
         from dataruns.models import Contact
@@ -510,6 +656,59 @@ class WritebackWb11GateTests(TestCase):
 
         self.company.writeback_execute_enabled = False
         self.company.save(update_fields=["writeback_execute_enabled"])
+        Connector.objects.create(
+            company=self.company,
+            name="manago_ai",
+            type="cdp",
+            config=encrypt_config(
+                {
+                    "workspace_id": "cid",
+                    "api_key": "secret",
+                    "owner": "owner@test.com",
+                    "endpoint": "https://app2.manago.ai",
+                }
+            ),
+            status="connected",
+        )
+        domain_run = Run.objects.create(
+            company=self.company,
+            run_type=Run.RunType.FULL,
+            status=Run.Status.COMPLETED,
+        )
+        DataRun.objects.create(
+            tenant=self.company.tenant,
+            name=DCS_SCORE_DATA_RUN_NAME,
+            status=DataRun.Status.SUCCEEDED,
+            metadata={
+                "kind": DCS_SCORE_KIND,
+                "company_id": str(self.company.id),
+                "run_id": str(domain_run.id),
+                "dcs_run": {"run_id": str(domain_run.id), "run_state": "SCORED"},
+                "check_results": [
+                    {"check_id": "SP-07", "status": "FAIL"},
+                    {"check_id": "PT-04", "status": "FAIL"},
+                ],
+            },
+        )
+        result = writeback_run(
+            company=self.company,
+            check_id="PT-04",
+            mode="dry_run",
+            actor=self.admin,
+        )
+        self.assertEqual(result.blocked_reason, "consent_namespace_not_clean")
+        self.assertEqual(result.summary.ready, 0)
+
+    def test_preview_blocked_when_sp07_fail_even_with_writebacks_enabled(self):
+        """B2 — PT-04 consent gate still blocks when writebacks are ON."""
+        from dataruns.dcs.enqueue import DCS_SCORE_DATA_RUN_NAME, DCS_SCORE_KIND
+        from dataruns.models import DataRun, Run
+        from dataruns.tests.writeback_helpers import enable_company_writeback_execute
+        from dataruns.writebacks.service import writeback_run
+        from tenants.crypto import encrypt_config
+        from tenants.models import Connector
+
+        enable_company_writeback_execute(self.company)
         Connector.objects.create(
             company=self.company,
             name="manago_ai",

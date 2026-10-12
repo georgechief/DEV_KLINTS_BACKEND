@@ -103,6 +103,16 @@ def main() -> int:
             ok("matrix flags TenantViewSet / DataRunViewSet")
         else:
             bad("matrix must mention TenantViewSet and DataRunViewSet")
+        # B1 — matrix must not still claim writable /dataruns/ for Viewer.
+        dataruns_section = _section_after(matrix, "/api/v1/dataruns/")
+        if not dataruns_section:
+            dataruns_section = matrix
+        if "B1" in dataruns_section or "read-only" in dataruns_section.lower():
+            ok("matrix documents /dataruns/ B1 read-only")
+        else:
+            bad("matrix /dataruns/ must document B1 read-only (no R/W Viewer)")
+        if "R/W (own)" in dataruns_section and "POST" in dataruns_section:
+            bad("matrix /dataruns/ must not list POST/PUT as R/W (own) after B1")
 
     # --- Phase 5: security review packet (required) ---
     packet_path = ROOT / _PACKET_REL
@@ -185,10 +195,10 @@ def main() -> int:
         else:
             bad(f"missing phase note: {rel}")
 
-    if (ROOT / "docs/security/M3_SEC_01_WORKING_GAPS.md").is_file():
+    if (ROOT / "docs/ops/M3_SEC_01_WORKING_GAPS.md").is_file():
         ok("WORKING_GAPS present")
     else:
-        bad("missing docs/security/M3_SEC_01_WORKING_GAPS.md")
+        bad("missing docs/ops/M3_SEC_01_WORKING_GAPS.md")
 
     rbac_tests = list(
         (ROOT / "dataruns" / "tests").glob("test_m3_sec01_rbac_negatives*.py")
@@ -199,6 +209,26 @@ def main() -> int:
         ok(f"RBAC negative test modules: {len(rbac_tests)}")
     else:
         bad("missing RBAC negative test modules (test_m3_sec01_rbac_negatives*.py)")
+
+    # --- B1: DataRun HTTP forge closed ---
+    b1_test = ROOT / "dataruns" / "tests" / "test_m3_sec01_b1_datarun_readonly.py"
+    if b1_test.is_file():
+        ok("B1 readonly negative test module present")
+        b1_src = b1_test.read_text(encoding="utf-8")
+        for needle, label in (
+            ("405", "405 assertions"),
+            ("client_admin", "Admin role coverage"),
+            ("client_viewer", "Viewer role coverage"),
+            ("headline_score", "forged terminal metadata"),
+            ("resolve_dcs_app_status", "unlock negative"),
+            ("/api/v1/dcs/runs/", "legitimate score path preserved"),
+        ):
+            if needle in b1_src:
+                ok(f"B1 test covers {label}")
+            else:
+                bad(f"B1 test missing coverage: {label}")
+    else:
+        bad("missing B1 test: dataruns/tests/test_m3_sec01_b1_datarun_readonly.py")
 
     # --- Phase 4: audit evidence + critical helpers ---
     audit_doc = "docs/security/M3_SEC_01_AUDIT_EVIDENCE.md"
@@ -358,14 +388,17 @@ def main() -> int:
             ok("DataRunViewSet documents ignoring foreign ?tenant=")
         else:
             bad("DataRunViewSet must document ignoring foreign ?tenant=")
-        if "def perform_create" in datarun_views and "tenant=" in datarun_views:
-            ok("DataRunViewSet perform_create forces caller tenant")
+        # B1 — HTTP writes removed for all roles (pipeline creates DCS evidence).
+        if "ReadOnlyModelViewSet" in datarun_views:
+            ok("DataRunViewSet is ReadOnlyModelViewSet (B1)")
         else:
-            bad("DataRunViewSet perform_create must force caller tenant")
-        if "def perform_update" in datarun_views and "tenant=" in datarun_views:
-            ok("DataRunViewSet perform_update forces caller tenant")
+            bad("DataRunViewSet must be ReadOnlyModelViewSet (B1 — no HTTP forge)")
+        if "def perform_create" in datarun_views or "def perform_update" in datarun_views:
+            bad("DataRunViewSet must not define perform_create/perform_update (B1)")
         else:
-            bad("DataRunViewSet perform_update must force caller tenant")
+            ok("DataRunViewSet has no perform_create/perform_update (B1)")
+        if "ModelViewSet" in datarun_views and "ReadOnlyModelViewSet" not in datarun_views:
+            bad("DataRunViewSet must not use writable ModelViewSet")
 
     datarun_ser = read("dataruns/serializers.py")
     if datarun_ser:
@@ -389,6 +422,49 @@ def main() -> int:
             ok("DataRunSerializer tenant_slug is read-only")
         else:
             bad("DataRunSerializer tenant_slug must be read-only")
+        # B1 — status/metadata must not be HTTP-writable.
+        ro_blob = ""
+        if "read_only_fields" in block:
+            ro_blob = block.split("read_only_fields", 1)[-1]
+        if "status" in ro_blob and "metadata" in ro_blob and "name" in ro_blob:
+            ok("DataRunSerializer locks status/metadata/name read-only (B1)")
+        else:
+            bad(
+                "DataRunSerializer must list status, metadata, and name in "
+                "read_only_fields (B1)"
+            )
+
+    # --- B2: SP-07 consent preflight must not skip when writebacks enabled ---
+    preflight_src = read("dataruns/writebacks/preflight.py")
+    if preflight_src:
+        if "is_writeback_execute_enabled" in preflight_src:
+            bad(
+                "preflight.py must not import/use is_writeback_execute_enabled "
+                "(B2 — no SP-07 bypass)"
+            )
+        else:
+            ok("preflight.py has no writeback_execute bypass (B2)")
+        if (
+            "requires_consent_namespace_clean" in preflight_src
+            and "_sp07_namespace_clean" in preflight_src
+        ):
+            ok("preflight.py still enforces SP-07 via _sp07_namespace_clean (B2)")
+        else:
+            bad("preflight.py must call _sp07_namespace_clean when consent required")
+    b2_tests = ROOT / "dataruns" / "tests" / "test_writeback_guards_and_preflight.py"
+    if b2_tests.is_file():
+        b2_src = b2_tests.read_text(encoding="utf-8")
+        for needle, label in (
+            ("writebacks_enabled_and_sp07_fail", "writebacks ON + SP-07 FAIL"),
+            ("mode=\"execute\"", "execute blocked coverage"),
+            ("run_preflight_unit_no_bypass", "direct run_preflight unit"),
+        ):
+            if needle in b2_src:
+                ok(f"B2 tests cover {label}")
+            else:
+                bad(f"B2 tests missing coverage: {label}")
+    else:
+        bad("missing B2 test module test_writeback_guards_and_preflight.py")
 
     print()
     if FAILED:

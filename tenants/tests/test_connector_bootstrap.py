@@ -37,10 +37,20 @@ BOOTSTRAP_TEST_SETTINGS = {
     "FRONTEND_SHOPIFY_REDIRECT_URL": "https://app.example/integrations",
 }
 
+_PUBLIC_MANAGO_ADDRINFO = [
+    (None, None, None, None, ("93.184.216.34", 443)),
+]
+
 
 @override_settings(**BOOTSTRAP_TEST_SETTINGS)
 class ConnectorBootstrapAcceptanceTests(TestCase):
     def setUp(self):
+        self._dns_patcher = patch(
+            "tenants.manago_endpoint.socket.getaddrinfo",
+            return_value=_PUBLIC_MANAGO_ADDRINFO,
+        )
+        self._dns_patcher.start()
+        self.addCleanup(self._dns_patcher.stop)
         self.factory = APIRequestFactory()
         self.tenant = Tenant.objects.create(name="Acme", slug="acme")
         self.company = Company.objects.create(
@@ -77,8 +87,8 @@ class ConnectorBootstrapAcceptanceTests(TestCase):
 
     @patch("tenants.emails.send_email")
     @patch("dataruns.tasks.run_import", side_effect=successful_run_import_side_effect)
-    @patch("dataruns.connectors.manago_ai.client._resolve_owner")
-    @patch("tenants.manago.verify_credentials")
+    @patch("dataruns.tasks._resolve_owner")
+    @patch("dataruns.tasks.verify_credentials")
     def test_scenario_1_connect_manago_bootstrap_succeeds(
         self,
         mock_verify,
@@ -143,12 +153,16 @@ class ConnectorBootstrapAcceptanceTests(TestCase):
 
     @patch("tenants.emails.send_email")
     @patch("dataruns.tasks.run_import", side_effect=successful_run_import_side_effect)
+    @patch("dataruns.connectors.shopify_token.ensure_fresh_shopify_token")
+    @patch("dataruns.tasks.fetch_shop")
     @patch("tenants.shopify.fetch_shop")
     @patch("tenants.shopify.exchange_code_for_token")
     def test_scenario_2_connect_shopify_oauth_bootstrap_succeeds(
         self,
         mock_exchange,
         mock_fetch_shop,
+        mock_tasks_fetch_shop,
+        mock_ensure_token,
         mock_run_import,
         mock_send_email,
     ):
@@ -161,7 +175,20 @@ class ConnectorBootstrapAcceptanceTests(TestCase):
             refresh_token="shprt_secret",
             refresh_token_expires_at="2026-10-27T12:00:00+00:00",
         )
-        mock_fetch_shop.return_value = {"id": 42, "name": "Acme Store"}
+        shop_info = {"id": 42, "name": "Acme Store"}
+        # OAuth callback uses tenants.shopify.fetch_shop; eager bootstrap preflight
+        # uses the dataruns.tasks.fetch_shop binding — patch both.
+        mock_fetch_shop.return_value = shop_info
+        mock_tasks_fetch_shop.return_value = shop_info
+        # Bootstrap worker refreshes tokens before run_import — do not hit live Shopify.
+        mock_ensure_token.side_effect = lambda connector: {
+            "shop_domain": shop,
+            "access_token": "shpat_secret_token",
+            "refresh_token": "shprt_secret",
+            "token_mode": TOKEN_MODE_EXPIRING,
+            "scopes": "read_customers,read_orders,read_products",
+            "api_version": "2026-01",
+        }
 
         from django.core import signing
 
@@ -202,7 +229,13 @@ class ConnectorBootstrapAcceptanceTests(TestCase):
             "shprt_secret",
         )
         self.assertEqual(connector.config["token_mode"], TOKEN_MODE_EXPIRING)
-        snapshot = ConnectorSnapshot.objects.get(connector=connector)
+        # OAuth writes v1 config snapshot; eager bootstrap import adds a later raw snapshot.
+        snapshot = (
+            ConnectorSnapshot.objects.filter(connector=connector)
+            .order_by("version")
+            .first()
+        )
+        self.assertIsNotNone(snapshot)
         self.assertNotIn("access_token", snapshot.snapshot_data)
         self.assertNotIn("refresh_token", snapshot.snapshot_data)
         data_run = DataRun.objects.filter(
@@ -221,8 +254,8 @@ class ConnectorBootstrapAcceptanceTests(TestCase):
 
     @patch("tenants.emails.send_email")
     @patch("dataruns.tasks.run_import")
-    @patch("dataruns.connectors.manago_ai.client._resolve_owner")
-    @patch("tenants.manago.verify_credentials")
+    @patch("dataruns.tasks._resolve_owner")
+    @patch("dataruns.tasks.verify_credentials")
     def test_scenario_3_invalid_manago_credentials_fail_bootstrap(
         self,
         mock_verify,
@@ -287,7 +320,7 @@ class ConnectorBootstrapAcceptanceTests(TestCase):
         )
     @patch("tenants.emails.send_email")
     @patch("dataruns.tasks.run_import")
-    @patch("tenants.shopify.fetch_shop")
+    @patch("dataruns.tasks.fetch_shop")
     def test_scenario_4_missing_shopify_required_scope_blocks_bootstrap(
         self,
         mock_fetch_shop,
@@ -348,7 +381,7 @@ class ConnectorBootstrapAcceptanceTests(TestCase):
 
     @patch("tenants.emails.send_email")
     @patch("dataruns.tasks.run_import", side_effect=successful_run_import_side_effect)
-    @patch("tenants.shopify.fetch_shop")
+    @patch("dataruns.tasks.fetch_shop")
     def test_shopify_write_admin_scopes_satisfy_required_preflight(
         self,
         mock_fetch_shop,
@@ -400,7 +433,7 @@ class ConnectorBootstrapAcceptanceTests(TestCase):
         self.assertEqual(scope_errors, [])
         mock_run_import.assert_called_once()
 
-    @patch("dataruns.connectors.base.bootstrap_connector_fetch")
+    @patch("dataruns.tasks.bootstrap_connector_fetch")
     def test_scenario_5_duplicate_bootstrap_reuses_active_data_run(
         self,
         mock_bootstrap_task,
@@ -438,7 +471,7 @@ class ConnectorBootstrapAcceptanceTests(TestCase):
         self.assertFalse(second.task_queued)
         mock_bootstrap_task.delay.assert_called_once_with(first.data_run.id)
 
-    @patch("dataruns.connectors.base.bootstrap_connector_fetch")
+    @patch("dataruns.tasks.bootstrap_connector_fetch")
     def test_reconnect_supersedes_active_bootstrap_and_enqueues_fresh_run(
         self,
         mock_bootstrap_task,
@@ -476,7 +509,7 @@ class ConnectorBootstrapAcceptanceTests(TestCase):
         self.assertEqual(mock_bootstrap_task.delay.call_count, 2)
         mock_bootstrap_task.delay.assert_called_with(reconnect.data_run.id)
 
-    @patch("dataruns.connectors.base.bootstrap_connector_fetch")
+    @patch("dataruns.tasks.bootstrap_connector_fetch")
     def test_scenario_6_manual_fetch_empty_body_defaults_days_and_returns_202(
         self,
         mock_bootstrap_task,
@@ -512,7 +545,7 @@ class ConnectorBootstrapAcceptanceTests(TestCase):
         self.assertEqual(response.data["detail"], "Bootstrap fetch queued.")
         mock_bootstrap_task.delay.assert_called_once()
 
-    @patch("dataruns.connectors.base.bootstrap_connector_fetch")
+    @patch("dataruns.tasks.bootstrap_connector_fetch")
     def test_scenario_6_manago_manual_fetch_empty_body_defaults_days_and_returns_202(
         self,
         mock_bootstrap_task,
@@ -550,7 +583,7 @@ class ConnectorBootstrapAcceptanceTests(TestCase):
 
     @patch("tenants.emails.send_email")
     @patch("dataruns.tasks.run_import", side_effect=successful_run_import_side_effect)
-    @patch("tenants.shopify.fetch_shop")
+    @patch("dataruns.tasks.fetch_shop")
     def test_scenario_7_get_bootstrap_status_returns_populated_health_report(
         self,
         mock_fetch_shop,
@@ -630,8 +663,8 @@ class ConnectorBootstrapAcceptanceTests(TestCase):
 
     @patch("tenants.emails.send_email")
     @patch("dataruns.tasks.run_import", side_effect=successful_run_import_side_effect)
-    @patch("dataruns.connectors.manago_ai.client._resolve_owner")
-    @patch("tenants.manago.verify_credentials")
+    @patch("dataruns.tasks._resolve_owner")
+    @patch("dataruns.tasks.verify_credentials")
     def test_success_email_only_goes_to_verified_active_admins(
         self,
         mock_verify,
@@ -654,14 +687,16 @@ class ConnectorBootstrapAcceptanceTests(TestCase):
         force_authenticate(request, user=self.admin)
         ConnectorListCreateView.as_view()(request)
 
+        # Connected + import-finished emails both go to verified active admins only.
         recipients = [call.kwargs["to"] for call in mock_send_email.call_args_list]
-        self.assertEqual(recipients, [self.admin.email])
+        self.assertGreaterEqual(len(recipients), 1)
+        self.assertTrue(all(r == self.admin.email for r in recipients))
         self.assertNotIn(self.unverified_admin.email, recipients)
 
     @patch("tenants.emails.send_email")
     @patch("dataruns.tasks.run_import", side_effect=successful_run_import_side_effect)
-    @patch("dataruns.connectors.manago_ai.client._resolve_owner")
-    @patch("tenants.manago.verify_credentials")
+    @patch("dataruns.tasks._resolve_owner")
+    @patch("dataruns.tasks.verify_credentials")
     def test_connector_status_mapping_ok_and_degraded(
         self,
         mock_verify,
@@ -734,7 +769,7 @@ class ConnectorBootstrapAcceptanceTests(TestCase):
     @patch("tenants.emails.send_email")
     @patch("dataruns.tasks.run_import", side_effect=successful_run_import_side_effect)
     @patch("dataruns.connectors.shopify_token.refresh_offline_access_token")
-    @patch("tenants.shopify.fetch_shop")
+    @patch("dataruns.tasks.fetch_shop")
     def test_shopify_bootstrap_refreshes_expired_access_token(
         self,
         mock_fetch_shop,
@@ -801,13 +836,14 @@ class ConnectorBootstrapAcceptanceTests(TestCase):
 
     @patch("tenants.emails.send_email")
     @patch("dataruns.tasks.run_import")
-    @patch("tenants.shopify.fetch_shop")
+    @patch("dataruns.tasks.fetch_shop")
     def test_shopify_bootstrap_fails_when_refresh_token_expired(
         self,
         mock_fetch_shop,
         mock_run_import,
         mock_send_email,
     ):
+        mock_fetch_shop.return_value = {"id": 42, "name": "Acme Store"}
         from datetime import datetime, timezone as dt_timezone
 
         now = datetime(2026, 7, 29, 12, 0, tzinfo=dt_timezone.utc)
@@ -870,7 +906,7 @@ class ConnectorBootstrapAcceptanceTests(TestCase):
     @patch("tenants.emails.send_email")
     @patch("dataruns.tasks.run_import", side_effect=successful_run_import_side_effect)
     @patch("dataruns.connectors.shopify_token.refresh_offline_access_token")
-    @patch("tenants.shopify.fetch_shop")
+    @patch("dataruns.tasks.fetch_shop")
     def test_shopify_bootstrap_legacy_connector_skips_refresh(
         self,
         mock_fetch_shop,

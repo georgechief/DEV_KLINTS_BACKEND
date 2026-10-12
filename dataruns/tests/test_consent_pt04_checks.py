@@ -533,12 +533,15 @@ class ProductTruthUnitTests(SimpleTestCase):
         truth = payload["product_truth"]
         self.assertEqual(truth["linked_contacts"], 1)
         row = payload["product_truth_rows"][0]
-        self.assertEqual(row["shopify_net"], 60.0)  # 100 - 40
+        # B3: separate fully-refunded $40 order contributes 0 (not −40).
+        # Net = paid $100 only → 100. Manago PURCHASE 100 matches → not overstated.
+        self.assertEqual(row["shopify_net"], 100.0)
         self.assertEqual(row["manago_purchase_value_deduped"], 100.0)
-        self.assertTrue(row["refund_blind"])
-        self.assertEqual(truth["contacts_over_delta"], 1)
+        self.assertFalse(row["refund_blind"])
+        self.assertEqual(truth["contacts_over_delta"], 0)
         self.assertFalse(row["governed_by_klints_net_ltv"])
         self.assertEqual(truth.get("contacts_governed_by_klints_net_ltv"), 0)
+        self.assertEqual(truth.get("revenue_scope"), "shopify_orders_in_import_snapshot")
 
     def test_dedupe_events_without_external_id(self):
         """Events missing externalId/transactionId must not inflate deduped value."""

@@ -45,6 +45,11 @@
     {
       "entity": "order",
       "api_key": "email",
+      "db_key": "email"
+    },
+    {
+      "entity": "order",
+      "api_key": "contactId",
       "db_key": "contact_external_id"
     },
     {

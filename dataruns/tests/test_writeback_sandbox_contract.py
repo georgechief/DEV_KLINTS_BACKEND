@@ -31,12 +31,25 @@ from tenants.crypto import encrypt_config
 from tenants.models import Company, Connector, Tenant, User
 
 
-def _seed_dcs_shell(*, company: Company, tenant: Tenant, check_id: str, status: str = "FAIL"):
+def _seed_dcs_shell(
+    *,
+    company: Company,
+    tenant: Tenant,
+    check_id: str,
+    status: str = "FAIL",
+    extra_check_results: list[dict] | None = None,
+):
+    """Seed a terminal DCS run. For consent-gated mappings also pass SP-07 PASS via extra_check_results."""
     domain_run = Run.objects.create(
         company=company,
         run_type=Run.RunType.FULL,
         status=Run.Status.COMPLETED,
     )
+    check_results = [
+        {"check_id": check_id, "status": status, "severity": "high"},
+    ]
+    if extra_check_results:
+        check_results.extend(extra_check_results)
     DataRun.objects.create(
         tenant=tenant,
         name=DCS_SCORE_DATA_RUN_NAME,
@@ -46,12 +59,14 @@ def _seed_dcs_shell(*, company: Company, tenant: Tenant, check_id: str, status: 
             "company_id": str(company.id),
             "run_id": str(domain_run.id),
             "dcs_run": {"run_id": str(domain_run.id), "run_state": "SCORED"},
-            "check_results": [
-                {"check_id": check_id, "status": status, "severity": "high"},
-            ],
+            "check_results": check_results,
         },
     )
     return domain_run
+
+
+# B2 — consent-gated mappings need SP-07 PASS even when writebacks are ON.
+_SP07_PASS = {"check_id": "SP-07", "status": "PASS", "severity": "high"}
 
 
 @override_settings(WRITEBACKS_ENABLED=False, WRITEBACK_SANDBOX_MAX_ROWS=1)
@@ -170,12 +185,13 @@ class WritebackSandboxContractPhaseATests(TestCase):
             external_id="mc-sandbox-cc03",
             email="consent@example.com",
         )
-        # PASS on worklist — original sandbox fallback must still produce ready intents.
+        # PASS on worklist + SP-07 PASS (B2: consent gate always enforced).
         _seed_dcs_shell(
             company=company,
             tenant=tenant,
             check_id="CC-03",
             status="PASS",
+            extra_check_results=[_SP07_PASS],
         )
 
         outcome = assert_tier_a_sandbox_pass(
@@ -277,7 +293,14 @@ class WritebackSandboxContractPhaseBTests(TestCase):
             ),
             status="connected",
         )
-        _seed_dcs_shell(company=company, tenant=tenant, check_id="CI-01", status="PASS")
+        # Include SP-07 PASS so consent-gated Tier A checks (SP-03/PT-04) work with B2.
+        _seed_dcs_shell(
+            company=company,
+            tenant=tenant,
+            check_id="CI-01",
+            status="PASS",
+            extra_check_results=[_SP07_PASS],
+        )
         return company, admin
 
     @patch("dataruns.writebacks.adapters.manago.upsert_contacts")
@@ -550,7 +573,8 @@ class WritebackSandboxContractPhaseBTests(TestCase):
             return_value={
                 "email": "buyer@net.test",
                 "contactId": "mc-1",
-                "properties": {},
+                # B3: replace incorrect legacy properties stamp (e.g. old net 60).
+                "properties": {"klints_net_ltv": "60"},
             },
         ):
             intents = build_intents_from_mapping(
@@ -561,18 +585,26 @@ class WritebackSandboxContractPhaseBTests(TestCase):
                         "side": "net_overstatement",
                         "person.email": "buyer@net.test",
                         "manago_contact_id": "mc-1",
-                        "shopify_net": 123.45,
+                        # Correct B3 net for paid100+refunded40.
+                        "shopify_net": 100.0,
                         "write_entity_key": "buyer@net.test",
                     }
                 ],
             )
         self.assertGreaterEqual(len(intents), 1)
+        ready = [i for i in intents if i.status == "ready"]
+        self.assertEqual(len(ready), 1)
+        # Before/after evidence: legacy $60 → NUMBER cents 10000.
+        self.assertEqual(ready[0].before.get("klints_net_ltv"), 6000)
+        self.assertEqual(ready[0].after.get("klints_net_ltv"), 10000)
+        dict_rows = ready[0].payload.get("dictionaryProperties") or []
+        self.assertEqual(dict_rows[0].get("value"), 10000)
         outcome = assert_tier_a_sandbox_pass(
             self,
             company=company,
             check_id="PT-04",
             actor=admin,
-            intents=intents,
+            intents=ready,
             expect_rollback=True,
         )
         self.assertEqual(outcome["rollback"]["status"], "rolled_back")
