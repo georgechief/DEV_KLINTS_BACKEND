@@ -314,6 +314,9 @@ def _pt04_project_mismatch(row: dict) -> dict:
         "delta_vs_net": row.get("delta_vs_net"),
         "refund_blind": row.get("refund_blind"),
         "overstatement": row.get("overstatement"),
+        # B3 Phase 2 — preview/execute reject when these are true (no silent stamp).
+        "incomplete_refund_history": bool(row.get("incomplete_refund_history")),
+        "mixed_currency": bool(row.get("mixed_currency")),
     }
 
 
@@ -405,8 +408,9 @@ def evaluate_pt_04(ctx: FoundationGateContext) -> CheckResult:
         "failing_sample": failing[:20],
         "refund_blind_sample": refund_blind_sample[:20],
         "note": (
-            "Manago lifetime (deduped) vs Shopify net; WB-12: klints_net_ltv ≈ net "
-            "governs contact (excluded from FAIL)"
+            "Manago PURCHASE (deduped) vs Shopify net in import snapshot; "
+            "WB-12: klints_net_ltv ≈ net governs contact (excluded from FAIL). "
+            "Scope is not guaranteed lifetime."
         ),
     }
     evidence = [
@@ -423,6 +427,9 @@ def evaluate_pt_04(ctx: FoundationGateContext) -> CheckResult:
         "matches": [],
         "mismatches": _pt04_mismatch_rows(failing, refund_blind_sample),
     }
+    revenue_scope = (
+        truth.get("revenue_scope") or "shopify_orders_in_import_snapshot"
+    )
     if linked == 0:
         return seal_revenue_on_result(
             _result(
@@ -444,7 +451,7 @@ def evaluate_pt_04(ctx: FoundationGateContext) -> CheckResult:
                 if raw.get("shopify_from_raw") and raw.get("manago_from_raw")
                 else "db_fallback"
             ),
-            extra={"revenue_scope": "lifetime_linked_contacts"},
+            extra={"revenue_scope": revenue_scope},
         )
     if over > 0 or refund_blind > 0:
         return seal_revenue_on_result(
@@ -473,7 +480,7 @@ def evaluate_pt_04(ctx: FoundationGateContext) -> CheckResult:
                 else "db_fallback"
             ),
             extra={
-                "revenue_scope": "lifetime_linked_contacts",
+                "revenue_scope": revenue_scope,
                 "gap_count": over + refund_blind,
             },
         )
@@ -504,7 +511,7 @@ def evaluate_pt_04(ctx: FoundationGateContext) -> CheckResult:
             if raw.get("shopify_from_raw") and raw.get("manago_from_raw")
             else "db_fallback"
         ),
-        extra={"revenue_scope": "lifetime_linked_contacts"},
+        extra={"revenue_scope": revenue_scope},
     )
 
 

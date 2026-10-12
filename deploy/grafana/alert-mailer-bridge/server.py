@@ -4,6 +4,9 @@
 Grafana cannot POST the mailer JSON shape directly. This tiny internal
 bridge formats Grafana Alerting payloads and calls MAILER_API_* — same
 path Django uses. No second mail product.
+
+Email subjects/bodies are written for humans (ops inbox), not raw Grafana
+machine titles like ``[FIRING:1] staging-logs-error-nginx …``.
 """
 
 from __future__ import annotations
@@ -22,6 +25,15 @@ ALERT_TO = os.environ.get("ALERT_EMAIL_TO", "noreplyklints@gmail.com").strip()
 BIND_HOST = os.environ.get("BIND_HOST", "0.0.0.0")
 PORT = int(os.environ.get("PORT", "8080"))
 
+# Friendly names for known M3-OBS-01 Docker services.
+_SERVICE_LABELS = {
+    "web": "web (Django API)",
+    "celery_worker": "celery worker",
+    "celery_beat": "celery beat",
+    "nginx": "nginx",
+    "redis": "redis",
+}
+
 
 def _html_escape(text: str) -> str:
     return (
@@ -36,58 +48,164 @@ def _path_only(raw_path: str) -> str:
     return (urlparse(raw_path).path or "/").rstrip("/") or "/"
 
 
-def _format_alert(payload: dict[str, Any]) -> tuple[str, str, str]:
-    status = str(payload.get("status") or payload.get("state") or "unknown")
+def _normalize_status(raw: str) -> str:
+    value = (raw or "unknown").strip().lower()
+    if value in {"firing", "alerting", "alert"}:
+        return "firing"
+    if value in {"resolved", "ok", "normal"}:
+        return "resolved"
+    return value or "unknown"
+
+
+def _service_from_payload(payload: dict[str, Any]) -> str:
     common_labels = payload.get("commonLabels") or {}
-    common_annotations = payload.get("commonAnnotations") or {}
-    if not isinstance(common_labels, dict):
-        common_labels = {}
-    if not isinstance(common_annotations, dict):
-        common_annotations = {}
+    if isinstance(common_labels, dict):
+        service = common_labels.get("service")
+        if isinstance(service, str) and service.strip():
+            return service.strip()
 
-    title = (
-        str(payload.get("title") or "").strip()
-        or str(common_labels.get("alertname") or "").strip()
-        or str(payload.get("groupKey") or "").strip()
-        or "Grafana alert"
-    )
     alerts = payload.get("alerts") or []
-    lines: list[str] = []
-    for alert in alerts[:25]:
-        if not isinstance(alert, dict):
-            continue
-        labels = alert.get("labels") or {}
-        annotations = alert.get("annotations") or {}
-        if not isinstance(labels, dict):
-            labels = {}
-        if not isinstance(annotations, dict):
-            annotations = {}
-        service = (
-            labels.get("service")
-            or common_labels.get("service")
-            or labels.get("alertname")
-            or "?"
-        )
-        state = alert.get("status") or status
-        summary = (
-            annotations.get("summary")
-            or annotations.get("description")
-            or common_annotations.get("summary")
-            or ""
-        )
-        lines.append(f"[{state}] service={service} {summary}".strip())
+    if isinstance(alerts, list):
+        for alert in alerts:
+            if not isinstance(alert, dict):
+                continue
+            labels = alert.get("labels") or {}
+            if isinstance(labels, dict):
+                service = labels.get("service")
+                if isinstance(service, str) and service.strip():
+                    return service.strip()
 
-    if not lines:
-        # Contact-point Test or empty group — still email something useful.
-        summary = common_annotations.get("summary") or payload.get("message") or ""
-        raw = json.dumps(payload, indent=2)[:4000]
-        text = f"Grafana {status}: {title}\n{summary}\n\n{raw}".strip()
+    # Fall back: scrape rule uid / alertname when labels missing.
+    for key in ("alertname",):
+        if isinstance(common_labels, dict):
+            name = common_labels.get(key)
+            if isinstance(name, str) and name.strip():
+                return name.strip()
+    title = str(payload.get("title") or "")
+    for candidate in _SERVICE_LABELS:
+        if candidate in title:
+            return candidate
+    return "unknown"
+
+
+def _human_service(service: str) -> str:
+    return _SERVICE_LABELS.get(service, service)
+
+
+def _summary_from_payload(payload: dict[str, Any]) -> str:
+    common_annotations = payload.get("commonAnnotations") or {}
+    if isinstance(common_annotations, dict):
+        for key in ("summary", "description"):
+            value = common_annotations.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+
+    alerts = payload.get("alerts") or []
+    if isinstance(alerts, list):
+        for alert in alerts:
+            if not isinstance(alert, dict):
+                continue
+            annotations = alert.get("annotations") or {}
+            if not isinstance(annotations, dict):
+                continue
+            for key in ("summary", "description"):
+                value = annotations.get(key)
+                if isinstance(value, str) and value.strip():
+                    return value.strip()
+    return ""
+
+
+def _rule_name(payload: dict[str, Any]) -> str:
+    common_labels = payload.get("commonLabels") or {}
+    if isinstance(common_labels, dict):
+        alertname = common_labels.get("alertname")
+        if isinstance(alertname, str) and alertname.strip():
+            return alertname.strip()
+    # Grafana often puts the rule title in payload["title"] — keep as footer only.
+    title = str(payload.get("title") or "").strip()
+    return title[:120] if title else "M3 OBS-01 log alert"
+
+
+def _format_alert(payload: dict[str, Any]) -> tuple[str, str, str]:
+    status = _normalize_status(
+        str(payload.get("status") or payload.get("state") or "unknown")
+    )
+    service = _service_from_payload(payload)
+    human_service = _human_service(service)
+    summary = _summary_from_payload(payload)
+    rule = _rule_name(payload)
+    alert_count = 0
+    alerts = payload.get("alerts") or []
+    if isinstance(alerts, list):
+        alert_count = len([a for a in alerts if isinstance(a, dict)])
+
+    if status == "firing":
+        subject = f"[Klints staging] ALERT — {human_service} error logs"
+        status_line = "Status: FIRING (needs attention)"
+        what = (
+            summary
+            or f"Staging {human_service} logged ERROR-like lines in the last ~5 minutes."
+        )
+        next_steps = (
+            "What to do:\n"
+            f"1. Open Grafana Explore and filter service={service}\n"
+            "2. Find recent error / exception / critical / emerg lines\n"
+            "3. Fix or confirm noise; a CLEARED email follows when the window is clean"
+        )
+    elif status == "resolved":
+        subject = f"[Klints staging] CLEARED — {human_service} error logs"
+        status_line = "Status: CLEARED (resolved)"
+        what = (
+            summary
+            or f"Staging {human_service} no longer matches the ERROR-log alert window."
+        )
+        next_steps = (
+            "No action needed unless you were still investigating the earlier ALERT."
+        )
     else:
-        text = f"Grafana {status}: {title}\n" + "\n".join(lines)
+        subject = f"[Klints staging] Grafana notice — {human_service}"
+        status_line = f"Status: {status.upper()}"
+        what = summary or "Grafana sent a notification with no firing/resolved state."
+        next_steps = "Check Grafana Alerting if this was unexpected."
 
-    html = f'<pre style="font-family:monospace">{_html_escape(text)}</pre>'
-    subject = f"[Klints staging] {status}: {title}"[:200]
-    return subject, html, text
+    body_lines = [
+        status_line,
+        f"Service: {human_service} (label={service})",
+        f"What happened: {what}",
+        "",
+        next_steps,
+        "",
+        f"Alert rule: {rule}",
+    ]
+    if alert_count:
+        body_lines.append(f"Alerts in this notification: {alert_count}")
+    body_lines.extend(
+        [
+            "Environment: Klints staging (apis.klints.io)",
+            "Monitor: M3-OBS-01 Docker ERROR-log rules",
+        ]
+    )
+
+    # Contact-point Test / empty payloads: append a short raw dump for debug.
+    if not summary and not alert_count:
+        raw = json.dumps(payload, indent=2)[:2000]
+        body_lines.extend(["", "Raw payload (truncated):", raw])
+
+    text = "\n".join(body_lines).strip()
+    html = (
+        '<div style="font-family:Segoe UI,Helvetica,Arial,sans-serif;'
+        'font-size:14px;line-height:1.45;color:#111">'
+        f"<p><strong>{_html_escape(status_line)}</strong></p>"
+        f"<p>Service: <code>{_html_escape(human_service)}</code>"
+        f" (label=<code>{_html_escape(service)}</code>)</p>"
+        f"<p>What happened: {_html_escape(what)}</p>"
+        f"<pre style='white-space:pre-wrap;background:#f6f8fa;padding:12px;"
+        f"border-radius:6px'>{_html_escape(next_steps)}</pre>"
+        f"<p style='color:#555;font-size:12px'>Alert rule: "
+        f"{_html_escape(rule)} · Klints staging · M3-OBS-01</p>"
+        "</div>"
+    )
+    return subject[:200], html, text
 
 
 def _send_mail(*, to: str, subject: str, html: str, text: str) -> None:

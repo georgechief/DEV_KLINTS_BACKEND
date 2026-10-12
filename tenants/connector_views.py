@@ -4,6 +4,7 @@ import logging
 
 from django.conf import settings
 from django.core import signing
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Max
 from django.http import HttpResponseRedirect
@@ -42,6 +43,10 @@ from tenants.connector_uniqueness import (
 )
 from tenants.crypto import encrypt_config, has_api_v3_key_in_config, masked_config
 from tenants.manago import verify_credentials
+from tenants.manago_endpoint import (
+    ManagoEndpointError,
+    normalize_and_validate_manago_endpoint,
+)
 from tenants.manago_topology_service import (
     ManagoTopologyError,
     apply_primary_owner,
@@ -215,12 +220,6 @@ class ConnectorVerifyView(APIView):
         api_secret = (request.data.get("api_secret") or "").strip()
         endpoint = (request.data.get("endpoint") or "").strip()
 
-        print(
-            f"[manago verify] attempt endpoint={endpoint!r} "
-            f"client_id={client_id!r} has_api_secret={bool(api_secret)} "
-            f"user={getattr(request.user, 'email', None)!r}"
-        )
-
         missing = [
             field
             for field, value in {
@@ -231,27 +230,41 @@ class ConnectorVerifyView(APIView):
             if not value
         ]
         if missing:
-            print(f"[manago verify] failed reason=missing_fields fields={missing}")
+            logger.info("manago verify failed reason=missing_fields")
             return Response(
                 {field: ["This field is required."] for field in missing},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # SSRF gate before any outbound fetch (HTTPS + allowlisted Manago hosts).
+        try:
+            safe_endpoint = normalize_and_validate_manago_endpoint(endpoint)
+        except ManagoEndpointError as exc:
+            logger.info("manago verify rejected unsafe endpoint")
+            return Response(
+                {
+                    "valid": False,
+                    "message": str(exc),
+                    "endpoint": [str(exc)],
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        logger.info(
+            "manago verify attempt has_client_id=%s has_api_secret=%s",
+            bool(client_id),
+            bool(api_secret),
+        )
+
         result = verify_credentials(
             client_id=client_id,
             api_secret=api_secret,
-            endpoint=endpoint,
+            endpoint=safe_endpoint,
         )
         if result.valid:
-            print(
-                f"[manago verify] success endpoint={endpoint!r} "
-                f"client_id={client_id!r} message={result.message!r}"
-            )
+            logger.info("manago verify success")
         else:
-            print(
-                f"[manago verify] failed endpoint={endpoint!r} "
-                f"client_id={client_id!r} error={result.message!r}"
-            )
+            logger.info("manago verify failed")
 
         response_data = {
             "valid": result.valid,
@@ -353,7 +366,14 @@ class ConnectorListCreateView(APIView):
             return _account_already_connected_response(exc)
 
         plain_api_key = config["api_key"]
-        base_url = str(config.get("base_url") or config.get("endpoint") or "").strip()
+        raw_base_url = str(config.get("base_url") or config.get("endpoint") or "").strip()
+        try:
+            base_url = normalize_and_validate_manago_endpoint(raw_base_url)
+        except ManagoEndpointError as exc:
+            return Response(
+                {"config": [str(exc)]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         stored_config_input = {
             key: value
             for key, value in config.items()
@@ -631,7 +651,13 @@ class ShopifyOAuthCallbackView(APIView):
         )
 
         actor_user_id = state.get("user_id")
-        actor = User.objects.filter(pk=actor_user_id).first() if actor_user_id else None
+        actor = None
+        if actor_user_id:
+            try:
+                actor = User.objects.filter(pk=actor_user_id).first()
+            except (TypeError, ValueError, ValidationError):
+                # Stale / non-UUID state payloads must not 500 the OAuth callback.
+                actor = None
         append_audit_event(
             company=company,
             action="connector.connected",

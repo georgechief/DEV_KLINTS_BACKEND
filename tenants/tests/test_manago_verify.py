@@ -13,6 +13,10 @@ TEST_MANAGO_SETTINGS = {
     "MANAGO_API_BASE_URL": "https://app2.manago.ai",
 }
 
+_PUBLIC_ADDRINFO = [
+    (None, None, None, None, ("93.184.216.34", 443)),
+]
+
 
 @override_settings(**TEST_MANAGO_SETTINGS)
 class ManagoAuthPayloadTests(SimpleTestCase):
@@ -58,8 +62,13 @@ class ConnectorVerifyViewTests(SimpleTestCase):
             is_active=True,
         )
 
+    @patch("tenants.connector_views._user_company", return_value=None)
+    @patch(
+        "tenants.manago_endpoint.socket.getaddrinfo",
+        return_value=_PUBLIC_ADDRINFO,
+    )
     @patch("tenants.connector_views.verify_credentials")
-    def test_verify_success_response(self, mock_verify):
+    def test_verify_success_response(self, mock_verify, _mock_dns, _mock_company):
         mock_verify.return_value = ManagoVerifyResult(
             valid=True,
             message="Credentials verified",
@@ -140,10 +149,15 @@ class ConnectorVerifyWarningTests(TestCase):
             snapshot_data={"workspace_id": "ws_prod"},
         )
 
+    @patch(
+        "tenants.manago_endpoint.socket.getaddrinfo",
+        return_value=_PUBLIC_ADDRINFO,
+    )
     @patch("tenants.connector_views.verify_credentials")
     def test_verify_returns_soft_warning_when_account_already_connected(
         self,
         mock_verify,
+        _mock_dns,
     ):
         mock_verify.return_value = ManagoVerifyResult(
             valid=True,

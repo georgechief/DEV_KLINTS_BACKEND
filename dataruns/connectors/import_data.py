@@ -293,12 +293,28 @@ def persist_normalized_records(
     if not isinstance(contact_records, list):
         contact_records = []
 
-    # Shopify guest checkouts: order has email but no customer.id → synthesize contact.
+    fetched_contact_ids = {
+        str(r.get("external_id")).strip()
+        for r in contact_records
+        if isinstance(r, dict)
+        and r.get("external_id") is not None
+        and str(r.get("external_id")).strip()
+    }
+
+    # Shopify: synthesize contacts for guest checkouts and for orders whose
+    # customer was outside the customers fetch window (updated_at_min) while the
+    # order itself is inside created_at_min — otherwise orders are silently dropped.
     if platform == "shopify":
-        contact_records = _with_shopify_guest_contacts(
+        contact_records = _with_shopify_order_contacts(
             contact_records=contact_records,
             order_records=normalized.get("orders") or [],
-            raw_orders_hint=normalized,
+        )
+    # Manago: transactions may reference contactId not present in the contacts
+    # list — ensure a contact row exists before order upsert.
+    elif platform == "manago_ai":
+        contact_records = _with_manago_order_contacts(
+            contact_records=contact_records,
+            order_records=normalized.get("orders") or [],
         )
 
     for record in contact_records:
@@ -307,10 +323,11 @@ def persist_normalized_records(
         external_id = record.get("external_id")
         if external_id is None or not str(external_id).strip():
             continue
+        external_id_str = str(external_id).strip()
         Contact.objects.update_or_create(
             company=company,
             source=platform,
-            external_id=str(external_id),
+            external_id=external_id_str,
             defaults={
                 "email": str(record.get("email") or ""),
                 "phone": str(record.get("phone") or ""),
@@ -319,13 +336,16 @@ def persist_normalized_records(
                 "excluded_at": None,
             },
         )
-        contacts_upserted += 1
+        # Link stubs (order-only contacts) must not inflate Connected-stack
+        # "Contacts" — that figure should match the platform fetch window.
+        if external_id_str in fetched_contact_ids:
+            contacts_upserted += 1
         source_created_at = _parse_order_created_at(record.get("created_at"))
         if source_created_at is not None:
             Contact.objects.filter(
                 company=company,
                 source=platform,
-                external_id=str(external_id),
+                external_id=external_id_str,
             ).update(created_at=source_created_at)
 
     order_records = normalized.get("orders")
@@ -394,14 +414,18 @@ def persist_normalized_records(
     }
 
 
-def _with_shopify_guest_contacts(
+def _with_shopify_order_contacts(
     *,
     contact_records: list[Any],
     order_records: Any,
-    raw_orders_hint: dict[str, Any],
 ) -> list[Any]:
-    """Ensure guest Shopify orders get an email:{addr} contact row."""
-    del raw_orders_hint  # reserved for future raw-path enrichment
+    """Ensure every Shopify order can link to a same-platform contact row.
+
+    - Guest checkout (no customer.id): synthesize ``email:{addr}``.
+    - Registered customer missing from the customers window: synthesize a stub
+      contact from ``contact_external_id`` + order email so the order is not
+      skipped at persist time.
+    """
     existing_ids = {
         str(r.get("external_id"))
         for r in contact_records
@@ -414,13 +438,26 @@ def _with_shopify_guest_contacts(
     for order in order_records:
         if not isinstance(order, dict):
             continue
-        if order.get("contact_external_id"):
-            continue
         email = str(order.get("email") or "").strip()
+        contact_external_id = order.get("contact_external_id")
+        if contact_external_id is not None and str(contact_external_id).strip():
+            cid = str(contact_external_id).strip()
+            if cid not in existing_ids:
+                enriched.append(
+                    {
+                        "external_id": cid,
+                        "email": email,
+                        "phone": "",
+                    }
+                )
+                existing_ids.add(cid)
+            continue
+
         if not email:
             continue
         guest_id = f"email:{email.lower()}"
         if guest_id in existing_ids:
+            order["contact_external_id"] = guest_id
             continue
         enriched.append(
             {
@@ -430,9 +467,57 @@ def _with_shopify_guest_contacts(
             }
         )
         existing_ids.add(guest_id)
-        # Mutate order so persist can link without a second pass.
         order["contact_external_id"] = guest_id
     return enriched
+
+
+def _with_manago_order_contacts(
+    *,
+    contact_records: list[Any],
+    order_records: Any,
+) -> list[Any]:
+    """Ensure Manago transactions can link when contactId is on the order."""
+    existing_ids = {
+        str(r.get("external_id"))
+        for r in contact_records
+        if isinstance(r, dict) and r.get("external_id") is not None
+    }
+    enriched = list(contact_records)
+    if not isinstance(order_records, list):
+        return enriched
+
+    for order in order_records:
+        if not isinstance(order, dict):
+            continue
+        contact_external_id = order.get("contact_external_id")
+        if contact_external_id is None or not str(contact_external_id).strip():
+            continue
+        cid = str(contact_external_id).strip()
+        if cid in existing_ids:
+            continue
+        enriched.append(
+            {
+                "external_id": cid,
+                "email": str(order.get("email") or "").strip(),
+                "phone": "",
+            }
+        )
+        existing_ids.add(cid)
+    return enriched
+
+
+def _with_shopify_guest_contacts(
+    *,
+    contact_records: list[Any],
+    order_records: Any,
+    raw_orders_hint: dict[str, Any] | None = None,
+) -> list[Any]:
+    """Back-compat wrapper; ``raw_orders_hint`` ignored."""
+    del raw_orders_hint
+    return _with_shopify_order_contacts(
+        contact_records=contact_records,
+        order_records=order_records,
+    )
 
 
 

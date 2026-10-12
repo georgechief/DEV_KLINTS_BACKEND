@@ -61,12 +61,21 @@ def main() -> int:
         return _fail("PT-04 detail_key must be klints_net_ltv")
     if (fields.get("detail_value") or {}).get("path") != "shopify_net":
         return _fail("PT-04 detail_value must path shopify_net")
+    extras = ops[0].get("extras") if isinstance(ops[0].get("extras"), dict) else {}
+    if extras.get("detail_storage") != "dictionary_number_cents":
+        return _fail("PT-04 must store klints_net_ltv as dictionary_number_cents")
+    if extras.get("dictionary_type") != "NUMBER":
+        return _fail("PT-04 dictionary_type must be NUMBER")
     disclosure = str(pt04.get("operator_disclosure") or "")
     if "may not make PT-04 PASS" in disclosure:
         return _fail("PT-04 disclosure must not say may not make PT-04 PASS (WB-12)")
     if "re-run DCS" not in disclosure or "PASS" not in disclosure:
         return _fail("PT-04 disclosure must say re-run DCS / PASS when stamp matches (WB-12)")
-    print("Mapping detail_set klints_net_ltv + WB-12 PASS disclosure: OK")
+    if "cents" not in disclosure.lower():
+        return _fail("PT-04 disclosure must state integer cents storage")
+    if "20000" not in disclosure and "cents" not in disclosure.lower():
+        return _fail("PT-04 disclosure must explain VIP thresholds use cents")
+    print("Mapping detail_set klints_net_ltv NUMBER cents + WB-12 PASS disclosure: OK")
 
     if not is_klints_owned_detail("klints_net_ltv"):
         return _fail("klints_net_ltv must be owned when PT-04 enabled")

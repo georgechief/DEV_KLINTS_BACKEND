@@ -527,7 +527,12 @@ def recompute_health_report_summary(
         return health_report
 
     metadata = data_run.metadata or {}
-    platform = metadata.get("connector") or health_report.get("platform")
+    # DataRun metadata uses ``platform``; older payloads may use ``connector``.
+    platform = (
+        metadata.get("platform")
+        or metadata.get("connector")
+        or health_report.get("platform")
+    )
     if not isinstance(platform, str) or not platform:
         return health_report
 
@@ -615,10 +620,38 @@ def build_latest_bootstrap_payload(data_run: DataRun) -> dict[str, Any]:
     if not isinstance(counts, dict):
         counts = {}
 
-    contacts = fetch.get("contacts_upserted")
+    # Prefer raw platform fetch counts for the Connected-stack card so link
+    # stubs (order-only contacts) do not inflate Contacts above Manago/Shopify.
+    # If an older health_report omitted raw_* , recount from the snapshot pin
+    # so staging cards correct without waiting for a fresh import.
+    raw_contacts = fetch.get("raw_customers_or_contacts")
+    raw_orders = fetch.get("raw_orders_or_transactions")
+    if raw_contacts is None or raw_orders is None:
+        snapshot_data = load_snapshot_data(metadata.get("snapshot_id"))
+        platform = (
+            metadata.get("platform")
+            or metadata.get("connector")
+            or health_report.get("platform")
+            or ""
+        )
+        raw = (
+            snapshot_data.get("raw")
+            if isinstance(snapshot_data.get("raw"), dict)
+            else {}
+        )
+        snap_contacts, snap_orders = _raw_entity_counts(
+            platform=str(platform),
+            raw=raw if isinstance(raw, dict) else {},
+        )
+        if raw_contacts is None and snap_contacts:
+            raw_contacts = snap_contacts
+        if raw_orders is None and snap_orders:
+            raw_orders = snap_orders
+
+    contacts = raw_contacts if raw_contacts is not None else fetch.get("contacts_upserted")
     if contacts is None:
         contacts = counts.get("contacts", 0)
-    orders = fetch.get("orders_upserted")
+    orders = raw_orders if raw_orders is not None else fetch.get("orders_upserted")
     if orders is None:
         orders = counts.get("orders", 0)
 

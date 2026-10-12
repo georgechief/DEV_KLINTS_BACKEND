@@ -2,6 +2,7 @@
 
 Team member + connector + invite object IDs must not cross companies.
 TenantViewSet / DataRunViewSet scoped in Phase 3 (tests below).
+DataRunViewSet writes removed in B1 (405) — DCS evidence via pipeline only.
 """
 
 from __future__ import annotations
@@ -230,7 +231,7 @@ class M3Sec01TenantViewSetIsolationTests(TestCase):
 
 
 class M3Sec01DataRunViewSetIsolationTests(TestCase):
-    """PRD §8 — DataRunViewSet scoped; foreign ?tenant= must not leak."""
+    """PRD §8 / B1 — DataRunViewSet read-only + tenant-scoped; writes → 405."""
 
     def setUp(self):
         self.pair = make_sec01_tenant_pair(slug_prefix="sec01-dr")
@@ -309,33 +310,34 @@ class M3Sec01DataRunViewSetIsolationTests(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_b_cannot_patch_a_run(self):
+        # B1: writes disabled for all roles — 405 before object lookup.
         response = self.pair.client_b.patch(
             f"/api/v1/dataruns/{self.run_a.id}/",
             {"name": "hijacked"},
             format="json",
         )
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 405)
         self.run_a.refresh_from_db()
         self.assertEqual(self.run_a.name, "A run")
         self.assertEqual(self.run_a.tenant_id, self.pair.tenant_a.id)
 
     def test_b_cannot_delete_a_run(self):
         response = self.pair.client_b.delete(f"/api/v1/dataruns/{self.run_a.id}/")
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 405)
         self.assertTrue(DataRun.objects.filter(pk=self.run_a.id).exists())
 
-    def test_create_forces_caller_tenant(self):
+    def test_post_create_rejected_read_only(self):
+        before = DataRun.objects.count()
         response = self.pair.client_b.post(
             "/api/v1/dataruns/",
             {"name": "forced", "status": DataRun.Status.PENDING},
             format="json",
         )
-        self.assertEqual(response.status_code, 201)
-        created = DataRun.objects.get(pk=response.data["id"])
-        self.assertEqual(created.tenant_id, self.pair.tenant_b.id)
-        self.assertEqual(response.data.get("tenant_slug"), self.pair.tenant_b.slug)
+        self.assertEqual(response.status_code, 405)
+        self.assertEqual(DataRun.objects.count(), before)
 
-    def test_create_ignores_foreign_tenant_slug_in_body(self):
+    def test_post_with_foreign_tenant_slug_rejected(self):
+        before = DataRun.objects.count()
         response = self.pair.client_b.post(
             "/api/v1/dataruns/",
             {
@@ -345,12 +347,10 @@ class M3Sec01DataRunViewSetIsolationTests(TestCase):
             },
             format="json",
         )
-        self.assertEqual(response.status_code, 201)
-        created = DataRun.objects.get(pk=response.data["id"])
-        self.assertEqual(created.tenant_id, self.pair.tenant_b.id)
-        self.assertEqual(response.data.get("tenant_slug"), self.pair.tenant_b.slug)
+        self.assertEqual(response.status_code, 405)
+        self.assertEqual(DataRun.objects.count(), before)
 
-    def test_patch_own_run_cannot_move_to_foreign_tenant(self):
+    def test_patch_own_run_rejected_read_only(self):
         response = self.pair.client_b.patch(
             f"/api/v1/dataruns/{self.run_b.id}/",
             {
@@ -359,12 +359,12 @@ class M3Sec01DataRunViewSetIsolationTests(TestCase):
             },
             format="json",
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 405)
         self.run_b.refresh_from_db()
-        self.assertEqual(self.run_b.name, "still-b")
+        self.assertEqual(self.run_b.name, "B run")
         self.assertEqual(self.run_b.tenant_id, self.pair.tenant_b.id)
 
-    def test_put_own_run_cannot_move_to_foreign_tenant(self):
+    def test_put_own_run_rejected_read_only(self):
         response = self.pair.client_b.put(
             f"/api/v1/dataruns/{self.run_b.id}/",
             {
@@ -375,13 +375,13 @@ class M3Sec01DataRunViewSetIsolationTests(TestCase):
             },
             format="json",
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 405)
         self.run_b.refresh_from_db()
-        self.assertEqual(self.run_b.name, "put-still-b")
+        self.assertEqual(self.run_b.name, "B run")
         self.assertEqual(self.run_b.tenant_id, self.pair.tenant_b.id)
-        self.assertEqual(response.data.get("tenant_slug"), self.pair.tenant_b.slug)
 
-    def test_create_ignores_raw_tenant_id_in_body(self):
+    def test_post_with_raw_tenant_id_rejected(self):
+        before = DataRun.objects.count()
         response = self.pair.client_b.post(
             "/api/v1/dataruns/",
             {
@@ -392,9 +392,8 @@ class M3Sec01DataRunViewSetIsolationTests(TestCase):
             },
             format="json",
         )
-        self.assertEqual(response.status_code, 201)
-        created = DataRun.objects.get(pk=response.data["id"])
-        self.assertEqual(created.tenant_id, self.pair.tenant_b.id)
+        self.assertEqual(response.status_code, 405)
+        self.assertEqual(DataRun.objects.count(), before)
 
     def test_unauthenticated_dataruns_401(self):
         from rest_framework.test import APIClient

@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 from django.test import TestCase, override_settings
 
-from dataruns.tests.writeback_helpers import enable_company_sandbox, sandbox_company, seed_writeback_allowlist
+from dataruns.tests.writeback_helpers import sandbox_company, seed_writeback_allowlist
 
 from dataruns.dcs.enqueue import DCS_SCORE_DATA_RUN_NAME, DCS_SCORE_KIND
 from dataruns.models import DataRun, Run
@@ -239,9 +239,7 @@ class WritebackGuardsAndPreflightTests(TestCase):
         self.assertIsNone(result.blocked_reason)
         self.assertNotEqual(result.blocked_reason, "consent_namespace_not_clean")
 
-    @override_settings(
-        WRITEBACKS_ENABLED=False,    )
-    def test_sp07_preflight_skipped_for_sandbox_company(self):
+    def _seed_terminal_dcs(self, *, check_results: list[dict]):
         domain_run = Run.objects.create(
             company=self.company,
             run_type=Run.RunType.FULL,
@@ -256,11 +254,102 @@ class WritebackGuardsAndPreflightTests(TestCase):
                 "company_id": str(self.company.id),
                 "run_id": str(domain_run.id),
                 "dcs_run": {"run_id": str(domain_run.id), "run_state": "SCORED"},
-                "check_results": [
-                    {"check_id": "SP-07", "status": "FAIL"},
-                    {"check_id": "CC-03", "status": "FAIL"},
-                ],
+                "check_results": check_results,
             },
+        )
+        return domain_run
+
+    @override_settings(
+        WRITEBACKS_ENABLED=False,    )
+    def test_sp07_preflight_blocks_when_writebacks_enabled_and_sp07_fail(self):
+        """B2 — writebacks ON must NOT skip SP-07 for consent-gated mappings."""
+        self._seed_terminal_dcs(
+            check_results=[
+                {"check_id": "SP-07", "status": "FAIL"},
+                {"check_id": "CC-03", "status": "FAIL"},
+            ]
+        )
+        with sandbox_company(self.company):
+            preview = writeback_run(
+                company=self.company,
+                check_id="CC-03",
+                mode="dry_run",
+                actor=self.admin,
+                max_rows=0,
+            )
+            execute = writeback_run(
+                company=self.company,
+                check_id="CC-03",
+                mode="execute",
+                actor=self.admin,
+                max_rows=0,
+            )
+        self.assertEqual(preview.blocked_reason, "consent_namespace_not_clean")
+        self.assertEqual(preview.summary.ready, 0)
+        # Client B2: execute blocked too (preflight runs before approval gates).
+        self.assertEqual(execute.blocked_reason, "consent_namespace_not_clean")
+        self.assertEqual(execute.summary.executed, 0)
+
+    @override_settings(
+        WRITEBACKS_ENABLED=False,    )
+    def test_sp07_preflight_blocks_when_writebacks_enabled_and_sp07_missing(self):
+        """B2 — missing SP-07 row + writebacks ON → still blocked."""
+        self._seed_terminal_dcs(
+            check_results=[{"check_id": "CC-03", "status": "FAIL"}]
+        )
+        with sandbox_company(self.company):
+            result = writeback_run(
+                company=self.company,
+                check_id="CC-03",
+                mode="dry_run",
+                actor=self.admin,
+                max_rows=0,
+            )
+        self.assertEqual(result.blocked_reason, "consent_namespace_not_clean")
+
+    @override_settings(
+        WRITEBACKS_ENABLED=False,    )
+    def test_sp07_preflight_blocks_when_writebacks_enabled_and_no_dcs_run(self):
+        """B2 — no terminal DCS run + writebacks ON → blocked."""
+        with sandbox_company(self.company):
+            result = writeback_run(
+                company=self.company,
+                check_id="CC-03",
+                mode="dry_run",
+                actor=self.admin,
+                max_rows=0,
+            )
+        self.assertEqual(result.blocked_reason, "consent_namespace_not_clean")
+
+    @override_settings(
+        WRITEBACKS_ENABLED=False,    )
+    def test_sp07_preflight_blocks_when_writebacks_enabled_and_sp07_warn(self):
+        """B2 — SP-07 WARN is not PASS; consent gate still blocks."""
+        self._seed_terminal_dcs(
+            check_results=[
+                {"check_id": "SP-07", "status": "WARN"},
+                {"check_id": "CC-03", "status": "FAIL"},
+            ]
+        )
+        with sandbox_company(self.company):
+            result = writeback_run(
+                company=self.company,
+                check_id="CC-03",
+                mode="dry_run",
+                actor=self.admin,
+                max_rows=0,
+            )
+        self.assertEqual(result.blocked_reason, "consent_namespace_not_clean")
+
+    @override_settings(
+        WRITEBACKS_ENABLED=False,    )
+    def test_sp07_preflight_allows_when_writebacks_enabled_and_sp07_pass(self):
+        """B2 — writebacks ON + SP-07 PASS → consent gate clears."""
+        self._seed_terminal_dcs(
+            check_results=[
+                {"check_id": "SP-07", "status": "PASS"},
+                {"check_id": "CC-03", "status": "FAIL"},
+            ]
         )
         with sandbox_company(self.company):
             result = writeback_run(
@@ -271,6 +360,24 @@ class WritebackGuardsAndPreflightTests(TestCase):
                 max_rows=0,
             )
         self.assertIsNone(result.blocked_reason)
+        self.assertNotEqual(result.blocked_reason, "consent_namespace_not_clean")
+
+    def test_run_preflight_unit_no_bypass_when_execute_enabled(self):
+        """Direct unit: mapping requires consent; company execute ON; SP-07 FAIL → blocked."""
+        from dataruns.writebacks.preflight import run_preflight
+        from dataruns.writebacks.registry import get_check_mapping
+
+        self.company.writeback_execute_enabled = True
+        self.company.save(update_fields=["writeback_execute_enabled"])
+        self._seed_terminal_dcs(
+            check_results=[{"check_id": "SP-07", "status": "FAIL"}]
+        )
+        mapping = get_check_mapping("CC-03")
+        self.assertTrue(mapping.get("requires_consent_namespace_clean"))
+        self.assertEqual(
+            run_preflight(company=self.company, mapping=mapping),
+            "consent_namespace_not_clean",
+        )
 
     @patch("dataruns.writebacks.rollback_snapshot.find_manago_contact")
     def test_rollback_snapshot_refreshed_before_detail_set_execute(self, mock_find):

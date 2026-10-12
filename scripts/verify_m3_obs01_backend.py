@@ -307,6 +307,16 @@ def main() -> int:
         ok("Phase 4: alert-mailer-bridge maps webhook -> MAILER_API_*")
     else:
         bad("Phase 4: alert-mailer-bridge/server.py required (urlparse path)")
+    if (
+        bridge
+        and "ALERT —" in bridge
+        and "CLEARED —" in bridge
+        and "_normalize_status" in bridge
+        and "_service_from_payload" in bridge
+    ):
+        ok("Phase 4: alert email subjects are human-readable (ALERT/CLEARED)")
+    else:
+        bad("Phase 4: alert-mailer-bridge must format ALERT/CLEARED human subjects")
 
     if compose and "obs_alert_mailer:" in compose:
         ok("Phase 4: compose has obs_alert_mailer")

@@ -87,7 +87,8 @@ class ProductTruthGovernedTests(SimpleTestCase):
             ],
         }
 
-    def test_no_stamp_still_fail(self):
+    def test_no_stamp_aligned_nets_pass_without_governance(self):
+        """B3: paid 100 + fully refunded 40 ⇒ net 100; Manago 100 ⇒ no FAIL."""
         company = SimpleNamespace(id="c1")
 
         def fake_raw(*, company, platform, **_kwargs):
@@ -102,9 +103,10 @@ class ProductTruthGovernedTests(SimpleTestCase):
             payload = build_product_truth_snapshot(company=company)
         truth = payload["product_truth"]
         row = payload["product_truth_rows"][0]
+        self.assertEqual(row["shopify_net"], 100.0)
         self.assertFalse(row["governed_by_klints_net_ltv"])
-        self.assertEqual(truth["contacts_over_delta"], 1)
-        self.assertEqual(truth["contacts_refund_blind"], 1)
+        self.assertEqual(truth["contacts_over_delta"], 0)
+        self.assertEqual(truth["contacts_refund_blind"], 0)
         self.assertEqual(truth["contacts_governed_by_klints_net_ltv"], 0)
 
     def test_stamp_matches_net_governs_pass_path(self):
@@ -113,7 +115,7 @@ class ProductTruthGovernedTests(SimpleTestCase):
         def fake_raw(*, company, platform, **_kwargs):
             if platform == "shopify":
                 return self._shopify()
-            return self._manago(properties={"klints_net_ltv": "60"})
+            return self._manago(properties={"klints_net_ltv": "100"})
 
         with patch(
             "dataruns.dcs.product_truth._connector_raw_for_platform",
@@ -123,7 +125,7 @@ class ProductTruthGovernedTests(SimpleTestCase):
         truth = payload["product_truth"]
         row = payload["product_truth_rows"][0]
         self.assertTrue(row["governed_by_klints_net_ltv"])
-        self.assertEqual(row["klints_net_ltv"], 60.0)
+        self.assertEqual(row["klints_net_ltv"], 100.0)
         self.assertFalse(row["refund_blind"])
         self.assertEqual(row["overstatement"], 0.0)
         self.assertEqual(truth["contacts_over_delta"], 0)
@@ -156,7 +158,7 @@ class ProductTruthGovernedTests(SimpleTestCase):
             if platform == "shopify":
                 return self._shopify()
             return self._manago(
-                properties_list=[{"name": "klints_net_ltv", "value": 60.0}]
+                properties_list=[{"name": "klints_net_ltv", "value": 100.0}]
             )
 
         with patch(
@@ -166,7 +168,8 @@ class ProductTruthGovernedTests(SimpleTestCase):
             payload = build_product_truth_snapshot(company=company)
         self.assertTrue(payload["product_truth_rows"][0]["governed_by_klints_net_ltv"])
 
-    def test_wrong_stamp_still_fail(self):
+    def test_wrong_stamp_not_governed(self):
+        """Stamp 10 ≠ net 100 → not governed; Manago still matches net so no over_delta."""
         company = SimpleNamespace(id="c1")
 
         def fake_raw(*, company, platform, **_kwargs):
@@ -180,7 +183,7 @@ class ProductTruthGovernedTests(SimpleTestCase):
         ):
             payload = build_product_truth_snapshot(company=company)
         truth = payload["product_truth"]
-        self.assertEqual(truth["contacts_over_delta"], 1)
+        self.assertEqual(truth["contacts_over_delta"], 0)
         self.assertFalse(payload["product_truth_rows"][0]["governed_by_klints_net_ltv"])
 
     def test_partial_governed_mix(self):
@@ -274,7 +277,7 @@ class ProductTruthGovernedTests(SimpleTestCase):
             if platform == "shopify":
                 return self._shopify()
             return self._manago(
-                properties_list=[{"name": "Klints_Net_Ltv", "value": "60"}]
+                properties_list=[{"name": "Klints_Net_Ltv", "value": "100"}]
             )
 
         with patch(
@@ -298,7 +301,8 @@ class ProductTruthGovernedTests(SimpleTestCase):
         ):
             payload = build_product_truth_snapshot(company=company)
         self.assertFalse(payload["product_truth_rows"][0]["governed_by_klints_net_ltv"])
-        self.assertEqual(payload["product_truth"]["contacts_over_delta"], 1)
+        # B3: empty stamp ≠ governed; nets still align (paid100+refunded40 ⇒ net100).
+        self.assertEqual(payload["product_truth"]["contacts_over_delta"], 0)
 
     def test_understated_purchase_governed(self):
         """Matching stamp clears FAIL even when purchase understates net."""

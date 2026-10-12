@@ -214,6 +214,54 @@ class StaleHealthReportRecomputeTests(TestCase):
         self.assertEqual(payload["contacts"], 189)
         self.assertEqual(payload["orders"], 250)
 
+    def test_display_prefers_snapshot_raw_over_inflated_upsert_counts(self):
+        """Order-link stubs inflate upserts; Connected stack must show Manago raw."""
+        from tenants.models import Connector
+
+        manago = Connector.objects.create(
+            company=self.company,
+            name="manago_ai",
+            type="cdp",
+            config={"workspace_id": "ws-1"},
+            status="connected",
+        )
+        snapshot = ConnectorSnapshot.objects.create(
+            connector=manago,
+            version=1,
+            snapshot_data={
+                "platform": "manago_ai",
+                "raw": {
+                    "contacts": [{"contactId": f"c-{i}"} for i in range(202)],
+                    "transactions": [{"transactionId": f"t-{i}"} for i in range(80)],
+                },
+            },
+        )
+        data_run = DataRun.objects.create(
+            tenant=self.tenant,
+            name="connector-bootstrap:manago_ai",
+            status=DataRun.Status.SUCCEEDED,
+            finished_at=timezone.now(),
+            metadata={
+                "platform": "manago_ai",
+                "snapshot_id": str(snapshot.id),
+                "counts": {"contacts": 232, "orders": 80},
+                "health_report": {
+                    "platform": "manago_ai",
+                    "days": 30,
+                    "summary_status": "ok",
+                    "preflight": {"issues": []},
+                    "postflight": {"issues": []},
+                    "fetch": {
+                        "contacts_upserted": 232,
+                        "orders_upserted": 80,
+                    },
+                },
+            },
+        )
+        payload = build_latest_bootstrap_payload(data_run)
+        self.assertEqual(payload["contacts"], 202)
+        self.assertEqual(payload["orders"], 80)
+
     def test_recompute_preserves_real_snapshot_note_partial_fetch(self):
         snapshot = ConnectorSnapshot.objects.create(
             connector=self.connector,

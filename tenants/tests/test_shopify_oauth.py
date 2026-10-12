@@ -1,6 +1,6 @@
 import hashlib
 import hmac as hmac_lib
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from django.core import signing
 from django.test import SimpleTestCase, TestCase, override_settings
@@ -165,10 +165,19 @@ class ShopifyOAuthCallbackViewTests(TestCase):
         self.company = Company.objects.create(
             tenant=self.tenant, name="Acme", domain="acme.com"
         )
+        self.admin = User.objects.create_user(
+            email="admin@acme.com",
+            password="TestPass123!",
+            name="Admin",
+            tenant=self.tenant,
+            role=User.Role.ADMIN,
+            email_verified=True,
+            is_active=True,
+        )
 
     def _state(self, **overrides):
         payload = {
-            "user_id": "unused",
+            "user_id": str(self.admin.id),
             "company_id": str(self.company.id),
             "shop": self.shop,
             "return_to": "",
@@ -193,11 +202,17 @@ class ShopifyOAuthCallbackViewTests(TestCase):
             "test-client-secret",
         )
 
+    @patch("tenants.emails.send_email")
+    @patch("tenants.connector_views.enqueue_connector_bootstrap")
     @patch("tenants.shopify.fetch_shop")
     @patch("tenants.shopify.exchange_code_for_token")
     def test_success_creates_connector_and_snapshot(
-        self, mock_exchange, mock_fetch
+        self, mock_exchange, mock_fetch, mock_bootstrap, mock_send_email
     ):
+        mock_bootstrap.return_value = MagicMock(
+            data_run=MagicMock(id=9001, metadata={"days": 30}),
+            task_queued=True,
+        )
         mock_exchange.return_value = ShopifyTokenBundle(
             access_token="shpat_secret_token",
             scope="read_orders,read_products",
@@ -235,12 +250,19 @@ class ShopifyOAuthCallbackViewTests(TestCase):
         self.assertNotIn("access_token", snapshot.snapshot_data)
         self.assertNotIn("refresh_token", snapshot.snapshot_data)
         self.assertEqual(snapshot.snapshot_data["shop_id"], 42)
+        mock_bootstrap.assert_called_once()
 
+    @patch("tenants.emails.send_email")
+    @patch("tenants.connector_views.enqueue_connector_bootstrap")
     @patch("tenants.shopify.fetch_shop")
     @patch("tenants.shopify.exchange_code_for_token")
     def test_reconnect_updates_existing_connector(
-        self, mock_exchange, mock_fetch
+        self, mock_exchange, mock_fetch, mock_bootstrap, mock_send_email
     ):
+        mock_bootstrap.return_value = MagicMock(
+            data_run=MagicMock(id=9002, metadata={"days": 30}),
+            task_queued=True,
+        )
         mock_exchange.return_value = ShopifyTokenBundle(
             access_token="shpat_first",
             scope="read_orders",
@@ -271,6 +293,43 @@ class ShopifyOAuthCallbackViewTests(TestCase):
             .values_list("version", flat=True)
         )
         self.assertEqual(versions, [1, 2])
+
+    @patch("tenants.emails.send_email")
+    @patch("tenants.connector_views.enqueue_connector_bootstrap")
+    @patch("tenants.shopify.fetch_shop")
+    @patch("tenants.shopify.exchange_code_for_token")
+    def test_non_uuid_user_id_in_state_does_not_500(
+        self, mock_exchange, mock_fetch, mock_bootstrap, mock_send_email
+    ):
+        """Stale OAuth state with a non-UUID user_id must still connect."""
+        mock_bootstrap.return_value = MagicMock(
+            data_run=MagicMock(id=9003, metadata={"days": 30}),
+            task_queued=True,
+        )
+        mock_exchange.return_value = ShopifyTokenBundle(
+            access_token="shpat_secret_token",
+            scope="read_orders,read_products",
+        )
+        mock_fetch.return_value = {"id": 42, "name": "Acme Store"}
+
+        response = self._get(
+            self._callback_params(state=self._state(user_id="unused"))
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("shopify=connected", response.url)
+        self.assertTrue(
+            Connector.objects.filter(
+                company=self.company, name="shopify"
+            ).exists()
+        )
+        from dataruns.models import AuditLog
+
+        audit = AuditLog.objects.filter(
+            company=self.company, action="connector.connected"
+        ).latest("created_at")
+        self.assertEqual(audit.performed_by, "system")
+        self.assertIsNone(audit.actor_user_id)
 
     def test_invalid_state_redirects_with_error(self):
         params = self._callback_params(state="garbage")

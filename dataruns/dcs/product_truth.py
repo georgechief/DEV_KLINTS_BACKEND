@@ -1,10 +1,23 @@
 """Excel sheet 02/06 PT-04 net vs gross transaction truth per contact.
 
-Per linked identity: Manago lifetime PURCHASE value vs Shopify net revenue
+Per linked identity: Manago purchase value vs Shopify net revenue
 (orders − refunds). Quantifies refund-blindness (depends on LE-09 returns).
 
 WB-12: when Manago ``klints_net_ltv`` ≈ Shopify net, the contact is governed
 and does not count toward FAIL / refund_blind (completes Automated writeback loop).
+
+B3 / client M3 — Shopify net definition (Excel SoT + acceptance):
+- Successful payments: paid / partially_paid ``total_price`` (and original total on
+  refunded / partially_refunded orders that were once paid).
+- Refunds: **actual** amounts from ``refunds[]`` / ``total_refunded`` when present;
+  full ``refunded`` status without refund rows ⇒ refund equals paid (net 0 for that order).
+- Unpaid cancellations / voided-never-paid: **excluded** (contribute 0) — do not subtract.
+- History: whatever orders are in the connector snapshot (typically BOOTSTRAP_DAYS import
+  window). This is **not** guaranteed Shopify lifetime; evidence labels say import window.
+- Currency: single-currency sum per contact when ``currency`` / ``presentment_currency``
+  is uniform; mixed currency is flagged and write intents are rejected (no silent stamp).
+- Stamp storage: Manago dictionary NUMBER as integer **cents**; VIP thresholds must
+  also be expressed in cents (e.g. ``>= 20000`` for $200.00).
 """
 
 from __future__ import annotations
@@ -62,6 +75,71 @@ def _contact_detail_value(contact: dict[str, Any], detail_key: str) -> Any:
     return None
 
 
+def _dictionary_number_raw(contact: dict[str, Any], detail_key: str) -> Any:
+    """Raw NUMBER value from dictionaryProperties only (B3 Phase 3 — cents)."""
+    want = str(detail_key or "").strip().lower()
+    if not want:
+        return None
+    bag = contact.get("dictionaryProperties")
+    if isinstance(bag, dict):
+        for k, v in bag.items():
+            if str(k).strip().lower() == want:
+                return v
+    elif isinstance(bag, list):
+        for item in bag:
+            if not isinstance(item, dict):
+                continue
+            name = item.get("name") or item.get("key") or item.get("property")
+            if str(name or "").strip().lower() != want:
+                continue
+            return item.get("value")
+    return None
+
+
+def dollars_to_cents(value: Any) -> int | None:
+    """Round currency dollars to positive-integer cents (Manago NUMBER)."""
+    try:
+        dollars = float(value)
+    except (TypeError, ValueError):
+        return None
+    if dollars != dollars:  # NaN
+        return None
+    return int(round(dollars * 100))
+
+
+def klints_net_ltv_dollars_from_contact(contact: dict[str, Any]) -> float | None:
+    """Read stamp as dollars.
+
+    Prefer dictionaryProperties NUMBER stored as **integer cents** (Phase 3).
+    Fall back to legacy ``properties`` float/string dollars.
+    """
+    cents_raw = _dictionary_number_raw(contact, KLINTS_NET_LTV_KEY)
+    if cents_raw is not None and cents_raw != "":
+        try:
+            return float(int(cents_raw)) / 100.0
+        except (TypeError, ValueError):
+            parsed = _float_or_none(cents_raw)
+            if parsed is not None:
+                # Already dollars mistakenly in dict bag — use as-is.
+                return parsed
+    # Legacy standard detail (dollars).
+    for bag_name in ("properties", "details", "customFields"):
+        bag = contact.get(bag_name)
+        if isinstance(bag, dict):
+            for k, v in bag.items():
+                if str(k).strip().lower() == KLINTS_NET_LTV_KEY:
+                    return _float_or_none(v)
+        elif isinstance(bag, list):
+            for item in bag:
+                if not isinstance(item, dict):
+                    continue
+                name = item.get("name") or item.get("key") or item.get("property")
+                if str(name or "").strip().lower() != KLINTS_NET_LTV_KEY:
+                    continue
+                return _float_or_none(item.get("value"))
+    return None
+
+
 def klints_net_ltv_matches_shopify_net(
     *,
     stamped: float | None,
@@ -79,11 +157,206 @@ def klints_net_ltv_matches_shopify_net(
         return False
     if stamped_f != stamped_f or net != net:  # NaN guard
         return False
+    # Negative stamps (pre-B3 Loom bug) never govern.
+    if stamped_f < 0 or net < 0:
+        return False
     delta = abs(stamped_f - net)
     if delta <= abs_match:
         return True
     denom = max(abs(net), abs(stamped_f), 1.0)
     return (delta / denom) <= rel_fail
+
+
+def _money_amount(value: Any) -> float | None:
+    """Parse Shopify money fields (scalar, string, or MoneyBag / set dict)."""
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        return _float_or_none(value)
+    if isinstance(value, dict):
+        for key in ("amount", "shop_money", "presentment_money"):
+            inner = value.get(key)
+            if isinstance(inner, dict):
+                amt = _float_or_none(inner.get("amount"))
+                if amt is not None:
+                    return amt
+            amt = _float_or_none(inner)
+            if amt is not None:
+                return amt
+    return None
+
+
+def _order_currency(order: dict[str, Any]) -> str | None:
+    for key in ("currency", "presentment_currency"):
+        raw = order.get(key)
+        if raw is None:
+            continue
+        text = str(raw).strip().upper()
+        if text:
+            return text
+    return None
+
+
+def _actual_refund_amount(order: dict[str, Any]) -> float | None:
+    """Sum actual refund amounts when Shopify provides them; else None."""
+    refunds = order.get("refunds")
+    if isinstance(refunds, list) and refunds:
+        total = 0.0
+        saw = False
+        for ref in refunds:
+            if not isinstance(ref, dict):
+                continue
+            ref_saw = False
+            # Prefer transaction amounts (cash that left the shop).
+            txns = ref.get("transactions")
+            if isinstance(txns, list) and txns:
+                for txn in txns:
+                    if not isinstance(txn, dict):
+                        continue
+                    kind = str(txn.get("kind") or "").lower()
+                    status = str(txn.get("status") or "").lower()
+                    if kind and kind not in ("refund", "change"):
+                        continue
+                    if status and status not in ("success", "pending", ""):
+                        continue
+                    amt = _money_amount(txn.get("amount"))
+                    if amt is not None:
+                        total += abs(amt)
+                        saw = True
+                        ref_saw = True
+            if ref_saw:
+                continue
+            # Fall through when transactions missing or none usable.
+            lines = ref.get("refund_line_items")
+            if isinstance(lines, list) and lines:
+                line_saw = False
+                for line in lines:
+                    if not isinstance(line, dict):
+                        continue
+                    amt = _money_amount(line.get("subtotal"))
+                    if amt is None:
+                        amt = _money_amount(line.get("total_tax"))
+                    if amt is not None:
+                        total += abs(amt)
+                        saw = True
+                        line_saw = True
+                if line_saw:
+                    continue
+            amt = _money_amount(ref.get("amount"))
+            if amt is not None:
+                total += abs(amt)
+                saw = True
+        if saw:
+            return total
+
+    for key in ("total_refunded", "total_refunded_set"):
+        amt = _money_amount(order.get(key))
+        if amt is not None:
+            return abs(amt)
+    return None
+
+
+def shopify_order_net_contribution(order: dict[str, Any]) -> dict[str, Any]:
+    """Per-order paid / refunded / net for PT-04 (B3).
+
+    Returns keys: paid, refunded, net, currency, incomplete_refund_history, skipped_reason.
+    """
+    empty = {
+        "paid": 0.0,
+        "refunded": 0.0,
+        "net": 0.0,
+        "currency": _order_currency(order),
+        "incomplete_refund_history": False,
+        "skipped_reason": None,
+    }
+    if order.get("test") is True:
+        empty["skipped_reason"] = "test_order"
+        return empty
+
+    financial = str(order.get("financial_status") or "").lower()
+    cancelled = bool(order.get("cancelled_at")) or financial in _CANCEL_FINANCIAL
+    total = _float_or_none(order.get("total_price")) or 0.0
+    currency = _order_currency(order)
+
+    # Unpaid cancel / void — never successfully paid → exclude (do not subtract).
+    if cancelled and financial in _CANCEL_FINANCIAL and financial not in (
+        _PAID_FINANCIAL | _REFUND_FINANCIAL
+    ):
+        return {
+            "paid": 0.0,
+            "refunded": 0.0,
+            "net": 0.0,
+            "currency": currency,
+            "incomplete_refund_history": False,
+            "skipped_reason": "unpaid_cancellation",
+        }
+
+    # Successful payment basis (Excel: orders side of orders − refunds).
+    paid = 0.0
+    if financial in _PAID_FINANCIAL:
+        # partially_paid: prefer captured amount when Shopify exposes outstanding.
+        outstanding = _money_amount(order.get("total_outstanding"))
+        if financial == "partially_paid" and outstanding is not None and total > 0:
+            paid = max(total - outstanding, 0.0)
+        else:
+            paid = total
+    elif financial in _REFUND_FINANCIAL:
+        # Was paid then refunded — original order total is the paid basis.
+        paid = total
+
+    if paid <= 0 and financial not in _REFUND_FINANCIAL:
+        return {
+            "paid": 0.0,
+            "refunded": 0.0,
+            "net": 0.0,
+            "currency": currency,
+            "incomplete_refund_history": False,
+            "skipped_reason": "not_paid",
+        }
+
+    refunded = 0.0
+    incomplete = False
+    actual = _actual_refund_amount(order)
+    if actual is not None:
+        if paid <= 0:
+            # Refund rows without a paid basis — not certifiable (no invent).
+            incomplete = True
+            refunded = 0.0
+        elif actual > paid + 0.01:
+            # Refund exceeds paid — do not silently clamp; flag incomplete.
+            incomplete = True
+            refunded = paid
+        else:
+            refunded = actual
+    elif financial == "refunded":
+        # Full refund status, no refund rows → entire paid amount returned.
+        refunded = paid
+    elif financial == "partially_refunded":
+        # Cannot know partial amount without refunds[] / total_refunded.
+        incomplete = True
+        refunded = 0.0
+    elif cancelled and paid > 0:
+        # Paid then cancelled: only subtract when refund amounts exist.
+        # Without amounts, net is not certifiable — flag incomplete (no invent).
+        incomplete = True
+        refunded = 0.0
+
+    net = paid - refunded
+    if net < 0:
+        # Should be unreachable after rules above; fail closed as incomplete.
+        incomplete = True
+        net = 0.0
+
+    return {
+        "paid": round(paid, 4),
+        "refunded": round(refunded, 4),
+        "net": round(net, 4),
+        "currency": currency,
+        "incomplete_refund_history": incomplete,
+        "skipped_reason": None,
+    }
 
 
 def build_product_truth_snapshot(
@@ -119,9 +392,12 @@ def build_product_truth_snapshot(
     shopify_from_raw = bool(customers) or bool(orders)
     manago_from_raw = bool(contacts) or bool(transactions)
 
-    # Shopify per-customer gross paid + refunded amounts.
+    # Shopify per-customer paid / refunded / net (B3 — actual refunds, no unpaid cancel).
     shopify_paid: dict[str, float] = defaultdict(float)
     shopify_refunded: dict[str, float] = defaultdict(float)
+    shopify_net: dict[str, float] = defaultdict(float)
+    shopify_currencies: dict[str, set[str]] = defaultdict(set)
+    shopify_incomplete: dict[str, bool] = defaultdict(bool)
     shopify_email: dict[str, str] = {}
     for cust in customers:
         cid = cust.get("id")
@@ -130,35 +406,33 @@ def build_product_truth_snapshot(
         shopify_email[str(cid)] = normalize_email(cust.get("email"))
 
     for order in orders:
-        if order.get("test") is True:
-            continue
         customer = order.get("customer") if isinstance(order.get("customer"), dict) else {}
         cid = customer.get("id")
         if cid is None:
             continue
         sid = str(cid)
-        amount = _float_or_none(order.get("total_price")) or 0.0
-        financial = str(order.get("financial_status") or "").lower()
-        cancelled = bool(order.get("cancelled_at")) or financial in _CANCEL_FINANCIAL
-        if financial in _PAID_FINANCIAL and not cancelled:
-            shopify_paid[sid] += amount
-        if financial in _REFUND_FINANCIAL or cancelled:
-            shopify_refunded[sid] += amount
+        contrib = shopify_order_net_contribution(order)
+        shopify_paid[sid] += float(contrib["paid"])
+        shopify_refunded[sid] += float(contrib["refunded"])
+        shopify_net[sid] += float(contrib["net"])
+        if contrib.get("incomplete_refund_history"):
+            shopify_incomplete[sid] = True
+        cur = contrib.get("currency")
+        if cur:
+            shopify_currencies[sid].add(str(cur))
         if sid not in shopify_email:
             shopify_email[sid] = normalize_email(
                 customer.get("email") or order.get("email")
             )
 
-    # Manago lifetime PURCHASE value per contact, deduped by externalId (LE-04).
+    # Manago PURCHASE value per contact, deduped by externalId (LE-04).
     # WB-12: also capture klints_net_ltv from contact detail bags.
     manago_by_id: dict[str, dict[str, Any]] = {}
     for contact in contacts:
         mid = str(contact.get("contactId") or contact.get("id") or "")
         if not mid:
             continue
-        stamped = _float_or_none(
-            _contact_detail_value(contact, KLINTS_NET_LTV_KEY)
-        )
+        stamped = klints_net_ltv_dollars_from_contact(contact)
         manago_by_id[mid] = {
             "manago_contact_id": mid,
             "person.external_key": str(contact.get("externalId") or "").strip(),
@@ -202,7 +476,10 @@ def build_product_truth_snapshot(
         link_kind = None
         link = meta["person.external_key"]
         if link and (
-            link in shopify_email or link in shopify_paid or link in shopify_refunded
+            link in shopify_email
+            or link in shopify_paid
+            or link in shopify_refunded
+            or link in shopify_net
         ):
             shopify_id = link
             link_kind = "external_key"
@@ -214,7 +491,7 @@ def build_product_truth_snapshot(
             continue
         paid = float(shopify_paid.get(shopify_id) or 0)
         refunded = float(shopify_refunded.get(shopify_id) or 0)
-        net = paid - refunded
+        net = float(shopify_net.get(shopify_id) or 0)
         manago_all = float(purchase_by_contact[mid]["gross_all"])
         manago_deduped = float(purchase_by_contact[mid]["deduped"])
         stamped = meta.get("klints_net_ltv")
@@ -222,12 +499,20 @@ def build_product_truth_snapshot(
         governed = klints_net_ltv_matches_shopify_net(
             stamped=stamped_f, shopify_net=net
         )
-        # Compare Manago lifetime (deduped) to Shopify net — Excel PT-04.
+        currencies = sorted(shopify_currencies.get(shopify_id) or [])
+        mixed_currency = len(currencies) > 1
+        incomplete_history = bool(shopify_incomplete.get(shopify_id))
+        # Compare Manago purchases to Shopify net — Excel PT-04.
         denom = max(abs(net), abs(manago_deduped), 1.0)
         delta_vs_net = abs(manago_deduped - net) / denom
         # Refund-blindness: Manago vs Shopify gross paid (ignoring refunds).
         denom_g = max(abs(paid), abs(manago_deduped), 1.0)
         delta_vs_gross = abs(manago_deduped - paid) / denom_g
+        # Incomplete / mixed / negative stamp: never govern — not certifiable.
+        if incomplete_history or mixed_currency:
+            governed = False
+        if stamped_f is not None and stamped_f < 0:
+            governed = False
         if governed:
             refund_blind = False
             overstatement = 0.0
@@ -254,6 +539,9 @@ def build_product_truth_snapshot(
                     round(stamped_f, 4) if stamped_f is not None else None
                 ),
                 "governed_by_klints_net_ltv": governed,
+                "shopify_currencies": currencies,
+                "mixed_currency": mixed_currency,
+                "incomplete_refund_history": incomplete_history,
             }
         )
 
@@ -261,7 +549,11 @@ def build_product_truth_snapshot(
         r
         for r in per_contact
         if (not r["governed_by_klints_net_ltv"])
-        and r["delta_vs_net"] > PT04_DELTA_FAIL
+        and (
+            r["delta_vs_net"] > PT04_DELTA_FAIL
+            or r["incomplete_refund_history"]
+            or r["mixed_currency"]
+        )
     ]
     refund_blind_rows = [
         r
@@ -282,6 +574,8 @@ def build_product_truth_snapshot(
             "fail_delta": PT04_DELTA_FAIL,
             "failing_sample": failing[:PT_SAMPLE],
             "refund_blind_sample": refund_blind_rows[:PT_SAMPLE],
+            # Honest scope: connector snapshot window (often BOOTSTRAP_DAYS), not lifetime.
+            "revenue_scope": "shopify_orders_in_import_snapshot",
             "raw_enrichment": {
                 "shopify_from_raw": shopify_from_raw,
                 "manago_from_raw": manago_from_raw,

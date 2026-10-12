@@ -210,7 +210,7 @@ class PilotGatesStep0PreconditionsTests(SimpleTestCase):
             msg="evaluate.py required after Step 5",
         )
 
-    def test_prd_and_working_gaps_present(self):
+    def test_module_prd_and_working_gaps_present(self):
         self.assertTrue(_MODULE_PRD.is_file(), msg=str(_MODULE_PRD))
         self.assertTrue(_WORKING_GAPS.is_file(), msg=str(_WORKING_GAPS))
         self.assertTrue(_ARCHIVE.is_file(), msg=str(_ARCHIVE))

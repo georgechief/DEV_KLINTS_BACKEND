@@ -2,12 +2,12 @@
   "schema_version": "1.0.0",
   "check_id": "PT-04",
   "template_id": "T6",
-  "title": "Governed net LTV detail (klints_net_ltv)",
+  "title": "Governed Shopify net stamp (klints_net_ltv)",
   "enabled": true,
   "approval_tier": "batch",
   "requires_consent_namespace_clean": true,
   "irreversible": false,
-  "operator_disclosure": "Prefer LE-09 PASS before stamping net LTV. Sets klints_net_ltv to Shopify net. After Approve, re-run DCS — PT-04 PASSes when stamped net matches Shopify net on overstated contacts (repeat Approve if batch truncated).",
+  "operator_disclosure": "Prefer LE-09 PASS before stamping. Sets klints_net_ltv as a Manago dictionary detail type NUMBER storing integer cents (Shopify net dollars × 100) for orders in the import snapshot (not guaranteed lifetime). Predefine klints_net_ltv as NUMBER under Manago Settings → Dictionary Details before Approve. VIP/automation thresholds must use cents (e.g. klints_net_ltv >= 20000 means $200.00) — Manago compares the stored integer directly. Rejects incomplete refund history, mixed currency, out-of-definition, or zero net (Manago NUMBER must be a positive integer). Clears legacy properties text stamp when writing. After Approve, re-run DCS — PT-04 PASSes when stamped net matches Shopify net (repeat Approve if batch truncated).",
   "rollback": {
     "strategy": "revert_detail"
   },
@@ -29,7 +29,14 @@
           "contact_id": { "path": "manago_contact_id" }
         }
       },
-      "guards": ["entity_key_required", "email_format", "klints_prefix"]
+      "guards": ["entity_key_required", "email_format", "klints_prefix"],
+      "extras": {
+        "detail_storage": "dictionary_number_cents",
+        "dictionary_type": "NUMBER",
+        "value_unit": "cents",
+        "must_predefine": true,
+        "clear_legacy_properties": true
+      }
     }
   ]
 }

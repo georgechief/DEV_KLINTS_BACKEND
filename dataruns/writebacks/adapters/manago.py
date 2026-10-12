@@ -166,6 +166,60 @@ class ManagoWriteAdapter:
                 response = upsert_contacts(ctx, [contact])
                 return {"ok": True, "reverse_rename": rename, "response": _safe_response(response)}
 
+            email = str(payload.get("email") or "").strip()
+            contact_id = str(payload.get("contactId") or "").strip()
+            # B3 Phase 3 — dictionary NUMBER (cents) rollback.
+            if (
+                snapshot.get("_detail_storage") == "dictionary_number_cents"
+                or payload.get("_detail_storage") == "dictionary_number_cents"
+            ):
+                dict_rows = payload.get("dictionaryProperties") or []
+                detail_key = None
+                if isinstance(dict_rows, list) and dict_rows:
+                    detail_key = str((dict_rows[0] or {}).get("name") or "")
+                if not detail_key:
+                    detail_key = next(
+                        (
+                            k
+                            for k in snapshot.keys()
+                            if not str(k).startswith("_")
+                        ),
+                        None,
+                    )
+                if not detail_key:
+                    raise ManagoClientError("rollback detail_set missing detail key")
+                prior = snapshot.get(detail_key)
+                dict_type = str(snapshot.get("_dictionary_type") or "NUMBER")
+                prior_bag = str(snapshot.get("_prior_bag") or "dictionary")
+                contact: dict[str, Any] = {
+                    "email": email or None,
+                    "contactId": contact_id or None,
+                }
+                if prior_bag == "properties":
+                    # Restore legacy standard detail (supports pre-B3 negatives).
+                    contact["properties"] = {
+                        detail_key: "" if prior is None else prior
+                    }
+                elif (
+                    prior_bag == "dictionary"
+                    and prior is not None
+                    and prior != ""
+                    and float(prior) > 0
+                ):
+                    contact["dictionaryProperties"] = [
+                        {
+                            "name": detail_key,
+                            "type": dict_type,
+                            "value": int(prior),
+                        }
+                    ]
+                else:
+                    # Clear / zero / missing — empty properties; NUMBER cannot be 0.
+                    contact["properties"] = {detail_key: ""}
+                contact = {k: v for k, v in contact.items() if v is not None}
+                response = upsert_contacts(ctx, [contact])
+                return {"ok": True, "response": _safe_response(response)}
+
             detail_key = next(iter((payload.get("properties") or {}).keys()), None)
             if not detail_key:
                 raise ManagoClientError("rollback detail_set missing detail key")
@@ -173,8 +227,6 @@ class ManagoWriteAdapter:
             # the standard detail; empty string is required to remove an absent prior.
             prior = snapshot.get(detail_key)
             rollback_value = "" if prior is None else prior
-            email = str(payload.get("email") or "").strip()
-            contact_id = str(payload.get("contactId") or "").strip()
             contact = {
                 "email": email or None,
                 "contactId": contact_id or None,
@@ -278,8 +330,13 @@ class ManagoWriteAdapter:
             contact = {
                 "email": email or None,
                 "contactId": contact_id or None,
-                "properties": payload.get("properties"),
             }
+            dict_props = payload.get("dictionaryProperties")
+            if isinstance(dict_props, list) and dict_props:
+                contact["dictionaryProperties"] = dict_props
+            props = payload.get("properties")
+            if isinstance(props, dict) and props:
+                contact["properties"] = props
             contact = {k: v for k, v in contact.items() if v is not None}
             response = upsert_contacts(ctx, [contact])
             return {
@@ -387,7 +444,10 @@ class ManagoWriteAdapter:
             return True
         if intent.op_kind == "detail_set":
             props = payload.get("properties")
-            if not isinstance(props, dict) or not props:
+            dict_props = payload.get("dictionaryProperties")
+            has_props = isinstance(props, dict) and bool(props)
+            has_dict = isinstance(dict_props, list) and bool(dict_props)
+            if not has_props and not has_dict:
                 intent.error_reason = "missing_detail_properties"
                 return False
             if not str(payload.get("email") or payload.get("contactId") or "").strip():

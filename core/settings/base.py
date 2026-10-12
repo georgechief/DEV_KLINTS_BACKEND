@@ -279,6 +279,9 @@ MANAGO_API_BASE_URL = env(
     "MANAGO_API_BASE_URL",
     default="https://app2.manago.ai",
 )
+# Extra hosts allowed for /connectors/verify/ (comma-separated). Defaults cover
+# app.manago.ai … app5.manago.ai plus the host from MANAGO_API_BASE_URL.
+MANAGO_ALLOWED_API_HOSTS = env.list("MANAGO_ALLOWED_API_HOSTS", default=[])
 
 # Writeback adapter foundation (PRD-WB-01) — prod execute off by default.
 WRITEBACKS_ENABLED = env("WRITEBACKS_ENABLED")

@@ -2,6 +2,15 @@
 
 
 
+## Deposit 2026-10-12 — product `main` sync (Gate B/C harden)
+
+- Source: `klints_backend` `main` @ `f1d58cc` (B1 DataRun read-only · B2 SP-07 preflight · B3 PT-04 net LTV cents · P1 Manago verify SSRF · Grafana alert copy · Connected-stack import-window counts).
+- Frontend companion: `klints_frontend` `main` @ `49e00f6` (Integrations import-window disclaimer).
+- Method: rsync deposit onto `deposit/product-main-2026-10-12` → PR → `main`.
+- Preserved client-only: `RELEASES.md`, tag deploy workflow, claim/security module docs, `production.env`.
+- Contributor folders / names scrubbed on deposit.
+- **Deploy:** not auto-deployed. Cut a new `v1.0.x` tag when ready to ship FRA.
+
 ## Deposit 2026-09-30 — product `main` sync → tag `v1.0.3`
 
 - Source: `klints_backend` `main` @ `6cafd10` (WB-13–21 + REAL-01 + prior AI/SEC stack).

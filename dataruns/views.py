@@ -1,21 +1,23 @@
 from rest_framework import viewsets
-from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 
 from dataruns.models import DataRun
 from dataruns.serializers import DataRunSerializer
 
 
-class DataRunViewSet(viewsets.ModelViewSet):
-    """DataRun CRUD scoped to the caller's tenant (M3-SEC-01 Phase 3).
+class DataRunViewSet(viewsets.ReadOnlyModelViewSet):
+    """DataRun list/retrieve scoped to the caller's tenant (M3-SEC-01 / B1).
 
-    Foreign ``?tenant=`` overrides are ignored — never widen beyond caller tenant.
+    Read-only for ALL roles including Admin — DCS evidence is produced only by
+    the scoring pipeline (``POST /api/v1/dcs/runs/`` + Celery), never via this
+    HTTP surface. Foreign ``?tenant=`` overrides are ignored.
     """
 
     permission_classes = [IsAuthenticated]
     serializer_class = DataRunSerializer
     # Base queryset is unused; get_queryset always scopes. Keep empty-safe default.
     queryset = DataRun.objects.none()
+    http_method_names = ["get", "head", "options"]
 
     def get_queryset(self):
         user = self.request.user
@@ -31,16 +33,3 @@ class DataRunViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(status=status_filter)
         # Intentionally ignore ?tenant= — do not allow cross-tenant override.
         return queryset
-
-    def _caller_tenant(self):
-        tenant = getattr(self.request.user, "tenant", None)
-        if tenant is None:
-            raise PermissionDenied("User has no tenant.")
-        return tenant
-
-    def perform_create(self, serializer):
-        serializer.save(tenant=self._caller_tenant())
-
-    def perform_update(self, serializer):
-        # Force caller tenant even if a client tries to reassign via payload.
-        serializer.save(tenant=self._caller_tenant())

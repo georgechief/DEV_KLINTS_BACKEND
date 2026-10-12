@@ -14,6 +14,12 @@ from urllib.parse import urljoin
 
 from django.conf import settings
 
+from tenants.manago_endpoint import (
+    ManagoEndpointError,
+    manago_urlopen,
+    normalize_and_validate_manago_endpoint,
+)
+
 
 @dataclass(frozen=True)
 class ManagoVerifyResult:
@@ -66,14 +72,20 @@ def list_users_by_client(
     api_secret: str,
     endpoint: str,
     timeout: float = 15.0,
+    validate_endpoint: bool = False,
 ) -> dict[str, Any]:
     """
     POST {endpoint}/api/user/listByClient with Manago v2 auth.
 
     Returns the parsed JSON body. Raises urllib.error.URLError / TimeoutError /
     ValueError on transport or parse failures.
+    When ``validate_endpoint`` is True (verify path), enforces HTTPS + Manago
+    host allowlist + public DNS + no redirects.
     """
-    base = _normalize_endpoint(endpoint)
+    if validate_endpoint:
+        base = normalize_and_validate_manago_endpoint(endpoint)
+    else:
+        base = _normalize_endpoint(endpoint)
     url = urljoin(f"{base}/", "api/user/listByClient")
     payload = build_auth_payload(client_id=client_id, api_secret=api_secret)
     body = json.dumps(payload).encode("utf-8")
@@ -86,7 +98,8 @@ def list_users_by_client(
             "Accept": "application/json",
         },
     )
-    with urllib.request.urlopen(request, timeout=timeout) as response:
+    open_fn = manago_urlopen if validate_endpoint else urllib.request.urlopen
+    with open_fn(request, timeout=timeout) as response:
         raw = response.read().decode("utf-8")
     if not raw:
         return {}
@@ -107,16 +120,24 @@ def verify_credentials(
 
     Treats Manago ``success: true`` as valid.
     Uses ``settings.MANAGO_API_BASE_URL`` unless ``endpoint`` is passed explicitly.
+    User-supplied endpoints are SSRF-hardened (HTTPS, allowlisted hosts,
+    no redirects, no private/internal resolution).
     """
-    api_base_url = resolve_manago_api_base_url(
-        {"base_url": endpoint} if endpoint else None
-    )
+    raw_endpoint = endpoint or settings.MANAGO_API_BASE_URL
+    try:
+        api_base_url = normalize_and_validate_manago_endpoint(raw_endpoint)
+    except ManagoEndpointError as exc:
+        return ManagoVerifyResult(valid=False, message=str(exc))
+
     try:
         data = list_users_by_client(
             client_id=client_id,
             api_secret=api_secret,
             endpoint=api_base_url,
+            validate_endpoint=True,
         )
+    except ManagoEndpointError as exc:
+        return ManagoVerifyResult(valid=False, message=str(exc))
     except urllib.error.HTTPError as exc:
         detail = _http_error_message(exc)
         return ManagoVerifyResult(valid=False, message=detail)

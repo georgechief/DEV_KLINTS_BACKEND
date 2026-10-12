@@ -64,6 +64,7 @@ def manago_raw_payload() -> dict[str, list[dict[str, Any]]]:
         "transactions": [
             {
                 "transactionId": "t-1",
+                "contactId": "c-1",
                 "value": 25.5,
                 "currency": "USD",
                 "email": "alice@example.com",
