@@ -898,6 +898,8 @@ class ManagoOwnersView(APIView):
                 performed_by=user.email,
                 allow_multi_owner_inference=False,
             )
+            # ensure_manago_primary_owner saves a different Connector instance
+            connector.refresh_from_db()
 
         return Response(
             _manago_owners_response(

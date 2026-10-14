@@ -133,9 +133,11 @@ class ManagoOwnersViewTests(TestCase):
         self.assertTrue(response.data["needs_primary_selection"])
         self.assertEqual(len(response.data["owners"]), 2)
 
+    @patch("tenants.manago_topology_service.list_manago_owners")
     @patch("tenants.connector_views.list_manago_owners")
-    def test_get_single_auto_selects(self, mock_list):
-        mock_list.return_value = ["only@x.com"]
+    def test_get_single_auto_selects(self, mock_list_view, mock_list_svc):
+        mock_list_view.return_value = ["only@x.com"]
+        mock_list_svc.return_value = ["only@x.com"]
         response = self._get(self.admin)
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.data["needs_primary_selection"])

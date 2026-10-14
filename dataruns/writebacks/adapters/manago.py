@@ -373,6 +373,7 @@ class ManagoWriteAdapter:
                 for k, v in payload.items()
                 if v is not None and not str(k).startswith("_")
             }
+            _strip_duplicate_manago_contact_identity(event)
             if not str(event.get("email") or event.get("contactId") or "").strip():
                 raise ManagoClientError("event_ingest requires email or contactId")
             response = batch_add_external_events(ctx, [event])
@@ -387,6 +388,7 @@ class ManagoWriteAdapter:
                 for k, v in payload.items()
                 if v is not None and not str(k).startswith("_")
             }
+            _strip_duplicate_manago_contact_identity(event)
             if not str(event.get("externalId") or "").strip():
                 raise ManagoClientError("event_correct requires externalId")
             if not str(event.get("email") or event.get("contactId") or "").strip():
@@ -518,6 +520,14 @@ class ManagoWriteAdapter:
             props = {}
             contact["properties"] = props
         props.setdefault("klints_backfill", "true")
+
+
+def _strip_duplicate_manago_contact_identity(event: dict[str, Any]) -> None:
+    """Manago event APIs accept email XOR contactId — never both."""
+    has_cid = bool(str(event.get("contactId") or "").strip())
+    has_email = bool(str(event.get("email") or "").strip())
+    if has_cid and has_email:
+        event.pop("email", None)
 
 
 def _safe_response(response: dict[str, Any]) -> dict[str, Any]:

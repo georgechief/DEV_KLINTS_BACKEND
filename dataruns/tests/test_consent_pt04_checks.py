@@ -452,7 +452,7 @@ class ConsentJoinUnitTests(SimpleTestCase):
             }
 
         with patch(
-            "dataruns.dcs.consent_join._latest_connector_raw", side_effect=fake_raw
+            "dataruns.dcs.lifecycle_join._latest_connector_raw", side_effect=fake_raw
         ):
             payload = build_consent_snapshot(company=company)
         consent = payload["consent"]

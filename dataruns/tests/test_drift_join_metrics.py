@@ -56,6 +56,10 @@ class DriftJoinLe13CheckoutVolumeTests(SimpleTestCase):
         with (
             patch("dataruns.dcs.drift_join._utcnow", return_value=as_of),
             patch(
+                "dataruns.dcs.lifecycle_join._latest_connector_raw",
+                side_effect=fake_raw,
+            ),
+            patch(
                 "dataruns.dcs.drift_join._latest_connector_raw",
                 side_effect=fake_raw,
             ),
@@ -96,6 +100,10 @@ class DriftJoinSp08ApiTagsTests(SimpleTestCase):
         with (
             patch("dataruns.dcs.drift_join._utcnow", return_value=as_of),
             patch(
+                "dataruns.dcs.lifecycle_join._latest_connector_raw",
+                side_effect=fake_raw,
+            ),
+            patch(
                 "dataruns.dcs.drift_join._latest_connector_raw",
                 side_effect=fake_raw,
             ),
@@ -132,6 +140,10 @@ class DriftJoinSp08ApiTagsTests(SimpleTestCase):
 
         with (
             patch("dataruns.dcs.drift_join._utcnow", return_value=as_of),
+            patch(
+                "dataruns.dcs.lifecycle_join._latest_connector_raw",
+                side_effect=fake_raw,
+            ),
             patch(
                 "dataruns.dcs.drift_join._latest_connector_raw",
                 side_effect=fake_raw,
@@ -172,6 +184,10 @@ class DriftJoinSp08ApiTagsTests(SimpleTestCase):
         with (
             patch("dataruns.dcs.drift_join._utcnow", return_value=as_of),
             patch(
+                "dataruns.dcs.lifecycle_join._latest_connector_raw",
+                side_effect=fake_raw,
+            ),
+            patch(
                 "dataruns.dcs.drift_join._latest_connector_raw",
                 side_effect=fake_raw,
             ),
@@ -200,6 +216,10 @@ class DriftJoinSp08ApiTagsTests(SimpleTestCase):
 
         with (
             patch("dataruns.dcs.drift_join._utcnow", return_value=as_of),
+            patch(
+                "dataruns.dcs.lifecycle_join._latest_connector_raw",
+                side_effect=fake_raw,
+            ),
             patch(
                 "dataruns.dcs.drift_join._latest_connector_raw",
                 side_effect=fake_raw,
@@ -251,6 +271,10 @@ class DriftJoinCartDedupTests(SimpleTestCase):
         with (
             patch("dataruns.dcs.drift_join._utcnow", return_value=as_of),
             patch(
+                "dataruns.dcs.lifecycle_join._latest_connector_raw",
+                side_effect=fake_raw,
+            ),
+            patch(
                 "dataruns.dcs.drift_join._latest_connector_raw",
                 side_effect=fake_raw,
             ),
@@ -298,6 +322,10 @@ class DriftJoinCartDedupTests(SimpleTestCase):
 
         with (
             patch("dataruns.dcs.drift_join._utcnow", return_value=as_of),
+            patch(
+                "dataruns.dcs.lifecycle_join._latest_connector_raw",
+                side_effect=fake_raw,
+            ),
             patch(
                 "dataruns.dcs.drift_join._latest_connector_raw",
                 side_effect=fake_raw,
@@ -348,6 +376,10 @@ class DriftJoinLe13CompletedCheckoutTests(SimpleTestCase):
         with (
             patch("dataruns.dcs.drift_join._utcnow", return_value=as_of),
             patch(
+                "dataruns.dcs.lifecycle_join._latest_connector_raw",
+                side_effect=fake_raw,
+            ),
+            patch(
                 "dataruns.dcs.drift_join._latest_connector_raw",
                 side_effect=fake_raw,
             ),
@@ -383,7 +415,14 @@ class DriftJoinBatch2Tests(SimpleTestCase):
 
         with (
             patch("dataruns.dcs.drift_join._utcnow", return_value=as_of),
-            patch("dataruns.dcs.drift_join._latest_connector_raw", side_effect=fake_raw),
+            patch(
+                "dataruns.dcs.lifecycle_join._latest_connector_raw",
+                side_effect=fake_raw,
+            ),
+            patch(
+                "dataruns.dcs.drift_join._latest_connector_raw",
+                side_effect=fake_raw,
+            ),
             patch("dataruns.dcs.drift_join._prior_drift_for_company", return_value={}),
         ):
             out = build_drift_snapshot(company=MagicMock())["drift"]
@@ -419,7 +458,14 @@ class DriftJoinBatch2Tests(SimpleTestCase):
 
         with (
             patch("dataruns.dcs.drift_join._utcnow", return_value=as_of),
-            patch("dataruns.dcs.drift_join._latest_connector_raw", side_effect=fake_raw),
+            patch(
+                "dataruns.dcs.lifecycle_join._latest_connector_raw",
+                side_effect=fake_raw,
+            ),
+            patch(
+                "dataruns.dcs.drift_join._latest_connector_raw",
+                side_effect=fake_raw,
+            ),
             patch("dataruns.dcs.drift_join._prior_drift_for_company", return_value={}),
         ):
             out = build_drift_snapshot(company=MagicMock())["drift"]
@@ -463,7 +509,14 @@ class DriftJoinBatch2Tests(SimpleTestCase):
 
         with (
             patch("dataruns.dcs.drift_join._utcnow", return_value=as_of),
-            patch("dataruns.dcs.drift_join._latest_connector_raw", side_effect=fake_raw),
+            patch(
+                "dataruns.dcs.lifecycle_join._latest_connector_raw",
+                side_effect=fake_raw,
+            ),
+            patch(
+                "dataruns.dcs.drift_join._latest_connector_raw",
+                side_effect=fake_raw,
+            ),
             patch("dataruns.dcs.drift_join._prior_drift_for_company", return_value={}),
         ):
             out = build_drift_snapshot(company=MagicMock())["drift"]
@@ -495,7 +548,14 @@ class DriftJoinBatch2Tests(SimpleTestCase):
 
         with (
             patch("dataruns.dcs.drift_join._utcnow", return_value=as_of),
-            patch("dataruns.dcs.drift_join._latest_connector_raw", side_effect=fake_raw),
+            patch(
+                "dataruns.dcs.lifecycle_join._latest_connector_raw",
+                side_effect=fake_raw,
+            ),
+            patch(
+                "dataruns.dcs.drift_join._latest_connector_raw",
+                side_effect=fake_raw,
+            ),
             patch("dataruns.dcs.drift_join._prior_drift_for_company", return_value={}),
         ):
             out = build_drift_snapshot(company=MagicMock())["drift"]
@@ -530,7 +590,14 @@ class DriftJoinBatch2Tests(SimpleTestCase):
 
         with (
             patch("dataruns.dcs.drift_join._utcnow", return_value=as_of),
-            patch("dataruns.dcs.drift_join._latest_connector_raw", side_effect=fake_raw),
+            patch(
+                "dataruns.dcs.lifecycle_join._latest_connector_raw",
+                side_effect=fake_raw,
+            ),
+            patch(
+                "dataruns.dcs.drift_join._latest_connector_raw",
+                side_effect=fake_raw,
+            ),
             patch("dataruns.dcs.drift_join._prior_drift_for_company", return_value={}),
         ):
             out = build_drift_snapshot(company=MagicMock())["drift"]

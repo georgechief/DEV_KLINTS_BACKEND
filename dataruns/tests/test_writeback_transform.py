@@ -136,8 +136,9 @@ class WritebackTransformTests(TestCase):
         self.assertEqual(intent.op_kind, "event_ingest")
         self.assertEqual(intent.status, "ready")
         self.assertEqual(intent.payload.get("externalId"), "501")
-        self.assertEqual(intent.payload.get("email"), "buyer@example.com")
+        # Manago XOR: contactId wins when both email and contactId are known.
         self.assertEqual(intent.payload.get("contactId"), "mc-1")
+        self.assertNotIn("email", intent.payload)
         self.assertEqual(intent.payload.get("value"), 99.5)
 
     def test_le01_ignores_legacy_missing_purchase_event_side(self):
@@ -271,7 +272,8 @@ class WritebackTransformTests(TestCase):
         self.assertEqual(len(intents), 1)
         self.assertEqual(intents[0].status, "ready")
         self.assertEqual(intents[0].payload.get("externalId"), "ord-nested")
-        self.assertEqual(intents[0].payload.get("email"), "nested@example.com")
+        self.assertEqual(intents[0].payload.get("contactId"), "mc-nested")
+        self.assertNotIn("email", intents[0].payload)
 
     @patch("dataruns.writebacks.transform._worklist_evidence_rows")
     @patch("dataruns.writebacks.transform._le01_sandbox_evidence_rows")

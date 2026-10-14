@@ -144,5 +144,6 @@ class WritebackEventIngestExecuteTests(TestCase):
         self.assertTrue(mock_batch.called)
         event = mock_batch.call_args[0][1][0]
         self.assertEqual(event["externalId"], "order-900")
-        self.assertEqual(event["email"], "buyer@example.com")
+        # Manago XOR: prefer contactId when both known.
         self.assertEqual(event["contactId"], "mc-55")
+        self.assertNotIn("email", event)

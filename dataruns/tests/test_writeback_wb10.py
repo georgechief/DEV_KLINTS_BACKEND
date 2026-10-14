@@ -110,7 +110,28 @@ class WritebackWb10TransformTests(TestCase):
         self.assertEqual(intent.payload.get("externalId"), "671-1")
         self.assertEqual(intent.payload.get("contactExtEventType"), "RETURN")
         self.assertEqual(intent.payload.get("value"), 48.0)
-        self.assertEqual(intent.payload.get("email"), "buyer@return.test")
+        # Manago rejects both email + contactId; prefer contactId when both known.
+        self.assertEqual(intent.payload.get("contactId"), "mc-r1")
+        self.assertNotIn("email", intent.payload)
+
+    def test_event_ingest_falls_back_to_email_when_no_contact_id(self):
+        mapping = get_check_mapping("LE-09")
+        intents = build_intents_from_mapping(
+            company=self.company,
+            mapping=mapping,
+            evidence_rows=[
+                {
+                    "side": "shopify_only_return",
+                    "order.id": "671-email-only",
+                    "person.email": "solo@return.test",
+                    "amount_gross": 12.0,
+                    "event_type": "RETURN",
+                }
+            ],
+        )
+        self.assertEqual(len(intents), 1)
+        self.assertEqual(intents[0].payload.get("email"), "solo@return.test")
+        self.assertNotIn("contactId", intents[0].payload)
 
     def test_missing_event_type_defaults_return_not_purchase(self):
         mapping = get_check_mapping("LE-09")
@@ -513,6 +534,8 @@ class WritebackWb10ExecuteHonestyTests(TestCase):
         events = mock_batch.call_args[0][1]
         self.assertEqual(events[0].get("contactExtEventType"), "RETURN")
         self.assertEqual(events[0].get("externalId"), "671-exec")
+        self.assertEqual(events[0].get("contactId"), "mc-exec")
+        self.assertNotIn("email", events[0])
 
         from dataruns.models import AuditLog
 
