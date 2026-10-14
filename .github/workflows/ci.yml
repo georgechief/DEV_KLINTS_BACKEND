@@ -1,0 +1,184 @@
+# Backend CI — full Django test suite on every pull request (green / red).
+#
+# Inspected against this repo:
+#   Dockerfile                 → Python 3.12
+#   requirements.txt           → pip install -r requirements.txt
+#   manage.py                  → core.settings.local
+#   core/settings/base.py      → DATABASE_URL via env.db(); CELERY_TASK_ALWAYS_EAGER bool
+#   core/settings/local.py     → eager Celery when CELERY_TASK_ALWAYS_EAGER is true
+#   README                     → manage.py test; Redis not required when eager
+#
+# Isolation:
+#   - Never loads DEV_ENV_FILE, local .env, DigitalOcean, staging, or production DBs.
+#   - Ephemeral GitHub Actions Postgres 16 only (host=localhost, db=klints_test).
+#   - All env values below are CI-only dummies (not production credentials).
+#   - No repository secrets required, so fork PRs can run the same checks.
+#
+# Fail closed: missing/non-local DATABASE_URL → red (no SQLite silent fallback).
+
+name: Backend CI
+
+"on":
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+concurrency:
+  group: backend-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Django tests (PostgreSQL 16)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          # Ephemeral runner-only password (not production). Alphanumeric → safe in URL.
+          POSTGRES_PASSWORD: ci_klints_test
+          POSTGRES_DB: klints_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d klints_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DJANGO_SETTINGS_MODULE: core.settings.local
+      # Explicit CI DB — process env wins over any .env (django-environ overwrite=False)
+      DATABASE_URL: postgres://postgres:ci_klints_test@localhost:5432/klints_test
+      CELERY_TASK_ALWAYS_EAGER: "True"
+      DEBUG: "True"
+      ALLOWED_HOSTS: localhost,127.0.0.1
+      CORS_ALLOWED_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+      FRONTEND_VERIFY_URL: http://localhost:8080/verify-email
+      FRONTEND_RESET_URL: http://localhost:8082/reset-password
+      FRONTEND_INVITE_URL: http://localhost:8080/invite/accept
+      FRONTEND_SHOPIFY_REDIRECT_URL: http://localhost:8080/integrations
+      MAILER_API_URL: https://example.invalid/send-email
+      MAILER_API_TOKEN: ci-dummy-mailer-token
+      CELERY_BROKER_URL: redis://127.0.0.1:6379/0
+      CELERY_RESULT_BACKEND: django-db
+      AI_ENABLED: "false"
+      AI_PROVIDER: mock
+      LANGSMITH_TRACING: "false"
+      REQUIRE_ARCHITECTURE_PILOT_GATES: "True"
+      REQUIRE_PILOT_GATING_CHECKS: "True"
+      REQUIRE_HANDOFF_QA_PASS: "True"
+      # CI-only Django / Fernet values (not production secrets)
+      SECRET_KEY: ci-only-django-secret-key-not-for-production
+      CONNECTOR_FERNET_KEY: zabmB74-IhC5u3eigA7-XoID6JKyiICspqc0GhLS-n0=
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Assert CI database is ephemeral localhost only
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          import urllib.parse
+
+          raw = os.environ.get("DATABASE_URL", "")
+          if not raw:
+              raise SystemExit("DATABASE_URL is empty")
+          parsed = urllib.parse.urlparse(raw)
+          host = (parsed.hostname or "").lower()
+          db = (parsed.path or "").lstrip("/")
+          if host not in {"localhost", "127.0.0.1"}:
+              raise SystemExit(
+                  f"Refusing to run tests: DATABASE_URL host is {host!r}, expected localhost"
+              )
+          if db != "klints_test":
+              raise SystemExit(
+                  f"Refusing to run tests: database name is {db!r}, expected klints_test"
+              )
+          blocked = (
+              "ondigitalocean.com",
+              "dbaas-db",
+              "doadmin",
+              "digitalocean.com",
+          )
+          lowered = raw.lower()
+          if any(token in lowered for token in blocked):
+              raise SystemExit(
+                  "Refusing to run tests: DATABASE_URL looks like a managed/production database"
+              )
+          # Confirm URL parses as a normal postgres URL (no stray backslashes)
+          if "\\" in raw or "postgres\\://" in raw:
+              raise SystemExit("Refusing to run tests: malformed DATABASE_URL")
+          print(
+              f"OK: DATABASE_URL host={host} scheme={parsed.scheme} db={db}"
+          )
+          PY
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Verify Django reads CI database settings
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+
+          os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings.local")
+          import django
+
+          django.setup()
+          from django.conf import settings
+
+          db = settings.DATABASES["default"]
+          host = (db.get("HOST") or "").lower()
+          name = db.get("NAME")
+          engine = db.get("ENGINE", "")
+          if host not in {"localhost", "127.0.0.1"}:
+              raise SystemExit(f"Django DB HOST is {host!r}, expected localhost")
+          if name != "klints_test":
+              raise SystemExit(f"Django DB NAME is {name!r}, expected klints_test")
+          if "postgresql" not in engine and "postgres" not in engine:
+              raise SystemExit(f"Django DB ENGINE is {engine!r}, expected PostgreSQL")
+          if settings.CELERY_TASK_ALWAYS_EAGER is not True:
+              raise SystemExit("CELERY_TASK_ALWAYS_EAGER must be True in CI")
+          print(
+              f"OK: Django engine={engine} host={host} name={name} "
+              f"eager={settings.CELERY_TASK_ALWAYS_EAGER}"
+          )
+          PY
+
+      - name: Run Django test suite
+        run: |
+          set -euo pipefail
+          if [ -z "${DATABASE_URL:-}" ]; then
+            echo "::error::DATABASE_URL is unset before tests"
+            exit 1
+          fi
+          python - <<'PY'
+          import os
+          import urllib.parse
+
+          raw = os.environ["DATABASE_URL"]
+          host = (urllib.parse.urlparse(raw).hostname or "").lower()
+          if host not in {"localhost", "127.0.0.1"}:
+              raise SystemExit(f"Refusing tests: DATABASE_URL host={host!r}")
+          print(f"Running manage.py test against host={host}")
+          PY
+          python manage.py test
