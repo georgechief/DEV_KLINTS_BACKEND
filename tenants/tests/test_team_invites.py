@@ -92,7 +92,7 @@ class TeamInviteCreateTests(TeamInviteTestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(
             response.data,
-            {"email": ["A user with this email already exists."]},
+            {"email": ["This email is already on the team."]},
         )
         mock_send.assert_not_called()
 

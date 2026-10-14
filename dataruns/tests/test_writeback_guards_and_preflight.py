@@ -160,9 +160,17 @@ class WritebackGuardsAndPreflightTests(TestCase):
             capability_id="RESTV2.PRODUCT.IMPORT",
             status="ready",
         )
+        # PRD-WB-20: DISCOVERY_REQUIRED stays preview-ready; execute still blocks.
         results = adapter.dry_run(self.company, [intent])
-        self.assertEqual(results[0].status, "error")
-        self.assertEqual(results[0].error_reason, "capability_not_confirmed")
+        self.assertEqual(results[0].status, "ready")
+        executed = adapter.execute(
+            self.company,
+            results,
+            approval_id=None,
+            idempotency_key=None,
+        )
+        self.assertEqual(executed[0].status, "error")
+        self.assertEqual(executed[0].error_reason, "capability_not_confirmed")
 
     @override_settings(
         WRITEBACKS_ENABLED=False,    )

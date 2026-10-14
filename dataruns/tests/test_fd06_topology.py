@@ -195,7 +195,7 @@ class LoadManagoTopologyTests(SimpleTestCase):
             }
         )
         self.assertFalse(result.topology_ok)
-        self.assertIn("RC-11", result.error or "")
+        self.assertIn("relationship isn't set yet", result.error or "")
 
     @patch("dataruns.dcs.topology.list_users_by_client")
     @patch("dataruns.dcs.topology.resolve_manago_credentials")

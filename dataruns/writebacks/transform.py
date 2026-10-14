@@ -2918,10 +2918,13 @@ def _event_ingest_payload(
         or context.get("representative_value")
         or context.get("count"),
     }
-    if email:
-        payload["email"] = str(email)
-    if contact_id:
-        payload["contactId"] = str(contact_id)
+    # Manago batchAddContactExtEvent rejects when both email and contactId are set.
+    # Prefer contactId (stable) when both are known.
+    _apply_manago_single_contact_identity(
+        payload,
+        email=str(email) if email else None,
+        contact_id=str(contact_id) if contact_id else None,
+    )
     before = {"externalId": order_id, "event_exists": False}
     after = dict(payload)
     rollback = {"externalId": order_id}
@@ -2964,10 +2967,12 @@ def _event_correct_payload(
         "contactExtEventType": "PURCHASE",
         "value": value,
     }
-    if email:
-        payload["email"] = str(email)
-    if contact_id:
-        payload["contactId"] = str(contact_id)
+    # Same Manago rule as event_ingest: only one of email / contactId.
+    _apply_manago_single_contact_identity(
+        payload,
+        email=str(email) if email else None,
+        contact_id=str(contact_id) if contact_id else None,
+    )
 
     # Full resend: include date (Manago ms) + currency when known.
     occurred = fields.get("occurred_at") or context.get("occurred_at")
@@ -2986,6 +2991,28 @@ def _event_correct_payload(
     after = dict(payload)
     rollback = {"externalId": event_ext, "prior_value": prior_value}
     return payload, before, after, rollback
+
+
+def _apply_manago_single_contact_identity(
+    payload: dict[str, Any],
+    *,
+    email: str | None,
+    contact_id: str | None,
+) -> None:
+    """Set exactly one of email / contactId for Manago event APIs.
+
+    Manago ``batchAddContactExtEvent`` / ``updateContactExtEvent`` reject:
+    "Both email and contactId were present. Use only one of them."
+    Prefer contactId when both are available.
+    """
+    cid = (contact_id or "").strip()
+    em = (email or "").strip()
+    if cid:
+        payload["contactId"] = cid
+        payload.pop("email", None)
+    elif em:
+        payload["email"] = em
+        payload.pop("contactId", None)
 
 
 def _occurred_at_to_manago_ms(value: Any) -> int | None:

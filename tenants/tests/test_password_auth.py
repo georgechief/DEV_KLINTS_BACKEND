@@ -123,10 +123,7 @@ class PasswordAuthTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(
-            response.data,
-            {"detail": "Invalid or expired reset link."},
-        )
+        self.assertEqual(response.data, ["Invalid or expired reset link."])
 
     def test_reset_password_rejects_used_token(self):
         reset_token = create_password_reset_token(self.user)
@@ -146,10 +143,7 @@ class PasswordAuthTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(
-            response.data,
-            {"detail": "Invalid or expired reset link."},
-        )
+        self.assertEqual(response.data, ["Invalid or expired reset link."])
 
     def test_change_password_success(self):
         request = self.factory.post(

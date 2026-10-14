@@ -304,7 +304,7 @@ class M3Sec01ArchitectureIsolationTests(TestCase):
         self.assertNotIn(str(self.assessment.id), str(response.data))
 
 
-@override_settings(AI_PROVIDER="mock")
+@override_settings(AI_ENABLED=True, AI_PROVIDER="mock")
 class M3Sec01AiIsolationTests(TestCase):
     def setUp(self):
         self.pair = make_sec01_tenant_pair(slug_prefix="sec01-ai")

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
@@ -18,6 +19,9 @@ from dataruns.connectors.manago_ai.client import (
     _resolve_owner,
 )
 from tenants.models import Company
+
+# Identity keys stay on the batch event wrapper; everything else goes in contactEvent.
+_BATCH_EVENT_IDENTITY_KEYS = frozenset({"email", "contactId"})
 
 
 @dataclass(frozen=True)
@@ -177,6 +181,48 @@ def remove_contact_tag(
     )
 
 
+def _wrap_batch_contact_event(raw: dict[str, Any]) -> dict[str, Any]:
+    """Manago batchAddContactExtEvent requires ``contactEvent`` nesting.
+
+    Flat payloads (contactExtEventType at the top level of each events[] item)
+    are rejected with ``No contactExtEventType specified`` even when the field
+    is present. Docs: email|contactId + contactEvent{ date, contactExtEventType, … }.
+    """
+    if not isinstance(raw, dict) or not raw:
+        raise ManagoClientError("batch event must be a non-empty object")
+
+    # Already in wire shape — pass through (tests / retries).
+    if isinstance(raw.get("contactEvent"), dict):
+        wrapped = dict(raw)
+        contact_event = dict(wrapped["contactEvent"])
+        if contact_event.get("date") is None:
+            contact_event["date"] = int(time.time() * 1000)
+            wrapped["contactEvent"] = contact_event
+        return wrapped
+
+    contact_event = {
+        key: value
+        for key, value in raw.items()
+        if key not in _BATCH_EVENT_IDENTITY_KEYS and value is not None
+    }
+    if not str(contact_event.get("contactExtEventType") or "").strip():
+        raise ManagoClientError("batch event requires contactExtEventType")
+    if contact_event.get("date") is None:
+        contact_event["date"] = int(time.time() * 1000)
+
+    wrapped: dict[str, Any] = {"contactEvent": contact_event}
+    contact_id = str(raw.get("contactId") or "").strip()
+    email = str(raw.get("email") or "").strip()
+    # Prefer contactId when both somehow remain (Manago XOR rule).
+    if contact_id:
+        wrapped["contactId"] = contact_id
+    elif email:
+        wrapped["email"] = email
+    else:
+        raise ManagoClientError("batch event requires email or contactId")
+    return wrapped
+
+
 def batch_add_external_events(
     ctx: ManagoWriteContext,
     events: list[dict[str, Any]],
@@ -185,12 +231,13 @@ def batch_add_external_events(
 ) -> dict[str, Any]:
     if not events:
         raise ManagoClientError("batch_add_external_events requires events")
+    wire_events = [_wrap_batch_contact_event(event) for event in events]
     return _post_manago(
         endpoint=ctx.endpoint,
         path="api/contact/batchAddContactExtEvent",
         client_id=ctx.client_id,
         api_secret=ctx.api_secret,
-        payload={"owner": ctx.owner, "events": events},
+        payload={"owner": ctx.owner, "events": wire_events},
         timeout=timeout,
     )
 

@@ -109,7 +109,8 @@ class WritebackWb13TransformTests(TestCase):
         self.assertEqual(intent.payload.get("externalId"), "5001")
         self.assertEqual(intent.payload.get("contactExtEventType"), "PURCHASE")
         self.assertEqual(intent.payload.get("value"), 99.5)
-        self.assertEqual(intent.payload.get("email"), "buyer@gap.test")
+        self.assertEqual(intent.payload.get("contactId"), "mc-g1")
+        self.assertNotIn("email", intent.payload)
 
     def test_ignores_manago_only_and_le09_return_side(self):
         mapping = get_check_mapping("LE-05")
